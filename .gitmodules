@@ -1,3 +1,0 @@
-[submodule "ext_lib/rtmidi"]
-	path = ext_lib/rtmidi
-	url = https://github.com/thestk/rtmidi
