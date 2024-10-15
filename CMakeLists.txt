@@ -29,3 +29,7 @@ if (CMAKE_C_COMPILER_ID STREQUAL "GNU")
 endif()
 
 add_subdirectory(flash_uti)
+add_subdirectory(src)
+add_subdirectory(tusb_midi)
+add_subdirectory(platform)
+add_subdirectory(ext_lib)

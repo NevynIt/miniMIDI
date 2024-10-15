@@ -27,5 +27,6 @@
     "*.pson": "python",
     "stdlib.h": "c",
     "flash.h": "c"
-  }
+  },
+  "C_Cpp.errorSquiggles": "enabled"
 }
