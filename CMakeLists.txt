@@ -31,5 +31,7 @@ include(pico_sdk_import.cmake)
 # Initialise the Raspberry Pi Pico SDK
 pico_sdk_init()
 
+project(miniMIDI C CXX ASM)
+
 #add src folder
 add_subdirectory(src)
