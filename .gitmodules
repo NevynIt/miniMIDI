@@ -1,0 +1,6 @@
+[submodule "src/no-OS-FatFS-SD-SPI-RPi-Pico"]
+	path = src/no-OS-FatFS-SD-SPI-RPi-Pico
+	url = https://github.com/carlk3/no-OS-FatFS-SD-SPI-RPi-Pico.git
+[submodule "src/pico-ssd1306"]
+	path = src/pico-ssd1306
+	url = https://github.com/daschr/pico-ssd1306
