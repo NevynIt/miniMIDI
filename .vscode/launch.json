@@ -1,6 +1,15 @@
 {
     "version": "0.2.0",
     "configurations": [
+        
+        {
+           "name": "Debug Python locally",
+            "type": "debugpy",
+            "request": "launch",
+            "program":"${file}",
+            "cwd": "${fileDirname}",
+            "console": "integratedTerminal"
+        }
         {
             "name": "Pico Debug (Cortex-Debug)",
             "cwd": "${userHome}/.pico-sdk/openocd/0.12.0+dev/scripts",

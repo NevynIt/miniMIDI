@@ -1,12 +1,17 @@
 # Add executable. Default name is the project name, version 0.1
 
+add_subdirectory(no-OS-FatFS-SD-SPI-RPi-Pico/FatFs_SPI build)
+
 add_executable(miniMIDI 
     miniMIDI.cpp
+    App.cpp
     Module.cpp
     Message.cpp
     Queue.cpp
     msg_MIDI.cpp
     mod_UART_MIDI.cpp
+    mod_config.cpp
+    mod_SD.cpp
 )
 
 pico_set_program_name(miniMIDI "miniMIDI")
@@ -21,7 +26,7 @@ pico_enable_stdio_usb(miniMIDI 0)
 
 # Add the standard library to the build
 target_link_libraries(miniMIDI
-        pico_stdlib)
+        pico_stdlib stdc++)
 
 # Add the standard include files to the build
 target_include_directories(miniMIDI PRIVATE
@@ -35,6 +40,8 @@ target_link_libraries(miniMIDI
         hardware_i2c
         hardware_dma
         hardware_pio
+        pico_multicore
+        FatFs_SPI
 )
 
 pico_add_extra_outputs(miniMIDI)
