@@ -5,20 +5,37 @@ add_subdirectory(no-OS-FatFS-SD-SPI-RPi-Pico/FatFs_SPI build)
 add_executable(miniMIDI 
     miniMIDI.cpp
     App.cpp
-    Module.cpp
-    Message.cpp
-    Queue.cpp
+    module.cpp
+    message.cpp
+    queue.cpp
     msg_MIDI.cpp
     mod_UART_MIDI.cpp
     mod_config.cpp
     mod_SD.cpp
+    mod_Display.cpp
+    mod_Encoders.cpp
+    mod_Joys.cpp
+    mod_LedStrip.cpp
+    mod_Sequencer.cpp
+    mod_USB.cpp
+    mod_USB_Audio.cpp
+    mod_USB_MIDI.cpp
+    mod_USB_UART.cpp
+    mod_Audio.cpp
+    mod_DSP.cpp
+    usb_descriptors.c
+    QuadratureDecoder/QuadratureDecoder.cpp
+    rp2040_i2s_example/i2s.c
 )
 
 pico_set_program_name(miniMIDI "miniMIDI")
 pico_set_program_version(miniMIDI "0.1")
 
-# Generate PIO header
+# Generate PIO headers
 pico_generate_pio_header(miniMIDI ${CMAKE_CURRENT_LIST_DIR}/blink.pio)
+pico_generate_pio_header(miniMIDI ${CMAKE_CURRENT_LIST_DIR}/ws2812.pio)
+pico_generate_pio_header(miniMIDI ${CMAKE_CURRENT_LIST_DIR}/QuadratureDecoder/QuadratureDecoder.pio)
+pico_generate_pio_header(miniMIDI ${CMAKE_CURRENT_LIST_DIR}/rp2040_i2s_example/i2s.pio)
 
 # Modify the below lines to enable/disable output over UART/USB
 pico_enable_stdio_uart(miniMIDI 0)
@@ -26,12 +43,20 @@ pico_enable_stdio_usb(miniMIDI 0)
 
 # Add the standard library to the build
 target_link_libraries(miniMIDI
-        pico_stdlib stdc++)
+        pico_stdlib
+        stdc++
+        tinyusb_device
+        tinyusb_board
+)
 
 # Add the standard include files to the build
 target_include_directories(miniMIDI PRIVATE
   ${CMAKE_CURRENT_LIST_DIR}
   ${CMAKE_CURRENT_LIST_DIR}/.. # for our common lwipopts or any other standard includes, if required
+  ${CMAKE_CURRENT_LIST_DIR}/no-OS-FatFS-SD-SPI-RPi-Pico/FatFs_SPI/include
+  ${CMAKE_CURRENT_LIST_DIR}/pico-ssd1306
+  ${CMAKE_CURRENT_LIST_DIR}/QuadratureDecoder
+  ${CMAKE_CURRENT_LIST_DIR}/rp2040_i2s_example
 )
 
 # Add any user requested libraries
@@ -39,6 +64,7 @@ target_link_libraries(miniMIDI
         hardware_spi
         hardware_i2c
         hardware_dma
+        hardware_adc
         hardware_pio
         pico_multicore
         FatFs_SPI

@@ -11,6 +11,18 @@ void App::Init() {
     // Add existing module instances to the appropriate vectors
     modules_c0.push_back(&config);
     modules_c1.push_back(&uartMIDI);
+    modules_c1.push_back(&display);
+    modules_c1.push_back(&ledStrip);
+    modules_c1.push_back(&usb);
+    modules_c1.push_back(&usbUart);
+    modules_c1.push_back(&usbMidi);
+    modules_c1.push_back(&usbAudio);
+    modules_c1.push_back(&sd);
+    modules_c1.push_back(&encoders);
+    modules_c1.push_back(&joys);
+    modules_c1.push_back(&sequencer);
+    modules_c1.push_back(&audio);
+    modules_c1.push_back(&dsp);
 }
 
 void App::Tick() {

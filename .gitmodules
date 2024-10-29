@@ -4,3 +4,12 @@
 [submodule "src/pico-ssd1306"]
 	path = src/pico-ssd1306
 	url = https://github.com/daschr/pico-ssd1306
+[submodule "src/rp2040-encoder-library"]
+	path = src/rp2040-encoder-library
+	url = https://github.com/gbr1/rp2040-encoder-library
+[submodule "src/QuadratureDecoder"]
+	path = src/QuadratureDecoder
+	url = https://github.com/adamgreen/QuadratureDecoder
+[submodule "src/rp2040_i2s_example"]
+	path = src/rp2040_i2s_example
+	url = https://github.com/malacalypse/rp2040_i2s_example

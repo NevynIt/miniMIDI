@@ -4,6 +4,18 @@
 #include "Module.h"
 #include "mod_UART_MIDI.h"
 #include "mod_config.h"
+#include "mod_Display.h"
+#include "mod_LedStrip.h"
+#include "mod_USB.h"
+#include "mod_USB_UART.h"
+#include "mod_USB_MIDI.h"
+#include "mod_USB_Audio.h"
+#include "mod_SD.h"
+#include "mod_Encoders.h"
+#include "mod_Joys.h"
+#include "mod_Sequencer.h"
+#include "mod_Audio.h"
+#include "mod_DSP.h"
 #include <vector>
 #include <memory>
 
@@ -21,6 +33,18 @@ public:
 
     mod_UART_MIDI uartMIDI;
     mod_config config;
+    mod_Display display;
+    mod_LedStrip ledStrip;
+    mod_USB usb;
+    mod_USB_UART usbUart;
+    mod_USB_MIDI usbMidi;
+    mod_USB_Audio usbAudio;
+    mod_SD sd;
+    mod_Encoders encoders;
+    mod_Joys joys;
+    mod_Sequencer sequencer;
+    mod_Audio audio;
+    mod_DSP dsp;
 
 private:
     App() = default; // Private constructor for singleton pattern
