@@ -108,6 +108,8 @@
         "typeinfo": "cpp",
         "valarray": "cpp",
         "variant": "cpp",
-        "ssd1306.h": "c"
+        "ssd1306.h": "c",
+        "hw_config.h": "c",
+        "i2c.h": "c"
     }
 }

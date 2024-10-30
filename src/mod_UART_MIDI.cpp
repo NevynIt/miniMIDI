@@ -3,9 +3,9 @@
 
 void mod_UART_MIDI::Init() {
     // Initialize UART
-    uart_init(UART_ID, BAUD_RATE);
-    gpio_set_function(UART_TX_PIN, GPIO_FUNC_UART);
-    gpio_set_function(UART_RX_PIN, GPIO_FUNC_UART);
+    uart_init(UART_MIDI, BAUD_RATE);
+    gpio_set_function(GPIO_MIDI_TX, GPIO_FUNC_UART);
+    gpio_set_function(GPIO_MIDI_RX, GPIO_FUNC_UART);
 }
 
 void mod_UART_MIDI::Tick() {
@@ -20,11 +20,11 @@ void mod_UART_MIDI::ReadMIDI() {
 
     Queue& inQueue = Queue::GetInQueue();
 
-    while (uart_is_readable(UART_ID)) {
+    while (uart_is_readable(UART_MIDI)) {
         uint8_t data[msg_MIDI::MIDI_MESSAGE_SIZE];
         for (size_t i = 0; i < msg_MIDI::MIDI_MESSAGE_SIZE; ++i) {
-            if (uart_is_readable(UART_ID)) {
-                data[i] = uart_getc(UART_ID);
+            if (uart_is_readable(UART_MIDI)) {
+                data[i] = uart_getc(UART_MIDI);
             } else {
                 // Handle incomplete MIDI message if necessary
                 return;

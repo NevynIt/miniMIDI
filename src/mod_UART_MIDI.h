@@ -6,8 +6,11 @@
 #include "Message.h"
 #include "hardware/uart.h"
 #include "hardware/gpio.h"
+#include "hwConfig.h"
 
-#define UART_ID uart0
+// #define UART_ID uart0
+
+//Wait for either midi messages or a \n\n\n escape sequence, which would trigger interaction with a embedded-cli
 
 class mod_UART_MIDI : public Module {
 public:
@@ -15,9 +18,6 @@ public:
     void Tick() override;
 
 private:
-    static constexpr uint UART_TX_PIN = 0;
-    static constexpr uint UART_RX_PIN = 1;
-    // static constexpr uart_inst* UART_ID = uart0;
     static constexpr uint BAUD_RATE = 31250; // Standard MIDI baud rate
 
     void ReadMIDI();

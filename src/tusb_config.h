@@ -14,10 +14,13 @@
 // Device Configuration
 #define CFG_TUD_ENDPOINT0_SIZE      64
 
-// Class Configuration
-#define CFG_TUD_CDC                 1
-#define CFG_TUD_MIDI                4
-#define CFG_TUD_AUDIO               1
+// Class Configuration -- Let's start simple
+#define CFG_TUD_CDC               1 // target 1 cdc
+#define CFG_TUD_MSC               0 // target 1 msc
+#define CFG_TUD_HID               0 // target 0 hid
+#define CFG_TUD_MIDI              0 // target 1 midi
+#define CFG_TUD_VENDOR            0 // target 0 vendor
+#define CFG_TUD_AUDIO             0 // target 1 audio
 
 // CDC FIFO size of TX and RX
 #define CFG_TUD_CDC_RX_BUFSIZE      64

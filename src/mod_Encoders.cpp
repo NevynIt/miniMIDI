@@ -2,7 +2,7 @@
 
 void mod_Encoders::Init() {
     // Initialize the quadrature decoder
-    if (!decoder.init(pio0)) {
+    if (!decoder.init(PIO_ENCODERS)) {
         // Handle initialization failure
         return;
     }
@@ -12,7 +12,7 @@ void mod_Encoders::Init() {
 
     // Add quadrature encoders
     for (int i = 0; i < NUM_ENCODERS; ++i) {
-        int32_t result = decoder.addQuadratureEncoder(i * 2); // Assuming pins 0&1, 2&3, 4&5, 6&7
+        int32_t result = decoder.addQuadratureEncoder(GPIO_Enc_Base + i * 2); // Assuming consecutive pins A,B, A,B, ...
         if (result < 0) {
             // Handle failure to add encoder
         }

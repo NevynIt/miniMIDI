@@ -23,9 +23,12 @@ add_executable(miniMIDI
     mod_USB_UART.cpp
     mod_Audio.cpp
     mod_DSP.cpp
-    usb_descriptors.c
+    mod_Synth.cpp
     QuadratureDecoder/QuadratureDecoder.cpp
     rp2040_i2s_example/i2s.c
+    pico-ssd1306/ssd1306.c
+    RP2040-pico_synth_ex/pico_synth_ex.c
+    RP2040-pico_synth_ex/sound_i2s/sound_i2s.c
 )
 
 pico_set_program_name(miniMIDI "miniMIDI")
@@ -36,6 +39,7 @@ pico_generate_pio_header(miniMIDI ${CMAKE_CURRENT_LIST_DIR}/blink.pio)
 pico_generate_pio_header(miniMIDI ${CMAKE_CURRENT_LIST_DIR}/ws2812.pio)
 pico_generate_pio_header(miniMIDI ${CMAKE_CURRENT_LIST_DIR}/QuadratureDecoder/QuadratureDecoder.pio)
 pico_generate_pio_header(miniMIDI ${CMAKE_CURRENT_LIST_DIR}/rp2040_i2s_example/i2s.pio)
+pico_generate_pio_header(miniMIDI ${CMAKE_CURRENT_LIST_DIR}/RP2040-pico_synth_ex/sound_i2s/sound_i2s_16bits.pio)
 
 # Modify the below lines to enable/disable output over UART/USB
 pico_enable_stdio_uart(miniMIDI 0)
@@ -57,6 +61,8 @@ target_include_directories(miniMIDI PRIVATE
   ${CMAKE_CURRENT_LIST_DIR}/pico-ssd1306
   ${CMAKE_CURRENT_LIST_DIR}/QuadratureDecoder
   ${CMAKE_CURRENT_LIST_DIR}/rp2040_i2s_example
+  ${CMAKE_CURRENT_LIST_DIR}/RP2040-pico_synth_ex
+  ${CMAKE_CURRENT_LIST_DIR}/RP2040-pico_synth_ex/sound_i2s
 )
 
 # Add any user requested libraries
@@ -66,6 +72,7 @@ target_link_libraries(miniMIDI
         hardware_dma
         hardware_adc
         hardware_pio
+        hardware_pwm
         pico_multicore
         FatFs_SPI
 )

@@ -3,17 +3,17 @@
 void mod_Joys::Init() {
     // Initialize the ADC
     adc_init();
-    adc_gpio_init(JOY_X_PIN);
-    adc_gpio_init(JOY_Y_PIN);
+    adc_gpio_init(GPIO_Joys_X);
+    adc_gpio_init(GPIO_Joys_Y);
 }
 
 void mod_Joys::Tick() {
     // Read X axis
-    adc_select_input(0);
+    adc_select_input(ADC_Joys_X);
     xValue = adc_read();
 
     // Read Y axis
-    adc_select_input(1);
+    adc_select_input(ADC_Joys_Y);
     yValue = adc_read();
 }
 

@@ -4,6 +4,8 @@
 #include "Module.h"
 #include "tusb.h"
 
+//use embedded-cli to interact with the device
+
 class mod_USB_UART : public Module {
 public:
     void Init() override;

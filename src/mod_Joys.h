@@ -3,6 +3,7 @@
 
 #include "Module.h"
 #include "hardware/adc.h"
+#include "hwConfig.h"
 
 class mod_Joys : public Module {
 public:
@@ -13,8 +14,6 @@ public:
     uint16_t GetY();
 
 private:
-    static const int JOY_X_PIN = 26; // ADC0
-    static const int JOY_Y_PIN = 27; // ADC1
     uint16_t xValue;
     uint16_t yValue;
 };

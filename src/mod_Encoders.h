@@ -4,6 +4,7 @@
 #include "Module.h"
 #include "QuadratureDecoder.h"
 #include <vector>
+#include "hwConfig.h"
 
 class mod_Encoders : public Module {
 public:
@@ -14,7 +15,6 @@ public:
     int32_t GetEncoderCount(int index);
 
 private:
-    static const int NUM_ENCODERS = 4;
     QuadratureDecoder decoder;
     std::vector<int32_t> encoderCounts;
 };

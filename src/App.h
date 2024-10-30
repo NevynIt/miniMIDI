@@ -16,6 +16,7 @@
 #include "mod_Sequencer.h"
 #include "mod_Audio.h"
 #include "mod_DSP.h"
+#include "mod_Synth.h"
 #include <vector>
 #include <memory>
 
@@ -45,6 +46,7 @@ public:
     mod_Sequencer sequencer;
     mod_Audio audio;
     mod_DSP dsp;
+    mod_Synth synth;
 
 private:
     App() = default; // Private constructor for singleton pattern

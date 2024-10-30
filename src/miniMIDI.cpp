@@ -14,11 +14,10 @@ void core1_entry() {
 int main() {
     App& app = App::GetInstance();
 
-    app.Init();
+    //Initialise the modules on core 0 first
+    app.Init_c0();
 
     multicore_launch_core1(core1_entry);
-
-    app.Init_c0();
 
     while (true) {
         app.Tick_c0();

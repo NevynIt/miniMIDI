@@ -13,3 +13,9 @@
 [submodule "src/rp2040_i2s_example"]
 	path = src/rp2040_i2s_example
 	url = https://github.com/malacalypse/rp2040_i2s_example
+[submodule "src/embedded-cli"]
+	path = src/embedded-cli
+	url = https://github.com/funbiscuit/embedded-cli
+[submodule "src/RP2040-pico_synth_ex"]
+	path = src/RP2040-pico_synth_ex
+	url = https://github.com/TuriSc/RP2040-pico_synth_ex

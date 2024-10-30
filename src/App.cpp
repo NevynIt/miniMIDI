@@ -8,21 +8,7 @@ App& App::GetInstance() {
 }
 
 void App::Init() {
-    // Add existing module instances to the appropriate vectors
-    modules_c0.push_back(&config);
-    modules_c1.push_back(&uartMIDI);
-    modules_c1.push_back(&display);
-    modules_c1.push_back(&ledStrip);
-    modules_c1.push_back(&usb);
-    modules_c1.push_back(&usbUart);
-    modules_c1.push_back(&usbMidi);
-    modules_c1.push_back(&usbAudio);
-    modules_c1.push_back(&sd);
-    modules_c1.push_back(&encoders);
-    modules_c1.push_back(&joys);
-    modules_c1.push_back(&sequencer);
-    modules_c1.push_back(&audio);
-    modules_c1.push_back(&dsp);
+    // Empty, as Init_c0 and Init_c1 will handle initialization
 }
 
 void App::Tick() {
@@ -30,13 +16,40 @@ void App::Tick() {
 }
 
 void App::Init_c0() {
-    for (auto& module : modules_c0) {
+    std::vector<Module*> &mods =  modules_c0;
+
+    // User interface modules
+    mods.push_back(&display); //Basic implementation using a library -- very slow refresh, and keeps the CPU busy, should be updated with DMA
+    mods.push_back(&sd); //Basic implementation using a library, it should work for now
+    mods.push_back(&config); //Dummy module for now
+
+    // Audio modules
+    mods.push_back(&audio); //Empty module for now
+    mods.push_back(&dsp);  //Dummy module for now
+    //mods.push_back(&synth); //Dummy module which should crash now, skipping
+
+    for (auto& module : mods) {
         module->Init();
     }
 }
 
 void App::Init_c1() {
-    for (auto& module : modules_c1) {
+    std::vector<Module*> &mods =  modules_c1;
+
+    // MIDI modules
+    mods.push_back(&uartMIDI); //Dummy module for now
+    mods.push_back(&encoders); //Basic implementation using a library -- should be overkill as it uses one full PIO for 4 encoders
+    mods.push_back(&joys); //Basic implementation using ADC polling every tick
+    mods.push_back(&ledStrip); //Basic implementation written by CoPilot, not sure it works
+    mods.push_back(&sequencer); //Basic implementation, not very useful for now
+
+    // USB modules
+    mods.push_back(&usb);
+    mods.push_back(&usbUart); //Dummy module for now
+    mods.push_back(&usbMidi); //Empty module for now
+    mods.push_back(&usbAudio); //Empty module for now
+
+    for (auto& module : mods) {
         module->Init();
     }
 }
