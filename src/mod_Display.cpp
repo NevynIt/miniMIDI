@@ -14,8 +14,9 @@ void mod_Display::Init() {
 
     // Initialize the display
     display.external_vcc = false;
-    ssd1306_init(&display, WIDTH, HEIGHT, 0x3C, i2c1);
+    ssd1306_init(&display, WIDTH, HEIGHT, 0x3C, I2C_DISPLAY);
     clear();
+    draw_text(0, 0, 1, "Boot sequence started");
     show();
 }
 

@@ -17,7 +17,7 @@ int main() {
     //Initialise the modules on core 0 first
     app.Init_c0();
 
-    multicore_launch_core1(core1_entry);
+    //multicore_launch_core1(core1_entry); //do not start the other modules for now
 
     while (true) {
         app.Tick_c0();

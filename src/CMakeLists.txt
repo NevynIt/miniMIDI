@@ -31,6 +31,13 @@ add_executable(miniMIDI
     RP2040-pico_synth_ex/sound_i2s/sound_i2s.c
 )
 
+# Set the output directories to the root build directory
+set_target_properties(miniMIDI PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}
+    ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}
+    LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}
+)
+
 pico_set_program_name(miniMIDI "miniMIDI")
 pico_set_program_version(miniMIDI "0.1")
 

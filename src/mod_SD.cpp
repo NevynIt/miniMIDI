@@ -1,8 +1,18 @@
 #include "mod_SD.h"
+#include "App.h"
 #include <cstring>
 
 void mod_SD::Init() {
     Mount();
+
+    if (mounted) {
+        App::GetInstance().display.draw_text(0, 8, 1, "SD Card mounted");
+    }
+    else
+    {
+        App::GetInstance().display.draw_text(0, 8, 1, "No SD Card");
+    }
+    App::GetInstance().display.show();
 }
 
 void mod_SD::Tick() {
