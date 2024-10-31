@@ -10,8 +10,9 @@ public:
     void Init() override;
     void Tick() override;
 
-    uint16_t GetX();
-    uint16_t GetY();
+    inline uint16_t GetX() const { return xValue; }
+    inline uint16_t GetY() const { return yValue; }
+    uint8_t button = 0;
 
 private:
     uint16_t xValue;

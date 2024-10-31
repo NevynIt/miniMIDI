@@ -3,7 +3,7 @@
 
 void mod_UART_MIDI::Init() {
     // Initialize UART
-    uart_init(UART_MIDI, BAUD_RATE);
+    uart_init(UART_MIDI, MIDI_BAUD_RATE);
     gpio_set_function(GPIO_MIDI_TX, GPIO_FUNC_UART);
     gpio_set_function(GPIO_MIDI_RX, GPIO_FUNC_UART);
 }

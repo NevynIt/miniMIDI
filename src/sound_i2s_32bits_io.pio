@@ -1,0 +1,55 @@
+.program sound_i2s_32bits_io
+.side_set 2
+
+.define I2S_BITS_PER_CHANNEL 32
+
+;                                /--- WS (left/right)
+;                                |/-- SCK (clock)
+;                                ||
+    set x, (I2S_BITS_PER_CHANNEL-2)             side 0b01 [1]
+bitloop_left:
+    out pins, 1           side 0b00   ; write * (I2S_BITS_PER_CHANNEL-1)
+    in pins, 1            side 0b00   ; read *  (I2S_BITS_PER_CHANNEL-1)
+    jmp x-- bitloop_left  side 0b01 [1]
+    out pins, 1           side 0b10   ; write
+    in pins, 1            side 0b10   ; read
+
+    set x, (I2S_BITS_PER_CHANNEL-2)             side 0b11 [1]
+bitloop_right:
+    out pins, 1           side 0b10   ; write * (I2S_BITS_PER_CHANNEL-1)
+    in pins, 1            side 0b10   ; read * (I2S_BITS_PER_CHANNEL-1)
+    jmp x-- bitloop_right side 0b11 [1]
+    out pins, 1           side 0b00   ; write
+    in pins, 1            side 0b00   ; read
+
+% c-sdk {
+#include "hardware/clocks.h"
+#include "hwConfig.h"
+
+static inline void sound_i2s_32bits_io_program_init(PIO pio, uint sm, uint offset, uint sample_rate, uint din_pin, uint dout_pin, uint clock_pin_base) {
+  // configure PIO pins
+  uint pin_mask = (1u << din_pin) | (1u << dout_pin) | (0b11 << clock_pin_base);
+  uint pin_dirs = (1u << din_pin) | (1u << dout_pin) | (0b11 << clock_pin_base);
+  pio_sm_set_pindirs_with_mask(pio, sm, pin_dirs, pin_mask);
+
+  pio_gpio_init(pio, din_pin);
+  pio_gpio_init(pio, dout_pin);
+  pio_gpio_init(pio, clock_pin_base);      // SCK
+  pio_gpio_init(pio, clock_pin_base + 1);  // WS
+
+  // configure PIO
+  pio_sm_config sm_config = sound_i2s_32bits_io_program_get_default_config(offset);
+
+  sm_config_set_out_pins(&sm_config, dout_pin, 1);
+  sm_config_set_in_pins(&sm_config, din_pin, 1);
+  sm_config_set_sideset_pins(&sm_config, clock_pin_base);
+  sm_config_set_out_shift(&sm_config, false, true, 0);
+  sm_config_set_in_shift(&sm_config, false, true, 32);
+
+  uint f_clk_sys = frequency_count_khz(CLOCKS_FC0_SRC_VALUE_CLK_SYS);
+  sm_config_set_clkdiv(&sm_config, (f_clk_sys * 1000.f) / (SAMPLE_RATE *  I2S_BITS_PER_CHANNEL * 4.0f));  // I2S_BITS_PER_CHANNEL bits (clock signal goes high/low every bit) * 4 (set/jump + delay + out + in) 
+
+  pio_sm_init(pio, sm, offset, &sm_config);
+}
+
+%}

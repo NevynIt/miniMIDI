@@ -2,21 +2,26 @@
 #define MOD_ENCODERS_H
 
 #include "Module.h"
-#include "QuadratureDecoder.h"
-#include <vector>
 #include "hwConfig.h"
+
+#ifdef ENCODERS_USE_PIO
+#include "QuadratureDecoder.h"
+#endif
 
 class mod_Encoders : public Module {
 public:
-    mod_Encoders() : decoder() {} // Ensure the constructor is defined
     void Init() override;
     void Tick() override;
 
-    int32_t GetEncoderCount(int index);
-
+    // Current quadrature count
+    int32_t count[NUM_ENCODERS] = {0};
+    uint8_t buttons = 0;
 private:
+#ifdef ENCODERS_USE_PIO
     QuadratureDecoder decoder;
-    std::vector<int32_t> encoderCounts;
+#else
+    void Decode();
+#endif
 };
 
 #endif // MOD_ENCODERS_H

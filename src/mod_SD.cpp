@@ -3,14 +3,14 @@
 #include <cstring>
 
 void mod_SD::Init() {
-    Mount();
+    //Mount();
 
     if (mounted) {
-        App::GetInstance().display.draw_text(0, 8, 1, "SD Card mounted");
+        App::GetInstance().display.println("SD Card mounted");
     }
     else
     {
-        App::GetInstance().display.draw_text(0, 8, 1, "No SD Card");
+        App::GetInstance().display.println("No SD Card");
     }
     App::GetInstance().display.show();
 }

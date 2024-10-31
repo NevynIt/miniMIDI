@@ -29,14 +29,23 @@ public:
     void draw_square(int x, int y, int w, int h);
     void clear_square(int x, int y, int w, int h);
     void draw_text(int x, int y, uint32_t scale, const char* text);
+    void scroll(int dy);
     // void draw_bitmap(int x, int y, const uint8_t* bitmap, int w, int h);
     // void set_contrast(uint8_t contrast);
     // void invert_display(bool invert);
+    
+    // Cursor management and printing
+    void setCursor(int x, int y);
+    void print(const std::string& text);
+    void println(const std::string& text);
 
 private:
     static const int WIDTH = 128;
     static const int HEIGHT = 64;
     ssd1306_t display;
+    
+    int cursor_x;
+    int cursor_y;
 };
 
 #endif // MOD_DISPLAY_H

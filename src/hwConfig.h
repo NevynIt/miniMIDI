@@ -12,10 +12,10 @@ typedef enum {
     GPIO_Enc2_B,        // 5
     GPIO_Enc3_A,        // 6
     GPIO_Enc3_B,        // 7
-    GPIO_Enc1_Btn,      // 8
-    GPIO_Enc2_Btn,      // 9
-    GPIO_Enc3_Btn,      // 10
-    GPIO_Enc4_Btn,      // 11
+    GPIO_Enc0_Btn,      // 8
+    GPIO_Enc1_Btn,      // 9
+    GPIO_Enc2_Btn,      // 10
+    GPIO_Enc3_Btn,      // 11
     GPIO_SD_RX,         // 12 - SPI1 RX
     GPIO_SD_CS,         // 13 - SPI1 CS
     GPIO_SD_CK,         // 14 - SPI1 CK
@@ -37,16 +37,44 @@ typedef enum {
     GPIO_Board_RGB = 23 // 23 - (Board RGB Led)
 } GPIO_Pin;
 
+// SD card configuration
 #define SPI_SD spi1
-#define UART_MIDI uart0
-#define I2C_DISPLAY i2c1
 
+// Display configuration
+#define I2C_DISPLAY i2c1
+#define DISPLAY_ADDR 0x3C
+#define DISPLAY_WIDTH 128
+#define DISPLAY_HEIGHT 64
+
+// Joystick configuration
 #define ADC_Joys_X 2
 #define ADC_Joys_Y 3
 
+// Encoder configuration
 #define NUM_ENCODERS 4
 #define GPIO_Enc_Base GPIO_Enc0_A
-
+// #define ENCODERS_USE_PIO //PIO Iplementation currently broken, Non-PIO implementation is a bit slow but kind of works
+#ifdef ENCODERS_USE_PIO
 #define PIO_ENCODERS pio0
+#endif
+
+// RGB LED configuration
+#define PIO_WS2812B  pio1
+#define LEDS_COUNT 23 // For testing purposes, the actual number of LEDs for the piano is 169
+
+// Audio configuration
+#define PIO_I2S      pio1
+#define SAMPLE_RATE 48000
+#define BITS_PER_SAMPLE 16
+#define I2S_BITS_PER_CHANNEL 32 //hard coded in the pio program
+#define I2S_CHANNELS 2 //hard coded in the pio program
+#define I2S_BUFFER_SAMPLES SAMPLE_RATE/1000
+#define I2S_BUFFER_NUM 2
+#define I2S_BUFFER_SIZE I2S_BUFFER_SAMPLES * I2S_CHANNELS * I2S_BITS_PER_CHANNEL / 8
+
+// MIDI configuration
+#define UART_MIDI uart0
+//#define MIDI_BAUD_RATE 31250
+#define MIDI_BAUD_RATE 115200 //for testing purposes, emulating midi interaction on the debugger
 
 #endif // HWCONFIG_H

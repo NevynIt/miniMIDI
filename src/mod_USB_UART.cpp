@@ -11,9 +11,11 @@ void mod_USB_UART::Tick() {
     {
         char buffer[64];
         size_t count = tud_cdc_read(buffer, sizeof(buffer));
-        App::GetInstance().display.clear_square(0, 16, 128, 16);
-        App::GetInstance().display.draw_text(0, 16, 1, buffer);
+        App::GetInstance().display.println(buffer);
         App::GetInstance().display.show();
+
+        tud_cdc_write(buffer, count);
+        tud_cdc_write_flush();
     }
 }
 

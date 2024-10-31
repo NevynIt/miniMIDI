@@ -3,6 +3,9 @@
 #include <algorithm>
 #include "hardware/i2c.h"
 #include "hardware/gpio.h"
+// #include "hardware/timer.h"
+#include "time.h"
+#include "App.h"
 
 void mod_Display::Init() {
     // Initialize I2C and SSD1306 display
@@ -24,7 +27,22 @@ void mod_Display::Init() {
 }
 
 void mod_Display::Tick() {
-    // Perform any periodic display tasks if needed
+    static uint32_t stored_time = 0;
+    uint32_t current_time;
+    current_time = to_ms_since_boot(get_absolute_time());
+    if (current_time - stored_time > 100) {
+        //update display
+        auto app = App::GetInstance();
+        clear();
+        char buffer[100];
+        sprintf(buffer, "%d, %d, %d, %d, %d\n",  app.encoders.buttons, app.encoders.count[0], app.encoders.count[1], app.encoders.count[2], app.encoders.count[3]);
+        draw_text(0,16,1,buffer);
+        sprintf(buffer, "%d, %d, %d\n", app.joys.button, app.joys.GetX(), app.joys.GetY());
+        draw_text(0,24,1,buffer);
+
+        show();
+        stored_time = current_time;
+    }
 }
 
 void mod_Display::clear() {
@@ -161,7 +179,6 @@ void mod_Display::println(const std::string& text) {
         cursor_y -= 8;
     }
     print(text);
-    cursor_x = 0;
     cursor_y += 8;
 }
 

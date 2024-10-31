@@ -29,6 +29,7 @@ add_executable(miniMIDI
     pico-ssd1306/ssd1306.c
     RP2040-pico_synth_ex/pico_synth_ex.c
     RP2040-pico_synth_ex/sound_i2s/sound_i2s.c
+    # i2s_example.c
 )
 
 # Set the output directories to the root build directory
@@ -47,6 +48,7 @@ pico_generate_pio_header(miniMIDI ${CMAKE_CURRENT_LIST_DIR}/ws2812.pio)
 pico_generate_pio_header(miniMIDI ${CMAKE_CURRENT_LIST_DIR}/QuadratureDecoder/QuadratureDecoder.pio)
 pico_generate_pio_header(miniMIDI ${CMAKE_CURRENT_LIST_DIR}/rp2040_i2s_example/i2s.pio)
 pico_generate_pio_header(miniMIDI ${CMAKE_CURRENT_LIST_DIR}/RP2040-pico_synth_ex/sound_i2s/sound_i2s_16bits.pio)
+pico_generate_pio_header(miniMIDI ${CMAKE_CURRENT_LIST_DIR}/sound_i2s_32bits_io.pio)
 
 # Modify the below lines to enable/disable output over UART/USB
 pico_enable_stdio_uart(miniMIDI 0)

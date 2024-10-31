@@ -11,13 +11,24 @@ void core1_entry() {
     }
 }
 
+// extern "C"
+// {
+// int i2s_example_main();
+// }
+
+// int main() {
+
+//     i2s_example_main();
+//     return 0;
+// }
+
 int main() {
     App& app = App::GetInstance();
 
     //Initialise the modules on core 0 first
     app.Init_c0();
 
-    //multicore_launch_core1(core1_entry); //do not start the other modules for now
+    multicore_launch_core1(core1_entry); //do not start the other modules for now
 
     while (true) {
         app.Tick_c0();

@@ -18,7 +18,6 @@ public:
     void Tick() override;
 
 private:
-    static constexpr uint BAUD_RATE = 31250; // Standard MIDI baud rate
 
     void ReadMIDI();
 };
