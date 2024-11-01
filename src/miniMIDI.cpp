@@ -76,6 +76,7 @@ int main() {
             app.ledStrip.Clear();
             i = (app.encoders.count[0]/4) % LEDS_COUNT;
             t = (128*8 + app.encoders.count[1]/4) % 128;
+            t & 0b01111110;
             b = (app.encoders.count[2]/4) % 128;
             app.ledStrip.SetColor(i,t,b);
             break;

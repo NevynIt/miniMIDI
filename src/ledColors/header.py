@@ -92,6 +92,9 @@ def generate_hue_saturation(i):
 
     return hue, saturation
 
+def ligthness_curve(velocity):
+    return math.pow(velocity/127, 2) * 40
+
 # Function to generate the color for each pressure and velocity value
 def generate_c_array(filename):
     with open(filename, 'w') as f:
@@ -102,7 +105,7 @@ def generate_c_array(filename):
             f.write("    {")
             for velocity in range(128):
                 # Map velocity (0-127) to lightness (0-100)
-                lightness = (velocity / 127.0) * 100.0
+                lightness = ligthness_curve(velocity)
 
                 # Get hue and saturation for this pressure index
                 hue, saturation = generate_hue_saturation(pressure)
@@ -144,7 +147,7 @@ def generate_png_image(filename):
     for pressure in range(128):
         for velocity in range(128):
             # Map velocity (0-127) to lightness (0-100)
-            lightness = (velocity / 127.0) * 100.0
+            lightness = ligthness_curve(velocity)
 
             # Get hue and saturation for this pressure index
             hue, saturation = generate_hue_saturation(pressure)
