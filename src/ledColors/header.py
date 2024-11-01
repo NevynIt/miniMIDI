@@ -95,8 +95,8 @@ def generate_hue_saturation(i):
 # Function to generate the color for each pressure and velocity value
 def generate_c_array(filename):
     with open(filename, 'w') as f:
-        f.write("#include <stdint.h>\n\n")
-        f.write("static const uint32_t LedColor[128][128] = {\n")
+        f.write("#include \"led_colors.h\"\n\n")
+        f.write("const uint32_t LedColor[128][128] = {\n")
 
         for pressure in range(128):
             f.write("    {")
@@ -109,7 +109,7 @@ def generate_c_array(filename):
 
                 # Convert HSL to RGB
                 (r,g,b) = hsl_to_rgb(hue, saturation, lightness)
-                color = (r << 16) | (g << 8) | b  # Combine RGB into 0xRRGGBB 
+                color = (r << 8) | (g << 16) | b  # Combine RGB into 0xGGRRBB
 
                 # Write the color in hex format
                 f.write(f"0x{color:06X}")
@@ -131,7 +131,7 @@ def generate_header_file(filename):
 generate_header_file("led_colors.h")
 
 # Generate the C file with the LedColor array
-generate_c_array("led_colors.c")
+generate_c_array("led_colors.cpp")
 
 from PIL import Image
 

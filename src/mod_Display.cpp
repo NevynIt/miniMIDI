@@ -3,7 +3,6 @@
 #include <algorithm>
 #include "hardware/i2c.h"
 #include "hardware/gpio.h"
-// #include "hardware/timer.h"
 #include "time.h"
 #include "App.h"
 
@@ -30,16 +29,8 @@ void mod_Display::Tick() {
     static uint32_t stored_time = 0;
     uint32_t current_time;
     current_time = to_ms_since_boot(get_absolute_time());
-    if (current_time - stored_time > 100) {
+    if (current_time - stored_time > DISPLAY_REFRESH_MS) {
         //update display
-        auto app = App::GetInstance();
-        clear();
-        char buffer[100];
-        sprintf(buffer, "%d, %d, %d, %d, %d\n",  app.encoders.buttons, app.encoders.count[0], app.encoders.count[1], app.encoders.count[2], app.encoders.count[3]);
-        draw_text(0,16,1,buffer);
-        sprintf(buffer, "%d, %d, %d\n", app.joys.button, app.joys.GetX(), app.joys.GetY());
-        draw_text(0,24,1,buffer);
-
         show();
         stored_time = current_time;
     }

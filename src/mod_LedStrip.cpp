@@ -1,39 +1,56 @@
 #include "mod_LedStrip.h"
 #include "ws2812.pio.h"
 #include <cmath>
+#include "led_colors.h"
+#include "time.h"
+#include <string.h>
 
 void mod_LedStrip::Init() {
     // Initialize PIO and DMA
-    pio = pio0;
     sm = 0;
-    offset = pio_add_program(pio, &ws2812_program);
-    ws2812_program_init(pio, sm, offset, WS2812_PIN, 800000, false); // Added missing argument
+    offset = pio_add_program(PIO_WS2812B, &ws2812_program);
+    ws2812_program_init(PIO_WS2812B, sm, offset, GPIO_LedStrip, 800000, false);
 
     dma_channel = dma_claim_unused_channel(true);
     dma_channel_config c = dma_channel_get_default_config(dma_channel);
     channel_config_set_transfer_data_size(&c, DMA_SIZE_32);
     channel_config_set_read_increment(&c, true);
     channel_config_set_write_increment(&c, false);
-    channel_config_set_dreq(&c, pio_get_dreq(pio, sm, true));
-    dma_channel_configure(dma_channel, &c, &pio->txf[sm], led_buffer.data(), led_buffer.size(), false);
-
-    // Initialize LED buffer
-    led_buffer.resize(NUM_PIXELS, 0);
+    channel_config_set_dreq(&c, pio_get_dreq(PIO_WS2812B, sm, true));
+    dma_channel_configure(dma_channel, &c, &PIO_WS2812B->txf[sm], led_buffer, LEDS_COUNT, false);
 }
 
 void mod_LedStrip::Tick() {
-    // Perform any periodic LED tasks if needed
+    static uint32_t stored_time = 0;
+    uint32_t current_time;
+    current_time = to_ms_since_boot(get_absolute_time());
+    if (current_time - stored_time > 100) {
+        //update display
+        dma_channel_set_read_addr(dma_channel, led_buffer, true);
+        stored_time = current_time;
+    }
 }
 
-void mod_LedStrip::SetColor(uint index, uint8_t h, uint8_t s, uint8_t v) {
-    if (index >= NUM_PIXELS) return;
-    uint32_t color = hsv_to_rgb(h, s, v);
+void mod_LedStrip::SetColor(uint index, uint8_t r, uint8_t g, uint8_t b) {
+    SetColor(index, (static_cast<uint32_t>(r) << 8) | (static_cast<uint32_t>(g) << 16) |static_cast<uint32_t>(b));
+}
+
+void mod_LedStrip::SetColor(uint index, uint32_t color)
+{
+    if (index >= LEDS_COUNT) return;
     uint32_t mapped_index = pixel_map(index);
-    led_buffer[mapped_index] = color;
+    led_buffer[mapped_index] = color << 8;
 }
 
-void mod_LedStrip::Update() {
-    dma_channel_set_read_addr(dma_channel, led_buffer.data(), true);
+void mod_LedStrip::SetColor(uint index, uint8_t tone, uint8_t brightness)
+{
+    if (tone >= 128 || brightness >= 128) return;
+    SetColor(index, LedColor[tone][brightness]);
+}
+
+void mod_LedStrip::Clear()
+{
+    memset(led_buffer, 0, sizeof(led_buffer));
 }
 
 uint32_t mod_LedStrip::hsv_to_rgb(uint8_t h, uint8_t s, uint8_t v) {
@@ -61,10 +78,10 @@ uint32_t mod_LedStrip::hsv_to_rgb(uint8_t h, uint8_t s, uint8_t v) {
            static_cast<uint32_t>(b * 255);
 }
 
-uint32_t mod_LedStrip::pixel_map(uint index) {
+uint32_t inline mod_LedStrip::pixel_map(uint index) {
     // Example mapping function, you can customize this
-    static const uint32_t pixel_map_table[NUM_PIXELS] = {
-        // Fill this table with your specific pixel mapping
+    static const uint32_t pixel_map_table[LEDS_COUNT] = {
+        0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22
     };
     return pixel_map_table[index];
 }

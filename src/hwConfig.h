@@ -45,6 +45,7 @@ typedef enum {
 #define DISPLAY_ADDR 0x3C
 #define DISPLAY_WIDTH 128
 #define DISPLAY_HEIGHT 64
+#define DISPLAY_REFRESH_MS 100
 
 // Joystick configuration
 #define ADC_Joys_X 2
@@ -61,6 +62,8 @@ typedef enum {
 // RGB LED configuration
 #define PIO_WS2812B  pio1
 #define LEDS_COUNT 23 // For testing purposes, the actual number of LEDs for the piano is 169
+#define LEDS_REFRESH_MS 100
+//pixel map defined in mod_LedStrip.cpp
 
 // Audio configuration
 #define PIO_I2S      pio1

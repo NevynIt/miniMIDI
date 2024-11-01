@@ -3,7 +3,7 @@
 #include <cstring>
 
 void mod_SD::Init() {
-    //Mount();
+    Mount();
 
     if (mounted) {
         App::GetInstance().display.println("SD Card mounted");

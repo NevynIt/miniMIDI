@@ -19,10 +19,11 @@ void App::Init_c0() {
     std::vector<Module*> &mods =  modules_c0;
 
     // User interface modules
-    mods.push_back(&display); //Basic implementation using a library -- very slow refresh, and keeps the CPU busy, should be updated with DMA
+    mods.push_back(&display); //Basic implementation using a library -- very slow refresh, and keeps the CPU busy, should be updated with DMA - Scroll is buggy
     // mods.push_back(&sd); //Basic implementation using a library, it should work for now
     // mods.push_back(&config); //Dummy module for now
 
+    mods.push_back(&ledStrip); //Implemented correctly with PIO and DMA
 
     // USB modules
     // mods.push_back(&usb);
@@ -43,7 +44,6 @@ void App::Init_c1() {
 
     // MIDI modules
     // mods.push_back(&uartMIDI); //Dummy module for now
-    // mods.push_back(&ledStrip); //Basic implementation written by CoPilot, not sure it works
     // mods.push_back(&sequencer); //Basic implementation, not very useful for now
 
     // Audio modules

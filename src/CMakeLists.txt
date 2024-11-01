@@ -24,6 +24,7 @@ add_executable(miniMIDI
     mod_Audio.cpp
     mod_DSP.cpp
     mod_Synth.cpp
+    ledColors/led_colors.cpp
     QuadratureDecoder/QuadratureDecoder.cpp
     rp2040_i2s_example/i2s.c
     pico-ssd1306/ssd1306.c
@@ -69,6 +70,7 @@ target_include_directories(miniMIDI PRIVATE
   ${CMAKE_CURRENT_LIST_DIR}/no-OS-FatFS-SD-SPI-RPi-Pico/FatFs_SPI/include
   ${CMAKE_CURRENT_LIST_DIR}/pico-ssd1306
   ${CMAKE_CURRENT_LIST_DIR}/QuadratureDecoder
+  ${CMAKE_CURRENT_LIST_DIR}/ledColors
   ${CMAKE_CURRENT_LIST_DIR}/rp2040_i2s_example
   ${CMAKE_CURRENT_LIST_DIR}/RP2040-pico_synth_ex
   ${CMAKE_CURRENT_LIST_DIR}/RP2040-pico_synth_ex/sound_i2s
