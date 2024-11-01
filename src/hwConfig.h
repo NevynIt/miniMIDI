@@ -45,6 +45,7 @@ typedef enum {
 #define DISPLAY_ADDR 0x3C
 #define DISPLAY_WIDTH 128
 #define DISPLAY_HEIGHT 64
+#define DISPLAY_BUFSIZE DISPLAY_WIDTH * DISPLAY_HEIGHT / 8
 #define DISPLAY_REFRESH_MS 100
 
 // Joystick configuration

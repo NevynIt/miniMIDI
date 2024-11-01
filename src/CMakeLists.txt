@@ -25,9 +25,9 @@ add_executable(miniMIDI
     mod_DSP.cpp
     mod_Synth.cpp
     ledColors/led_colors.cpp
-    QuadratureDecoder/QuadratureDecoder.cpp
+    # QuadratureDecoder/QuadratureDecoder.cpp
     rp2040_i2s_example/i2s.c
-    pico-ssd1306/ssd1306.c
+    # pico-ssd1306/ssd1306.c
     RP2040-pico_synth_ex/pico_synth_ex.c
     RP2040-pico_synth_ex/sound_i2s/sound_i2s.c
     # i2s_example.c
@@ -46,7 +46,7 @@ pico_set_program_version(miniMIDI "0.1")
 # Generate PIO headers
 pico_generate_pio_header(miniMIDI ${CMAKE_CURRENT_LIST_DIR}/blink.pio)
 pico_generate_pio_header(miniMIDI ${CMAKE_CURRENT_LIST_DIR}/ws2812.pio)
-pico_generate_pio_header(miniMIDI ${CMAKE_CURRENT_LIST_DIR}/QuadratureDecoder/QuadratureDecoder.pio)
+# pico_generate_pio_header(miniMIDI ${CMAKE_CURRENT_LIST_DIR}/QuadratureDecoder/QuadratureDecoder.pio)
 pico_generate_pio_header(miniMIDI ${CMAKE_CURRENT_LIST_DIR}/rp2040_i2s_example/i2s.pio)
 pico_generate_pio_header(miniMIDI ${CMAKE_CURRENT_LIST_DIR}/RP2040-pico_synth_ex/sound_i2s/sound_i2s_16bits.pio)
 pico_generate_pio_header(miniMIDI ${CMAKE_CURRENT_LIST_DIR}/sound_i2s_32bits_io.pio)
@@ -68,8 +68,8 @@ target_include_directories(miniMIDI PRIVATE
   ${CMAKE_CURRENT_LIST_DIR}
   ${CMAKE_CURRENT_LIST_DIR}/.. # for our common lwipopts or any other standard includes, if required
   ${CMAKE_CURRENT_LIST_DIR}/no-OS-FatFS-SD-SPI-RPi-Pico/FatFs_SPI/include
-  ${CMAKE_CURRENT_LIST_DIR}/pico-ssd1306
-  ${CMAKE_CURRENT_LIST_DIR}/QuadratureDecoder
+  # ${CMAKE_CURRENT_LIST_DIR}/pico-ssd1306
+  # ${CMAKE_CURRENT_LIST_DIR}/QuadratureDecoder
   ${CMAKE_CURRENT_LIST_DIR}/ledColors
   ${CMAKE_CURRENT_LIST_DIR}/rp2040_i2s_example
   ${CMAKE_CURRENT_LIST_DIR}/RP2040-pico_synth_ex

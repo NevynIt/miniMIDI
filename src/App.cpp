@@ -23,7 +23,6 @@ void App::Init_c0() {
     // mods.push_back(&sd); //Basic implementation using a library, it should work for now
     // mods.push_back(&config); //Dummy module for now
 
-    mods.push_back(&ledStrip); //Implemented correctly with PIO and DMA
 
     // USB modules
     // mods.push_back(&usb);
@@ -41,6 +40,7 @@ void App::Init_c1() {
 
     mods.push_back(&encoders); //reimplemented with polling without PIO, a bit slow but it works, includes button support
     mods.push_back(&joys); //Basic implementation using ADC polling every tick
+    mods.push_back(&ledStrip); //Implemented correctly with PIO and DMA
 
     // MIDI modules
     // mods.push_back(&uartMIDI); //Dummy module for now
