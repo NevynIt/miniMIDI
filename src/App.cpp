@@ -25,10 +25,10 @@ void App::Init_c0() {
 
 
     // USB modules
-    // mods.push_back(&usb);
-    // mods.push_back(&usbUart); //Dummy module for now
-    // mods.push_back(&usbMidi); //Empty module for now
-    // mods.push_back(&usbAudio); //Empty module for now
+    mods.push_back(&usb);
+    mods.push_back(&usbUart); //Dummy module for now
+    mods.push_back(&usbMidi); //Empty module for now
+    mods.push_back(&usbAudio); //Empty module for now
     
     for (auto& module : mods) {
         module->Init();

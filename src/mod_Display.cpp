@@ -75,18 +75,7 @@ void mod_Display::Init() {
     gpio_pull_up(GPIO_Display_SCL);
     
     // Initialize the display update commands
-    frame = buffer + 1;
-    buffer[0] = 0x40;
-
-    // Initialize the display
-    for (size_t i = 0; i < sizeof(InitCMDS); i++) {
-        ssd1306_write(InitCMDS[i]);
-    }
-
-    //Prepare for refresh
-    for (size_t i = 0; i < sizeof(refresh_Cmds); i++) {
-        ssd1306_write(refresh_Cmds[i]);
-    }
+    buffer[0] = 0x40 + I2C_IC_DATA_CMD_RESTART_BITS;
 
     // Configure I2C for DMA
     i2c_get_hw(I2C_DISPLAY)->dma_cr = I2C_IC_DMA_CR_TDMAE_BITS; // Enable I2C TX DMA
@@ -98,7 +87,7 @@ void mod_Display::Init() {
     dma_cfg = dma_channel_get_default_config(dma_channel);
 
     // Configure DMA channel
-    channel_config_set_transfer_data_size(&dma_cfg, DMA_SIZE_8); // 8-bit transfers
+    channel_config_set_transfer_data_size(&dma_cfg, DMA_SIZE_16); // 16-bit transfers (8 for i2c control, 8 for data)
     channel_config_set_read_increment(&dma_cfg, true);           // Increment read address
     channel_config_set_write_increment(&dma_cfg, false);         // Don't increment write address
     channel_config_set_dreq(&dma_cfg, i2c_get_dreq(I2C_DISPLAY, true)); // Set DREQ for I2C TX
@@ -108,10 +97,19 @@ void mod_Display::Init() {
         dma_channel,
         &dma_cfg,
         &i2c_get_hw(I2C_DISPLAY)->data_cmd, // Write to I2C data command register
-        buffer,                             // Read from buffer
-        sizeof(buffer),                     
+        NULL,                       
+        0,                                  
         false                               // Don't start yet
     );
+
+    // Initialize the display
+    for (size_t i = 0; i < sizeof(InitCMDS); i++) {
+        ssd1306_write(InitCMDS[i]);
+    }
+    // Initialize refresh
+    for (size_t i = 0; i < sizeof(refresh_Cmds); i++) {
+        ssd1306_write(refresh_Cmds[i]);
+    }
 
     clear();
     println("Boot sequence started");
@@ -119,8 +117,20 @@ void mod_Display::Init() {
 }
 
 void mod_Display::show() {
-    // i2c_write_blocking(I2C_DISPLAY, DISPLAY_ADDR, buffer, sizeof(buffer), false);
-    dma_channel_start(dma_channel);
+    //using two to prevent updates while the DMA is active
+    for (size_t i = 0; i < sizeof(frame); i++) {
+        buffer[i + 1] = frame[i];
+    }
+    buffer[DISPLAY_BUFSIZE] |= I2C_IC_DATA_CMD_STOP_BITS;
+
+    dma_channel_configure(
+        dma_channel,
+        &dma_cfg,
+        &i2c_get_hw(I2C_DISPLAY)->data_cmd, // Write to I2C data command register
+        buffer,                             // Read from buffer
+        DISPLAY_BUFSIZE + 1,                                  
+        true                               // Start!!!
+    );
 }
 
 void mod_Display::Tick() {
@@ -135,9 +145,11 @@ void mod_Display::Tick() {
 }
 
 void mod_Display::clear() {
-    memset(frame, 0, DISPLAY_WIDTH * DISPLAY_HEIGHT / 8);
-    cursor_x = 0;
-    cursor_y = 0;
+    for (size_t i = 0; i < DISPLAY_BUFSIZE; i++) {
+        frame[i] = 0;
+    }
+    // cursor_x = 0;
+    // cursor_y = 0;
 }
 
 void mod_Display::draw_pixel(int x, int y) {
@@ -201,81 +213,73 @@ void mod_Display::scroll(int dy) {
         return;
     }
 
-    int total_rows = DISPLAY_HEIGHT;
-    int page_height = 8;
-    int pages = DISPLAY_HEIGHT/8; // Number of pages (HEIGHT / 8)
-    int page_offset = dy / page_height;
-    int bit_offset = dy % page_height;
+    const int width = DISPLAY_WIDTH;           // Width of the display in pixels
+    const int height = DISPLAY_HEIGHT;         // Height of the display in pixels
+    const int bytes_per_col = height / 8;      // Number of bytes per column (since each byte represents 8 vertical pixels)
+    const int total_cols = width;              // Total number of columns in the display
 
-    if (bit_offset < 0) {
-        bit_offset += 8;
-        page_offset -= 1;
-    }
-
+    // Process scrolling in units of pixels
     if (dy > 0) {
         // Scroll down
-        int byte_offset = page_offset * DISPLAY_WIDTH;
-        if (byte_offset > 0) {
-            // Shift pages
-            memmove(frame + byte_offset,
-                    frame,
-                    (DISPLAY_WIDTH*DISPLAY_HEIGHT/8) - byte_offset);
-            memset(frame, 0, byte_offset);
-        }
+        for (int x = 0; x < total_cols; x++) {
+            for (int y = bytes_per_col - 1; y >= 0; y--) {
+                uint16_t data = frame[y * width + x];
+                uint8_t pixel_data = data & 0xFF; // Extract display data
+                uint8_t new_pixel_data = 0;
 
-        if (bit_offset > 0) {
-            // Shift bits within pages
-            for (int x = 0; x < DISPLAY_WIDTH; x++) {
-                uint8_t carry = 0;
-                for (int page = pages - 1; page >= 0; page--) {
-                    int index = page * DISPLAY_WIDTH + x;
-                    uint8_t current_byte = frame[index];
-                    frame[index] = (current_byte << bit_offset) | carry;
-                    carry = current_byte >> (8 - bit_offset);
+                // Shift bits down
+                if (y - (dy / 8) >= 0) {
+                    uint16_t src_data = frame[(y - (dy / 8)) * width + x];
+                    uint8_t src_pixel_data = src_data & 0xFF;
+                    new_pixel_data = src_pixel_data >> (dy % 8);
+                    if (y - (dy / 8) - 1 >= 0 && (dy % 8) != 0) {
+                        uint16_t carry_data = frame[(y - (dy / 8) - 1) * width + x];
+                        uint8_t carry_pixel_data = carry_data & 0xFF;
+                        new_pixel_data |= (carry_pixel_data << (8 - (dy % 8)));
+                    }
                 }
+                // Set new pixel data, preserve control bits
+                frame[y * width + x] = (data & 0xFF00) | new_pixel_data;
             }
         }
-
-        // Clear the new area at the top
-        int rows_to_clear = dy;
-        clear_square(0, 0, DISPLAY_WIDTH, rows_to_clear);
-
+        // Clear new area at the top
+        int clear_rows = (dy + 7) / 8;
+        for (int x = 0; x < total_cols; x++) {
+            for (int y = 0; y < clear_rows; y++) {
+                frame[y * width + x] = frame[y * width + x] & 0xFF00; // Clear pixel data, preserve control bits
+            }
+        }
     } else {
         // Scroll up
         dy = -dy;
-        page_offset = dy / page_height;
-        bit_offset = dy % page_height;
+        for (int x = 0; x < total_cols; x++) {
+            for (int y = 0; y < bytes_per_col; y++) {
+                uint16_t data = frame[y * width + x];
+                uint8_t pixel_data = data & 0xFF; // Extract display data
+                uint8_t new_pixel_data = 0;
 
-        if (bit_offset < 0) {
-            bit_offset += 8;
-            page_offset -= 1;
-        }
-
-        int byte_offset = page_offset * DISPLAY_WIDTH;
-        if (byte_offset > 0) {
-            // Shift pages
-            memmove(frame,
-                    frame + byte_offset,
-                    (DISPLAY_WIDTH*DISPLAY_HEIGHT/8) - byte_offset);
-            //memset(display.buffer + display.bufsize - byte_offset, 0, byte_offset);
-        }
-
-        if (bit_offset > 0) {
-            // Shift bits within pages
-            for (int x = 0; x < DISPLAY_WIDTH; x++) {
-                uint8_t carry = 0;
-                for (int page = 0; page < pages; page++) {
-                    int index = page * DISPLAY_WIDTH + x;
-                    uint8_t current_byte = frame[index];
-                    frame[index] = (current_byte >> bit_offset) | carry;
-                    carry = current_byte << (8 - bit_offset);
+                // Shift bits up
+                if (y + (dy / 8) < bytes_per_col) {
+                    uint16_t src_data = frame[(y + (dy / 8)) * width + x];
+                    uint8_t src_pixel_data = src_data & 0xFF;
+                    new_pixel_data = src_pixel_data << (dy % 8);
+                    if (y + (dy / 8) + 1 < bytes_per_col && (dy % 8) != 0) {
+                        uint16_t carry_data = frame[(y + (dy / 8) + 1) * width + x];
+                        uint8_t carry_pixel_data = carry_data & 0xFF;
+                        new_pixel_data |= (carry_pixel_data >> (8 - (dy % 8)));
+                    }
                 }
+                // Set new pixel data, preserve control bits
+                frame[y * width + x] = (data & 0xFF00) | new_pixel_data;
             }
         }
-
-        // Clear the new area at the bottom
-        int rows_to_clear = dy;
-        //clear_square(0, HEIGHT - rows_to_clear, WIDTH, rows_to_clear);
+        // Clear new area at the bottom
+        int clear_rows = (dy + 7) / 8;
+        for (int x = 0; x < total_cols; x++) {
+            for (int y = bytes_per_col - clear_rows; y < bytes_per_col; y++) {
+                frame[y * width + x] = frame[y * width + x] & 0xFF00; // Clear pixel data, preserve control bits
+            }
+        }
     }
 }
 

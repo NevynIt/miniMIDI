@@ -19,3 +19,6 @@
 [submodule "src/RP2040-pico_synth_ex"]
 	path = src/RP2040-pico_synth_ex
 	url = https://github.com/TuriSc/RP2040-pico_synth_ex
+[submodule "src/pico-i2c-dma"]
+	path = src/pico-i2c-dma
+	url = https://github.com/fivdi/pico-i2c-dma

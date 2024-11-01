@@ -49,8 +49,8 @@ private:
     int dma_channel;
     dma_channel_config dma_cfg;
 
-    uint8_t buffer[DISPLAY_BUFSIZE + 1] = {0};
-    uint8_t *frame;
+    uint8_t frame[DISPLAY_BUFSIZE] = {0};
+    uint16_t buffer[DISPLAY_BUFSIZE + 1] = {0};
     
     int cursor_x;
     int cursor_y;
