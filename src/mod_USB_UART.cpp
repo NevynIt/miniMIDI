@@ -17,12 +17,3 @@ void mod_USB_UART::Tick() {
         tud_cdc_write_flush();
     }
 }
-
-void mod_USB_UART::Write(const char* data, size_t length) {
-    tud_cdc_write(data, length);
-    tud_cdc_write_flush();
-}
-
-size_t mod_USB_UART::Read(char* buffer, size_t bufferSize) {
-    return tud_cdc_read(buffer, bufferSize);
-}

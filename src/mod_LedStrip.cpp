@@ -4,6 +4,8 @@
 #include "led_colors.h"
 #include "time.h"
 #include <string.h>
+#include "stdio.h"
+#include "App.h"
 
 void mod_LedStrip::Init() {
     // Initialize PIO and DMA
@@ -18,6 +20,9 @@ void mod_LedStrip::Init() {
     channel_config_set_write_increment(&c, false);
     channel_config_set_dreq(&c, pio_get_dreq(PIO_WS2812B, sm, true));
     dma_channel_configure(dma_channel, &c, &PIO_WS2812B->txf[sm], led_buffer, LEDS_COUNT, false);
+
+    App::GetInstance().display.println("LedStrip initialized");
+    printf("LedStrip initialized\n");
 }
 
 void mod_LedStrip::Tick() {

@@ -8,8 +8,6 @@
 #include "hardware/gpio.h"
 #include "hwConfig.h"
 
-// #define UART_ID uart0
-
 //Wait for either midi messages or a \n\n\n escape sequence, which would trigger interaction with a embedded-cli
 
 class mod_UART : public Module {

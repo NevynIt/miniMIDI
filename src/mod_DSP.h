@@ -64,6 +64,10 @@ public:
     uint8_t getReadingSlot() const { return (currentSlot - 1 + AUDIO_BUFFER_SLOTS) % AUDIO_BUFFER_SLOTS; }
     uint8_t getDSPSlot() const { return currentSlot; }
 
+    sample_ptr getWritingBuffer(uint8_t track) { return buffers[track][getWritingSlot()]; }
+    sample_ptr getReadingBuffer(uint8_t track) { return buffers[track][getReadingSlot()]; }
+    sample_ptr getDSPBuffer(uint8_t track) { return buffers[track][getDSPSlot()]; }
+
     sample_t buffers[AUDIO_BUFFER_TRACKS][AUDIO_BUFFER_SLOTS][AUDIO_BUFFER_SAMPLES] = {0};
 private:
     uint8_t currentSlot = 0;

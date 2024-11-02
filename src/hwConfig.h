@@ -82,10 +82,10 @@ typedef SAMPLE_TYPE sample_t;
 #define SAMPLE_MAX (1 << BITS_PER_SAMPLE) - 1
 #define SAMPLE_ZERO SAMPLE_MAX/2
 typedef sample_t* sample_ptr;
-#define AUDIO_BUFFER_MS 1
+#define AUDIO_BUFFER_MS 1 //1ms to be consistent with the USB audio buffer
 #define AUDIO_BUFFER_SAMPLES SAMPLE_RATE / 1000 * AUDIO_BUFFER_MS
 #define AUDIO_BUFFER_SIZE AUDIO_BUFFER_SAMPLES * BITS_PER_SAMPLE / 8
-#define AUDIO_BUFFER_SLOTS 5
+#define AUDIO_BUFFER_SLOTS 8
 #define AUDIO_BUFFER_TRACKS 10
 
 // Fixed-point math
@@ -109,14 +109,17 @@ enum DSP_Tracks {
 #define PIO_I2S      pio1
 #define I2S_BITS_PER_CHANNEL 32 //hard coded in the pio program
 #define I2S_CHANNELS 2 //hard coded in the pio program
-#define I2S_BUFFER_SAMPLES SAMPLE_RATE/1000
+#define I2S_BUFFER_SAMPLES AUDIO_BUFFER_SAMPLES
 #define I2S_BUFFER_NUM 2
 #define I2S_BUFFER_SIZE I2S_BUFFER_SAMPLES * I2S_CHANNELS * I2S_BITS_PER_CHANNEL / 8
 
-// UART configuration - UART_USE defined in CMakeLists.txt - make sure to update the GPIO pins
+// UART configuration - LIB_PICO_STDIO_UART defined implicitly in CMakeLists.txt
 #define UART_INST uart0  //deconflicting the name with the standard macro
-#define UART_BAUD_RATE 115200
-// #define UART_BAUD_RATE 31250
+#if LIB_PICO_STDIO_UART
+    #define UART_BAUD_RATE 115200
+#else
+    #define UART_BAUD_RATE 31250
+#endif
 
 //USB configuration mostly defined in mod_USB.cpp
 
