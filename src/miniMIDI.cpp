@@ -1,5 +1,8 @@
 #include "App.h"
 #include "pico/multicore.h"
+#include "hwConfig.h"
+#include "hardware/clocks.h"
+#include "stdio.h"
 
 void core1_entry() {
     App& app = App::GetInstance();
@@ -94,6 +97,8 @@ void ledTest()
 }
 
 int main() {
+    set_sys_clock_khz(CPU_KHZ, true);
+
     App& app = App::GetInstance();
 
     //Initialise the modules on core 0 first
@@ -103,6 +108,8 @@ int main() {
 
     while (true) {
         app.Tick_c0();
+
+        ledTest();
     }
 
     return 0;

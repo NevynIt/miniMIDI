@@ -9,7 +9,7 @@ add_executable(miniMIDI
     message.cpp
     queue.cpp
     msg_MIDI.cpp
-    mod_UART_MIDI.cpp
+    mod_UART.cpp
     mod_config.cpp
     mod_SD.cpp
     mod_Display.cpp
@@ -21,8 +21,9 @@ add_executable(miniMIDI
     mod_USB_Audio.cpp
     mod_USB_MIDI.cpp
     mod_USB_UART.cpp
-    mod_Audio.cpp
+    mod_I2S_Audio.cpp
     mod_DSP.cpp
+    mod_Blink.cpp
     mod_Synth.cpp
     ledColors/led_colors.cpp
     # QuadratureDecoder/QuadratureDecoder.cpp
@@ -51,8 +52,29 @@ pico_generate_pio_header(miniMIDI ${CMAKE_CURRENT_LIST_DIR}/rp2040_i2s_example/i
 pico_generate_pio_header(miniMIDI ${CMAKE_CURRENT_LIST_DIR}/RP2040-pico_synth_ex/sound_i2s/sound_i2s_16bits.pio)
 pico_generate_pio_header(miniMIDI ${CMAKE_CURRENT_LIST_DIR}/sound_i2s_32bits_io.pio)
 
-# Modify the below lines to enable/disable output over UART/USB
-pico_enable_stdio_uart(miniMIDI 0)
+
+# Modify the below lines to enable/disable output over UART
+#UART Configuration: 1 = STDIO, 2 = Serial, 3 = MIDI
+set (UART_USE 1) 
+
+if (UART_USE EQUAL 1) #STDIO
+  set (PICO_DEFAULT_UART_TX_PIN 16)
+  set (PICO_DEFAULT_UART_RX_PIN 17)
+  set (PICO_DEFAULT_UART_BAUD_RATE 115200)
+  set (PICO_DEFAULT_UART 0)
+  target_compile_definitions(miniMIDI PUBLIC
+    PICO_DEFAULT_UART_TX_PIN=16
+    PICO_DEFAULT_UART_RX_PIN=17
+    PICO_DEFAULT_UART_BAUD_RATE=115200
+    PICO_DEFAULT_UART=0
+    )
+  pico_enable_stdio_uart(miniMIDI 1) #Use the UART_MIDI pins
+elseif (UART_USE EQUAL 2) #Serial
+elseif (UART_USE EQUAL 3) #MIDI
+endif()
+target_compile_definitions(miniMIDI PUBLIC UART_USE=${UART_USE})
+
+# Modify the below lines to enable/disable output over USB
 pico_enable_stdio_usb(miniMIDI 0)
 
 # Add the standard library to the build

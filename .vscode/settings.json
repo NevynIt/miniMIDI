@@ -115,6 +115,9 @@
         "notes.h": "c",
         "sound_i2s.h": "c",
         "stdlib.h": "c",
-        "font.h": "c"
+        "font.h": "c",
+        "semaphore": "cpp",
+        "stop_token": "cpp",
+        "thread": "cpp"
     }
 }

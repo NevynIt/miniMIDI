@@ -46,7 +46,7 @@ public:
     void draw_string(int x, int y, uint32_t scale, const char *s);
 
 private:
-    int dma_channel;
+    int dma_channel = -1;
     dma_channel_config dma_cfg;
 
     uint8_t frame[DISPLAY_BUFSIZE] = {0};

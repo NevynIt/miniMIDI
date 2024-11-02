@@ -59,9 +59,19 @@ const uint8_t InitCMDS[] = {
         0x00,  // horizontal
 };
 
-inline static void ssd1306_write(uint8_t val) {
+inline static bool ssd1306_write(uint8_t val) {
     uint8_t d[2]= {0x00, val};
-    i2c_write_blocking(I2C_DISPLAY, DISPLAY_ADDR, d, 2, false);
+    switch(i2c_write_timeout_us(I2C_DISPLAY, DISPLAY_ADDR, d, 2, false, 1000))
+    {
+        case PICO_ERROR_GENERIC:
+            printf("I2C Error\n");
+            return false;
+        case PICO_ERROR_TIMEOUT:
+            printf("I2C Timeout\n");
+            return false;
+        default:
+            return true;
+    }
 }
 
 const uint8_t refresh_Cmds[] = {SET_COL_ADDR, 0, DISPLAY_WIDTH-1, SET_PAGE_ADDR, 0, (DISPLAY_HEIGHT/8)-1};
@@ -79,6 +89,18 @@ void mod_Display::Init() {
 
     // Configure I2C for DMA
     i2c_get_hw(I2C_DISPLAY)->dma_cr = I2C_IC_DMA_CR_TDMAE_BITS; // Enable I2C TX DMA
+
+    // Initialize the display
+    for (size_t i = 0; i < sizeof(InitCMDS); i++) {
+        if (!ssd1306_write(InitCMDS[i])){
+            printf("Error initialising the display\n");
+            return; // Error writing to display
+        }
+    }
+    // Initialize refresh
+    for (size_t i = 0; i < sizeof(refresh_Cmds); i++) {
+        ssd1306_write(refresh_Cmds[i]);
+    }
 
     // Claim a free DMA channel
     dma_channel = dma_claim_unused_channel(true);
@@ -102,26 +124,27 @@ void mod_Display::Init() {
         false                               // Don't start yet
     );
 
-    // Initialize the display
-    for (size_t i = 0; i < sizeof(InitCMDS); i++) {
-        ssd1306_write(InitCMDS[i]);
-    }
-    // Initialize refresh
-    for (size_t i = 0; i < sizeof(refresh_Cmds); i++) {
-        ssd1306_write(refresh_Cmds[i]);
-    }
-
     clear();
     println("Boot sequence started");
     show();
 }
 
 void mod_Display::show() {
+    if (dma_channel == -1) return; // DMA channel not claimed
+
     //using two to prevent updates while the DMA is active
     for (size_t i = 0; i < sizeof(frame); i++) {
         buffer[i + 1] = frame[i];
     }
     buffer[DISPLAY_BUFSIZE] |= I2C_IC_DATA_CMD_STOP_BITS;
+
+    // Initialize refresh
+    for (size_t i = 0; i < sizeof(refresh_Cmds); i++) {
+        if (!ssd1306_write(refresh_Cmds[i])){
+            printf("Error refreshing the display\n");
+            return;
+        }
+    }
 
     dma_channel_configure(
         dma_channel,

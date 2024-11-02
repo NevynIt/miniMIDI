@@ -1,10 +1,10 @@
-#ifndef MOD_AUDIO_H
-#define MOD_AUDIO_H
+#ifndef mod_I2S_Audio_H
+#define mod_I2S_Audio_H
 
 #include "Module.h"
 #include "i2s.h"
 
-class mod_Audio : public Module {
+class mod_I2S_Audio : public Module {
 public:
     void Init() override;
     void Tick() override;
@@ -18,4 +18,4 @@ private:
     static void DefaultDMAHandler();
 };
 
-#endif // MOD_AUDIO_H
+#endif // mod_I2S_Audio_H

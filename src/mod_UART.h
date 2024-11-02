@@ -1,5 +1,5 @@
-#ifndef MOD_UART_MIDI_H
-#define MOD_UART_MIDI_H
+#ifndef mod_UART_H
+#define mod_UART_H
 
 #include "Module.h"
 #include "Queue.h"
@@ -12,14 +12,12 @@
 
 //Wait for either midi messages or a \n\n\n escape sequence, which would trigger interaction with a embedded-cli
 
-class mod_UART_MIDI : public Module {
+class mod_UART : public Module {
 public:
     void Init() override;
     void Tick() override;
 
 private:
-
-    void ReadMIDI();
 };
 
-#endif // MOD_UART_MIDI_H
+#endif // mod_UART_H

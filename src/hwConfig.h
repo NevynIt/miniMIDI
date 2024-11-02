@@ -20,8 +20,8 @@ typedef enum {
     GPIO_SD_CS,         // 13 - SPI1 CS
     GPIO_SD_CK,         // 14 - SPI1 CK
     GPIO_SD_TX,         // 15 - SPI1 TX
-    GPIO_MIDI_TX,       // 16 - UART0 TX
-    GPIO_MIDI_RX,       // 17 - UART0 RX
+    GPIO_UART_TX,       // 16 - UART0 TX make sure to update the GPIO pins in CMakeLists.txt to use as STDIO
+    GPIO_UART_RX,       // 17 - UART0 RX
     GPIO_Audio_CK,      // 18 - I2S CK
     GPIO_Audio_WS,      // 19 - I2S WS
     GPIO_Audio_DO,      // 20 - I2S DO
@@ -36,6 +36,14 @@ typedef enum {
     GPIO_Joys_Y,        // 29 - ADC 3
     GPIO_Board_RGB = 23 // 23 - (Board RGB Led)
 } GPIO_Pin;
+
+// Board Configuration
+#define CPU_KHZ 12*12*1000 //12MHz multiple needed for USB
+#define BLINK_MS 500
+
+// Flash Configuration
+#define FLASH_SIZE 16*1024*1024 //16MB on the current motherboard
+#define FLASH_RESERVED 4*1024*1024 //4MB reserved for code, the rest for data
 
 // SD card configuration
 #define SPI_SD spi1
@@ -66,19 +74,52 @@ typedef enum {
 #define LEDS_REFRESH_MS 100
 //pixel map defined in mod_LedStrip.cpp
 
-// Audio configuration
+// Audio DSP configuration
+#define SAMPLE_RATE 48000 // use multiples of 1000
+#define SAMPLE_TYPE uint16_t  // 16 bits per sample
+typedef SAMPLE_TYPE sample_t;
+#define SAMPLE_MAX (1 << (sizeof(SAMPLE_TYPE) * 8 - 1))
+typedef sample_t* sample_ptr;
+#define SAMPLE_CHANNELS 2
+#define BITS_PER_SAMPLE sizeof(SAMLPE_TYPE) * 8
+#define AUDIO_BUFFER_MS 1
+#define AUDIO_BUFFER_SAMPLES SAMPLE_RATE / 1000 * AUDIO_BUFFER_MS
+#define AUDIO_BUFFER_SIZE AUDIO_BUFFER_SAMPLES * BITS_PER_SAMPLE / 8 * SAMPLE_CHANNELS
+#define AUDIO_BUFFER_SLOTS 5
+#define AUDIO_BUFFER_TRACKS 10
+
+enum DSP_Tracks {
+    DSP_TRACK_SYNTH = 0,
+    DSP_TRACK_USB_IN,
+    DSP_TRACK_USB_OUT,
+    DSP_TRACK_MIC,
+    DSP_TRACK_SPK,
+    DSP_TRACK_DSP_BASE
+};
+
+// I2S configuration
 #define PIO_I2S      pio1
-#define SAMPLE_RATE 48000
-#define BITS_PER_SAMPLE 16
 #define I2S_BITS_PER_CHANNEL 32 //hard coded in the pio program
 #define I2S_CHANNELS 2 //hard coded in the pio program
 #define I2S_BUFFER_SAMPLES SAMPLE_RATE/1000
 #define I2S_BUFFER_NUM 2
 #define I2S_BUFFER_SIZE I2S_BUFFER_SAMPLES * I2S_CHANNELS * I2S_BITS_PER_CHANNEL / 8
 
-// MIDI configuration
-#define UART_MIDI uart0
-//#define MIDI_BAUD_RATE 31250
-#define MIDI_BAUD_RATE 115200 //for testing purposes, emulating midi interaction on the debugger
+// UART configuration - UART_USE defined in CMakeLists.txt - make sure to update the GPIO pins
+#define UART_INST uart0  //deconflicting the name with the standard macro
+
+#ifndef UART_USE
+#define UART_USE 1 // Default to STDIO
+#endif
+
+#if UART_USE == 1 //STDIO
+    #define UART_BAUD_RATE 115200
+#elif UART_USE == 2 //Serial
+    #define UART_BAUD_RATE 115200
+#elif UART_USE == 3 //MIDI
+    #define UART_BAUD_RATE 31250
+#endif
+
+//USB configuration mostly defined in mod_USB.cpp
 
 #endif // HWCONFIG_H

@@ -2,7 +2,7 @@
 #define APP_H
 
 #include "Module.h"
-#include "mod_UART_MIDI.h"
+#include "mod_UART.h"
 #include "mod_config.h"
 #include "mod_Display.h"
 #include "mod_LedStrip.h"
@@ -14,9 +14,10 @@
 #include "mod_Encoders.h"
 #include "mod_Joys.h"
 #include "mod_Sequencer.h"
-#include "mod_Audio.h"
+#include "mod_I2S_Audio.h"
 #include "mod_DSP.h"
 #include "mod_Synth.h"
+#include "mod_Blink.h"
 #include <vector>
 #include <memory>
 
@@ -32,7 +33,7 @@ public:
     void Tick_c0();
     void Tick_c1();
 
-    mod_UART_MIDI uartMIDI;
+    mod_UART uart;
     mod_config config;
     mod_Display display;
     mod_LedStrip ledStrip;
@@ -44,9 +45,10 @@ public:
     mod_Encoders encoders;
     mod_Joys joys;
     mod_Sequencer sequencer;
-    mod_Audio audio;
+    mod_I2S_Audio audio;
     mod_DSP dsp;
     mod_Synth synth;
+    mod_Blink blink;
 
 private:
     App() = default; // Private constructor for singleton pattern
