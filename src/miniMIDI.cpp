@@ -109,7 +109,7 @@ int main() {
     while (true) {
         app.Tick_c0();
 
-        ledTest();
+        //ledTest();
     }
 
     return 0;

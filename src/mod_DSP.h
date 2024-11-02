@@ -12,16 +12,15 @@ public:
     void Init() override;
     void Tick() override;
 
-    static float GenerateSineWave(sample_ptr buf, float frequency = 440.0f, int amplitude = SAMPLE_MAX / 2, float phase = 0.0f, int channel = -1);
-    static float GenerateSquareWave(sample_ptr buf, float frequency = 440.0f, int amplitude = SAMPLE_MAX / 2, float phase = 0.0f, int channel = -1);
-    static float GenerateTriangleWave(sample_ptr buf, float frequency = 440.0f, int amplitude = SAMPLE_MAX / 2, float phase = 0.0f, int channel = -1);
-    static float GenerateSawtoothWave(sample_ptr buf, float frequency = 440.0f, int amplitude = SAMPLE_MAX / 2, float phase = 0.0f, int channel = -1);
-    static void GenerateNoise(sample_ptr buf, int amplitude = SAMPLE_MAX / 2, int channel = -1);
-    static void GenerateEnvelope(sample_ptr buf, float attack, float decay, float sustain, float release, int channel = -1);
-    static void MixBuffers(sample_ptr dst, sample_ptr src, float dry, float wet);
-    static void ApplyEnvelope(sample_ptr buf, sample_ptr envelope);
-    static void ClipBuffer(sample_ptr buf, float threshold);
-    static void AmplifyBuffer(sample_ptr buf, float gain);
+    static fp_int GenerateSineWave(sample_ptr buf, fp_int frequency = 440.0f * FP1, fp_int amplitude = FP1, fp_int phase = 0);
+    static fp_int GenerateSquareWave(sample_ptr buf, fp_int frequency = 440.0f * FP1, fp_int amplitude = FP1, fp_int phase = 0);
+    static fp_int GenerateTriangleWave(sample_ptr buf, fp_int frequency = 440.0f * FP1, fp_int amplitude = FP1, fp_int phase = 0);
+    static fp_int GenerateSawtoothWave(sample_ptr buf, fp_int frequency = 440.0f * FP1, fp_int amplitude = FP1, fp_int phase = 0);
+    static void GenerateNoise(sample_ptr buf, fp_int amplitude = FP1);
+    static void MixBuffers(sample_ptr dst, sample_ptr src, fp_int dry, fp_int wet);
+    static void ScaleBuffer(sample_ptr buf, sample_ptr gain);
+    static void ClipBuffer(sample_ptr buf, fp_int threshold);
+    static void AmplifyBuffer(sample_ptr buf, fp_int gain);
     static void ClearBuffer(sample_ptr buf);
 
 
@@ -45,27 +44,27 @@ public:
     static inline uint16_t WT_GetWaveformSize(sample_ptr wavetable, uint8_t waveform) {
         return wavetable[2 + (waveform * 2) + 1];
     }
-    static inline sample_t getSample(sample_ptr wavetable, uint16_t waveform, float phase) {
+    static inline sample_t getSample(sample_ptr wavetable, uint16_t waveform, fp_int phase) {
         return WT_GetWaveform(wavetable, waveform)[(uint16_t)(phase * WT_GetWaveformSize(wavetable, waveform))];
     }
-    static inline sample_t getSampleInterp(sample_ptr wavetable, uint16_t waveform, float phase) {
+    static inline sample_t getSampleInterp(sample_ptr wavetable, uint16_t waveform, fp_int phase) {
         uint16_t size = WT_GetWaveformSize(wavetable, waveform);
-        float index = phase * size;
+        int index = phase * size;
         uint16_t index_int = static_cast<uint16_t>(index);
-        float frac = index - index_int;
+        int frac = index - index_int;
 
         sample_t sample1 = WT_GetWaveform(wavetable, waveform)[index_int];
         sample_t sample2 = WT_GetWaveform(wavetable, waveform)[(index_int + 1) % size];
 
         return static_cast<sample_t>(sample1 * (1.0f - frac) + sample2 * frac);
     }
-    static float GenerateWave(sample_ptr buf, sample_ptr wavetable, uint8_t waveform, float frequency_ratio = 1.0f, float phase = 0.0f, int channel = -1, bool interp = false);
+    static fp_int GenerateWave(sample_ptr buf, sample_ptr wavetable, uint8_t waveform, fp_int frequency_ratio = FP1, fp_int phase = 0, bool interp = false);
 
     uint8_t getWritingSlot() const { return (currentSlot + 1) % AUDIO_BUFFER_SLOTS; }
     uint8_t getReadingSlot() const { return (currentSlot - 1 + AUDIO_BUFFER_SLOTS) % AUDIO_BUFFER_SLOTS; }
     uint8_t getDSPSlot() const { return currentSlot; }
 
-    sample_t buffers[AUDIO_BUFFER_TRACKS][AUDIO_BUFFER_SLOTS][AUDIO_BUFFER_SAMPLES * SAMPLE_CHANNELS] = {0};
+    sample_t buffers[AUDIO_BUFFER_TRACKS][AUDIO_BUFFER_SLOTS][AUDIO_BUFFER_SAMPLES] = {0};
 private:
     uint8_t currentSlot = 0;
     uint32_t time_reference = 0;

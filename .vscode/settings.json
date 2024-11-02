@@ -118,6 +118,7 @@
         "font.h": "c",
         "semaphore": "cpp",
         "stop_token": "cpp",
-        "thread": "cpp"
+        "thread": "cpp",
+        "gpio.h": "c"
     }
 }

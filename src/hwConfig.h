@@ -78,20 +78,28 @@ typedef enum {
 #define SAMPLE_RATE 48000 // use multiples of 1000
 #define SAMPLE_TYPE uint16_t  // 16 bits per sample
 typedef SAMPLE_TYPE sample_t;
-#define SAMPLE_MAX (1 << (sizeof(SAMPLE_TYPE) * 8 - 1))
+#define BITS_PER_SAMPLE sizeof(SAMPLE_TYPE) * 8
+#define SAMPLE_MAX (1 << BITS_PER_SAMPLE) - 1
+#define SAMPLE_ZERO SAMPLE_MAX/2
 typedef sample_t* sample_ptr;
-#define SAMPLE_CHANNELS 2
-#define BITS_PER_SAMPLE sizeof(SAMLPE_TYPE) * 8
 #define AUDIO_BUFFER_MS 1
 #define AUDIO_BUFFER_SAMPLES SAMPLE_RATE / 1000 * AUDIO_BUFFER_MS
-#define AUDIO_BUFFER_SIZE AUDIO_BUFFER_SAMPLES * BITS_PER_SAMPLE / 8 * SAMPLE_CHANNELS
+#define AUDIO_BUFFER_SIZE AUDIO_BUFFER_SAMPLES * BITS_PER_SAMPLE / 8
 #define AUDIO_BUFFER_SLOTS 5
 #define AUDIO_BUFFER_TRACKS 10
 
+// Fixed-point math
+typedef int32_t fp_int;
+#define FIXED_POINT_SHIFT 10
+#define FIXED_POINT_ONE (1 << FIXED_POINT_SHIFT)
+#define FP1 FIXED_POINT_ONE
+
 enum DSP_Tracks {
-    DSP_TRACK_SYNTH = 0,
-    DSP_TRACK_USB_IN,
-    DSP_TRACK_USB_OUT,
+    DSP_TRACK_USB_IN_LEFT,
+    DSP_TRACK_USB_IN_RIGHT,
+    DSP_TRACK_USB_OUT_LEFT,
+    DSP_TRACK_USB_OUT_RIGHT,
+    DSP_TRACK_SYNTH,
     DSP_TRACK_MIC,
     DSP_TRACK_SPK,
     DSP_TRACK_DSP_BASE
@@ -107,18 +115,8 @@ enum DSP_Tracks {
 
 // UART configuration - UART_USE defined in CMakeLists.txt - make sure to update the GPIO pins
 #define UART_INST uart0  //deconflicting the name with the standard macro
-
-#ifndef UART_USE
-#define UART_USE 1 // Default to STDIO
-#endif
-
-#if UART_USE == 1 //STDIO
-    #define UART_BAUD_RATE 115200
-#elif UART_USE == 2 //Serial
-    #define UART_BAUD_RATE 115200
-#elif UART_USE == 3 //MIDI
-    #define UART_BAUD_RATE 31250
-#endif
+#define UART_BAUD_RATE 115200
+// #define UART_BAUD_RATE 31250
 
 //USB configuration mostly defined in mod_USB.cpp
 

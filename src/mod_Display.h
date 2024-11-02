@@ -2,9 +2,6 @@
 #define MOD_DISPLAY_H
 
 #include "Module.h"
-// extern "C" {
-//     #include "ssd1306.h"
-// }
 
 #include <vector>
 #include <cstdint>
@@ -12,10 +9,8 @@
 #include "hwConfig.h"
 #include "hardware/dma.h"
 
-//Current implementation just uses the library and takes about 20 ms for each update,
-//which is way too slow. Next implementation to use DMA, just check that no other
-//messages are sent to the I2C bus while the DMA is active and to wait for the DMA
-//to finish before starting the next
+//based on the work of David Schramm (c) 2021
+//pico-ssd1306 library
 
 class mod_Display : public Module {
 public:
@@ -50,10 +45,10 @@ private:
     dma_channel_config dma_cfg;
 
     uint8_t frame[DISPLAY_BUFSIZE] = {0};
-    uint16_t buffer[DISPLAY_BUFSIZE + 1] = {0};
+    uint16_t buffer[DISPLAY_BUFSIZE + 13] = {0}; //13 entries to initialise the refresh command before sending the buffer
     
-    int cursor_x;
-    int cursor_y;
+    int cursor_x=0;
+    int cursor_y=0;
 };
 
 #endif // MOD_DISPLAY_H
