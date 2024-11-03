@@ -58,10 +58,10 @@ void mod_USB_Audio::Test()
 
         sample_ptr left = app.dsp.getWritingBuffer(DSP_TRACK_USB_OUT_LEFT);
         sample_ptr right = app.dsp.getWritingBuffer(DSP_TRACK_USB_OUT_RIGHT);
-        // phaseL = app.dsp.GenerateSineWave(left, midi_frequencies[noteL], ampL, phaseL);
-        // phaseR = app.dsp.GenerateSineWave(right, midi_frequencies[noteR], ampR, phaseR);
-        phaseL = app.dsp.GenerateSquareWave(left, midi_frequencies[noteL], ampL, phaseL);
-        phaseR = app.dsp.GenerateSquareWave(right, midi_frequencies[noteR], ampR, phaseR);
+        phaseL = app.dsp.GenerateSineWave(left, midi_frequencies[noteL], ampL, phaseL);
+        phaseR = app.dsp.GenerateSineWave(right, midi_frequencies[noteR], ampR, phaseR);
+        // phaseL = app.dsp.GenerateSquareWave(left, midi_frequencies[noteL], ampL, phaseL);
+        // phaseR = app.dsp.GenerateSquareWave(right, midi_frequencies[noteR], ampR, phaseR);
 
         duration = time_us_64() - t0;
     }

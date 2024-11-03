@@ -6,19 +6,17 @@
 #include "stdio.h"
 #include "App.h"
 #include "midi_frequencies.h"
+#include "WT_BASE.h"
 
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
 #endif
 
-int sin_fixed(int angle)
+fp_int sin_fixed(fp_int angle)
 {
-    // Convert fixed-point angle to float radians
-    float radians = (float)angle / FP1 * 2.0f * M_PI;
-    // Use standard sinf function
-    float sin_value = sinf(radians);
-    // Convert result back to fixed-point
-    return (int)(sin_value * FP1);
+    // Normalize angle to the range [0, WT_BASE_sin_SIZE)
+    angle = angle % (WT_BASE_sin_SIZE * FP1);
+    return WT_BASE_sin[angle / FP1] * FP1 / SAMPLE_MAX;
 }
 
 void mod_DSP::Init()
@@ -166,37 +164,35 @@ void mod_DSP::ClearBuffer(sample_ptr buf)
 
 fp_int mod_DSP::GenerateWave(sample_ptr buf, sample_ptr wavetable, uint8_t waveform, fp_int frequency_ratio, fp_int phase, bool interp)
 {
+    uint16_t size = WT_GetWaveformSize(wavetable, waveform);
+
+    // index and increment are fixed-point numbers scaled by FP1
+    uint32_t index = (uint32_t)(phase * size);
+    uint32_t increment = ((uint64_t)frequency_ratio * size) / SAMPLE_RATE;
+
+    sample_ptr waveform_data = WT_GetWaveform(wavetable, waveform);
+
+    for (int i = 0; i < AUDIO_BUFFER_SAMPLES; ++i) {
+        uint16_t index_int = (uint16_t)(index / FP1);
+        fp_int frac = (fp_int)(index % FP1);
+
+        sample_t sample;
+        if (interp) {
+            sample_t sample1 = waveform_data[index_int];
+            sample_t sample2 = waveform_data[(index_int + 1) % size];
+            sample = sample1 + ((sample2 - sample1) * frac) / FP1;
+        } else {
+            sample = waveform_data[index_int];
+        }
+
+        buf[i] = sample;
+
+        index += increment;
+        if (index >= size * FP1) {
+            index -= size * FP1;
+        }
+    }
+
+    phase = (fp_int)(index / size);
     return phase;
-
-    // TODO Again using fixed point math
-
-    // uint16_t size = WT_GetWaveformSize(wavetable, waveform);
-    // float original_sample_rate = WT_GetSampleRate(wavetable);
-    // float increment = (frequency_ratio * original_sample_rate) / SAMPLE_RATE;
-    // float index = phase * size;
-
-    // sample_ptr waveform_data = WT_GetWaveform(wavetable, waveform);
-
-    // for (int i = 0; i < AUDIO_BUFFER_SAMPLES; ++i) {
-    //     uint16_t index_int = static_cast<uint16_t>(index);
-    //     float frac = index - index_int;
-
-    //     sample_t sample;
-    //     if (interp) {
-    //         sample_t sample1 = waveform_data[index_int];
-    //         sample_t sample2 = waveform_data[(index_int + 1) % size];
-    //         sample = static_cast<sample_t>(sample1 * (1.0f - frac) + sample2 * frac);
-    //     } else {
-    //         sample = waveform_data[index_int];
-    //     }
-
-    //        buf[i] = sample;
-
-    //     index += increment;
-    //     if (index >= size) {
-    //         index -= size;
-    //     }
-    // }
-
-    // return index/size;
 }

@@ -26,6 +26,7 @@ add_executable(miniMIDI
     mod_Blink.cpp
     mod_Synth.cpp
 
+    wavetables/WT_BASE.cpp
     midi_const/midi_frequencies.cpp
     ledColors/led_colors.cpp
     # QuadratureDecoder/QuadratureDecoder.cpp
@@ -47,7 +48,6 @@ pico_set_program_name(miniMIDI "miniMIDI")
 pico_set_program_version(miniMIDI "0.1")
 
 # Generate PIO headers
-pico_generate_pio_header(miniMIDI ${CMAKE_CURRENT_LIST_DIR}/blink.pio)
 pico_generate_pio_header(miniMIDI ${CMAKE_CURRENT_LIST_DIR}/ws2812.pio)
 # pico_generate_pio_header(miniMIDI ${CMAKE_CURRENT_LIST_DIR}/QuadratureDecoder/QuadratureDecoder.pio)
 pico_generate_pio_header(miniMIDI ${CMAKE_CURRENT_LIST_DIR}/rp2040_i2s_example/i2s.pio)
@@ -85,6 +85,7 @@ target_include_directories(miniMIDI PRIVATE
   # ${CMAKE_CURRENT_LIST_DIR}/pico-ssd1306
   # ${CMAKE_CURRENT_LIST_DIR}/QuadratureDecoder
   ${CMAKE_CURRENT_LIST_DIR}/ledColors
+  ${CMAKE_CURRENT_LIST_DIR}/wavetables
   ${CMAKE_CURRENT_LIST_DIR}/midi_const
   ${CMAKE_CURRENT_LIST_DIR}/rp2040_i2s_example
   ${CMAKE_CURRENT_LIST_DIR}/RP2040-pico_synth_ex
