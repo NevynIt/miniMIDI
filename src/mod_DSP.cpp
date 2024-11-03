@@ -36,7 +36,7 @@ void mod_DSP::Init()
         }
     }
 
-    App::GetInstance().display.println("DSP initialized");
+    app.display.println("DSP initialized");
     printf("DSP initialized\n");
 }
 

@@ -3,10 +3,6 @@
 // Define the static instance of App
 App App::appInstance;
 
-App& App::GetInstance() {
-    return appInstance;
-}
-
 void App::Init() {
     // Empty, as Init_c0 and Init_c1 will handle initialization
 }
@@ -27,7 +23,6 @@ void App::Init_c0() {
     mods.push_back(&config); //Dummy module for now
 
     mods.push_back(&dsp);
-    mods.push_back(&encoders); //reimplemented with polling without PIO, a bit slow but it works, includes button support
     
     // USB modules
     mods.push_back(&usb);
@@ -47,12 +42,13 @@ void App::Init_c1() {
     std::vector<Module*> &mods =  modules_c1;
 
     // parked modules
-    // mods.push_back(&sd); 
-    // mods.push_back(&ledStrip); //Implemented correctly with PIO and DMA
+    mods.push_back(&sd); 
+    mods.push_back(&ledStrip); //Implemented correctly with PIO and DMA
+    mods.push_back(&encoders); //reimplemented with polling without PIO, a bit slow but it works, includes button support
 
 
     // time critical modules on core 1
-    // mods.push_back(&joys); //Basic implementation using ADC polling every tick
+    mods.push_back(&joys); //Basic implementation using ADC polling every tick
 
     // Audio modules
     // mods.push_back(&synth); //Dummy module which should crash now, skipping

@@ -33,8 +33,8 @@ void mod_Encoders::Tick()
     // char buffer[100];
     buttons = (gpio_get_all() >> (GPIO_Enc_Base + NUM_ENCODERS * 2)) & (~(~0 << (NUM_ENCODERS)));
     // sprintf(buffer, "%d, %d, %d, %d, %d\n", buttons, count[0], count[1], count[2], count[3]);
-    // App::GetInstance().display.clear_square(0,16,128,8);
-    // App::GetInstance().display.draw_text(0,16,1,buffer);
+    // app.display.clear_square(0,16,128,8);
+    // app.display.draw_text(0,16,1,buffer);
 }
 
 #else
@@ -55,8 +55,8 @@ void mod_Encoders::Tick()
     // char buffer[100];
     buttons = (~gpio_get_all() >> (GPIO_Enc_Base + NUM_ENCODERS * 2)) & (~(~0 << (NUM_ENCODERS)));
     // sprintf(buffer, "%d, %d, %d, %d, %d\n", buttons, count[0], count[1], count[2], count[3]);
-    // App::GetInstance().display.clear_square(0,16,128,8);
-    // App::GetInstance().display.draw_text(0,16,1,buffer);
+    // app.display.clear_square(0,16,128,8);
+    // app.display.draw_text(0,16,1,buffer);
 }
 
 // Expected initial signal levels

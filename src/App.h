@@ -21,9 +21,11 @@
 #include <vector>
 #include <memory>
 
+#define app App::GetInstance()
+
 class App : public Module {
 public:
-    static App& GetInstance();
+    static inline App& GetInstance() { return appInstance; }
 
     void Init() override;
     void Tick() override;

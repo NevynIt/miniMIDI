@@ -29,7 +29,6 @@ void mod_USB_Audio::Tick()
 
 void mod_USB_Audio::Test()
 {
-    auto app = App::GetInstance();
     static fp_int phaseL = 0;
     static fp_int phaseR = 0;
     static int last_slot = 0;
@@ -45,8 +44,8 @@ void mod_USB_Audio::Test()
 
         int noteL = app.encoders.count[0]/4 + 60;
         fp_int ampL = (app.encoders.count[1]/4 + 50) * FP1 / 100;
-        int noteR = app.encoders.count[0]/4 + 60;
-        fp_int ampR = (app.encoders.count[1]/4 + 50) * FP1 / 100;
+        int noteR = app.encoders.count[2]/4 + 60;
+        fp_int ampR = (app.encoders.count[3]/4 + 50) * FP1 / 100;
 
         if (noteL < 0) noteL = 0;
         if (noteL > 127) noteL = 127;
@@ -58,22 +57,22 @@ void mod_USB_Audio::Test()
         if (ampR > FP1) ampR = FP1;
 
         sample_ptr left = app.dsp.getWritingBuffer(DSP_TRACK_USB_OUT_LEFT);
-        // sample_ptr right = app.dsp.getWritingBuffer(DSP_TRACK_USB_OUT_RIGHT);
-        phaseL = app.dsp.GenerateSineWave(left, midi_frequencies[noteL], ampL, phaseL);
+        sample_ptr right = app.dsp.getWritingBuffer(DSP_TRACK_USB_OUT_RIGHT);
+        // phaseL = app.dsp.GenerateSineWave(left, midi_frequencies[noteL], ampL, phaseL);
         // phaseR = app.dsp.GenerateSineWave(right, midi_frequencies[noteR], ampR, phaseR);
-        // phaseL = app.dsp.GenerateSquareWave(left, midi_frequencies[noteL], ampL, phaseL);
-        // phaseR = app.dsp.GenerateSquareWave(right, midi_frequencies[noteR], ampR, phaseR);
+        phaseL = app.dsp.GenerateSquareWave(left, midi_frequencies[noteL], ampL, phaseL);
+        phaseR = app.dsp.GenerateSquareWave(right, midi_frequencies[noteR], ampR, phaseR);
 
         duration = time_us_64() - t0;
     }
 
-    // static uint32_t stored_time = 0;
-    // uint32_t current_time;
-    // current_time = to_ms_since_boot(get_absolute_time());
-    // if (current_time - stored_time > 500) {
-    //     printf("USB Audio Test: %d us\n", duration);
-    //     stored_time = current_time;
-    // }
+    static uint32_t stored_time = 0;
+    uint32_t current_time;
+    current_time = to_ms_since_boot(get_absolute_time());
+    if (current_time - stored_time > 500) {
+        printf("USB Audio Test: %lld us\n", duration);
+        stored_time = current_time;
+    }
 
 }
 
@@ -179,7 +178,6 @@ bool tud_audio_tx_done_pre_load_cb(uint8_t rhport, uint8_t itf, uint8_t ep_in, u
     (void)itf;
     (void)ep_in;
     (void)cur_alt_setting;
-    auto app = App::GetInstance();
     auto buf = app.usbAudio.buffer_out;
 
     // printf("tud_audio_tx_done_pre_load_cb\r\n");
@@ -232,7 +230,6 @@ bool tud_audio_rx_done_pre_read_cb(uint8_t rhport, uint16_t n_bytes_received, ui
 
     printf("tud_audio_rx_done_pre_read_cb\r\n");
 
-    auto app = App::GetInstance();
     auto buf = app.usbAudio.buffer_in;
 
     sample_ptr left = app.dsp.getWritingBuffer(DSP_TRACK_USB_IN_LEFT);
@@ -378,8 +375,11 @@ static bool tud_audio_feature_unit_get_request(uint8_t rhport, audio_control_req
         }
         else if (request->bRequest == AUDIO_CS_REQ_CUR)
         {
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wnarrowing"
             audio_control_cur_2_t cur_vol = {.bCur = tu_htole16(volume[request->bChannelNumber])};
             TU_LOG2("Get channel %u volume %d dB\r\n", request->bChannelNumber, cur_vol.bCur / 256);
+#pragma GCC diagnostic pop
             return tud_audio_buffer_and_schedule_control_xfer(rhport, (tusb_control_request_t const *)request, &cur_vol, sizeof(cur_vol));
         }
     }

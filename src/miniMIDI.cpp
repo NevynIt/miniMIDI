@@ -6,8 +6,6 @@
 
 void core1_entry()
 {
-    App &app = App::GetInstance();
-
     app.Init_c1();
 
     while (true)
@@ -29,8 +27,6 @@ void core1_entry()
 
 void disp_inputs()
 {
-    App &app = App::GetInstance();
-
     app.display.clear();
     char buffer[100];
     sprintf(buffer, "%d, %d, %d, %d, %d\n", app.encoders.buttons, app.encoders.count[0], app.encoders.count[1], app.encoders.count[2], app.encoders.count[3]);
@@ -43,12 +39,10 @@ int main()
 {
     set_sys_clock_khz(CPU_KHZ, true);
 
-    App &app = App::GetInstance();
-
     // Initialise the modules on core 0 first
     app.Init_c0();
 
-    // multicore_launch_core1(core1_entry); //for some reason, even with no modules on core 1, this causes a crash
+    multicore_launch_core1(core1_entry);
 
     while (true)
     {

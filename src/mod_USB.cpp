@@ -6,7 +6,7 @@ void mod_USB::Init()
 {
   tusb_init();
 
-  App::GetInstance().display.println("USB initialized");
+  app.display.println("USB initialized");
   printf("USB initialized\n");
 }
 
