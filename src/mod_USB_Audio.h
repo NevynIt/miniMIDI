@@ -9,9 +9,10 @@ class mod_USB_Audio : public Module {
 public:
     void Init() override;
     void Tick() override;
+    void Test() override;
 
-    sample_t buffer_in[AUDIO_BUFFER_SAMPLES*2] = {0}; // in from the USB host
-    sample_t buffer_out[AUDIO_BUFFER_SAMPLES*2] = {0}; // out to the USB host
+    int16_t buffer_in[AUDIO_BUFFER_SAMPLES*CFG_TUD_AUDIO_FUNC_1_MAX_CHAN] = {0}; // in from the USB host
+    int16_t buffer_out[AUDIO_BUFFER_SAMPLES*CFG_TUD_AUDIO_FUNC_1_MAX_CHAN] = {0}; // out to the USB host
 };
 
 #endif // MOD_USB_AUDIO_H

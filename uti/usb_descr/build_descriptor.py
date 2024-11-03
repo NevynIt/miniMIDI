@@ -110,7 +110,7 @@ conf_descr_data = { #AUDIO MUST BE THE FIRST FUNCTION
                 'LineIn' : {
                     'type': 'input',
                     'channels': 2,
-                    'audio_term_type': AUDIO_TERM_TYPE_IN_UNDEFINED,
+                    'audio_term_type': AUDIO_TERM_TYPE_IN_GENERIC_MIC,
                     'audio_channels_config': AUDIO_CHANNEL_CONFIG_FRONT_LEFT | AUDIO_CHANNEL_CONFIG_FRONT_RIGHT,
                     'bitResolution': 16, #only 1 resolution, no alternates
                     'bytesPerSample': 2,
@@ -134,7 +134,7 @@ conf_descr_data = { #AUDIO MUST BE THE FIRST FUNCTION
                 'LineOut' : {
                     'type': 'output',
                     'channels': 2,
-                    'audio_term_type': AUDIO_TERM_TYPE_OUT_UNDEFINED,
+                    'audio_term_type': AUDIO_TERM_TYPE_OUT_HEADPHONES,
                     'audio_channels_config': AUDIO_CHANNEL_CONFIG_FRONT_LEFT | AUDIO_CHANNEL_CONFIG_FRONT_RIGHT,
                     'bitResolution': 16, #only 1 resolution, no alternates
                     'bytesPerSample': 2,
@@ -161,8 +161,8 @@ conf_descr_data = { #AUDIO MUST BE THE FIRST FUNCTION
             'names': [
                 "mM_MIDI 1",
                 "mM_MIDI 2",
-                "mM_MIDI 3",
-                "mM_MIDI 4",
+                "mM_LEDS",
+                "mM_SYNTH",
             ],	
         },
         # 'mM_MIDI' : {

@@ -12,6 +12,7 @@ class mod_LedStrip : public Module {
 public:
     void Init() override;
     void Tick() override;
+    void Test() override;
 
     void SetColor(uint index, uint32_t color);
     void SetColor(uint index, uint8_t r, uint8_t g, uint8_t b);

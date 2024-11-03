@@ -4,8 +4,9 @@
 class Module {
 public:
     virtual ~Module() = default;
-    virtual void Init() = 0;
-    virtual void Tick() = 0;
+    virtual void Init() { };
+    virtual void Tick() { };
+    virtual void Test() { };
 };
 
 #endif // MODULE_H

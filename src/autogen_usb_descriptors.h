@@ -22,8 +22,8 @@ static char const * const string_desc_arr[] =
     "mM_MIDI",
     "mM_MIDI 1",
     "mM_MIDI 2",
-    "mM_MIDI 3",
-    "mM_MIDI 4",
+    "mM_LEDS",
+    "mM_SYNTH",
 };
 
 
@@ -47,7 +47,7 @@ static const uint8_t desc_fs_configuration[] = {
         "LineIn": {
             "type": "input",
             "channels": 2,
-            "audio_term_type": 512,
+            "audio_term_type": 513,
             "audio_channels_config": 3,
             "bitResolution": 16,
             "bytesPerSample": 2
@@ -55,7 +55,7 @@ static const uint8_t desc_fs_configuration[] = {
         "LineOut": {
             "type": "output",
             "channels": 2,
-            "audio_term_type": 768,
+            "audio_term_type": 770,
             "audio_channels_config": 3,
             "bitResolution": 16,
             "bytesPerSample": 2
@@ -77,7 +77,7 @@ static const uint8_t desc_fs_configuration[] = {
 /* ### Interface controls LineIn */\
 /* ## Input Terminal Descriptor */\
 /*    17, TUSB_DESC_CS_INTERFACE, AUDIO_CS_AC_INTERFACE_INPUT_TERMINAL, ent_in, U16_TO_U8S_LE(term_type_in), ent_out, ent_clk, tdata['channels'], U32_TO_U8S_LE(tdata['audio_channels_config']), 0x00, U16_TO_U8S_LE(ctrl), str_tname */\
-0x11, 0x24, 0x2, 0x2, 0x0, 0x2, 0x3, 0x1, 0x2, 0x3, 0x0, 0x0, 0x0, 0x0, 0x4, 0x0, 0x5, 
+0x11, 0x24, 0x2, 0x2, 0x1, 0x2, 0x3, 0x1, 0x2, 0x3, 0x0, 0x0, 0x0, 0x0, 0x4, 0x0, 0x5, 
 /* ## Feature Unit Descriptor */\
 /*    (6+(tdata['channels']+1)*4), TUSB_DESC_CS_INTERFACE, AUDIO_CS_AC_INTERFACE_FEATURE_UNIT, ent_feature, ent_in, ctrlch*tdata['channels'], str_tname */\
 0x12, 0x24, 0x6, 0x4, 0x2, 0xf, 0x0, 0x0, 0x0, 0xf, 0x0, 0x0, 0x0, 0xf, 0x0, 0x0, 0x0, 0x5, 
@@ -93,12 +93,12 @@ static const uint8_t desc_fs_configuration[] = {
 0x12, 0x24, 0x6, 0x7, 0x5, 0xf, 0x0, 0x0, 0x0, 0xf, 0x0, 0x0, 0x0, 0xf, 0x0, 0x0, 0x0, 0x6, 
 /* ## Output Terminal Descriptor */\
 /*    12, TUSB_DESC_CS_INTERFACE, AUDIO_CS_AC_INTERFACE_OUTPUT_TERMINAL, ent_out, U16_TO_U8S_LE(term_type_out), _assocTerm, srcid, ent_clk, U16_TO_U8S_LE(ctrl), str_tname */\
-0xc, 0x24, 0x3, 0x6, 0x0, 0x3, 0x5, 0x7, 0x1, 0x4, 0x0, 0x6, 
+0xc, 0x24, 0x3, 0x6, 0x2, 0x3, 0x5, 0x7, 0x1, 0x4, 0x0, 0x6, 
 /* ### Interface LineIn */\
 /* {
     "type": "input",
     "channels": 2,
-    "audio_term_type": 512,
+    "audio_term_type": 513,
     "audio_channels_config": 3,
     "bitResolution": 16,
     "bytesPerSample": 2,
@@ -127,7 +127,7 @@ static const uint8_t desc_fs_configuration[] = {
 /* {
     "type": "output",
     "channels": 2,
-    "audio_term_type": 768,
+    "audio_term_type": 770,
     "audio_channels_config": 3,
     "bitResolution": 16,
     "bytesPerSample": 2,
@@ -193,8 +193,8 @@ static const uint8_t desc_fs_configuration[] = {
     "names": [
         "mM_MIDI 1",
         "mM_MIDI 2",
-        "mM_MIDI 3",
-        "mM_MIDI 4"
+        "mM_LEDS",
+        "mM_SYNTH"
     ]
 } */\
 /* ### INITIAL HEADER */\

@@ -78,19 +78,19 @@ typedef enum {
 #define SAMPLE_RATE 48000 // use multiples of 1000
 #define SAMPLE_TYPE uint16_t  // 16 bits per sample
 typedef SAMPLE_TYPE sample_t;
-#define BITS_PER_SAMPLE sizeof(SAMPLE_TYPE) * 8
-#define SAMPLE_MAX (1 << BITS_PER_SAMPLE) - 1
+#define BITS_PER_SAMPLE (sizeof(SAMPLE_TYPE) * 8)
+#define SAMPLE_MAX ((1 << BITS_PER_SAMPLE) - 1)
 #define SAMPLE_ZERO SAMPLE_MAX/2
 typedef sample_t* sample_ptr;
 #define AUDIO_BUFFER_MS 1 //1ms to be consistent with the USB audio buffer
-#define AUDIO_BUFFER_SAMPLES SAMPLE_RATE / 1000 * AUDIO_BUFFER_MS
-#define AUDIO_BUFFER_SIZE AUDIO_BUFFER_SAMPLES * BITS_PER_SAMPLE / 8
+#define AUDIO_BUFFER_SAMPLES (SAMPLE_RATE / 1000 * AUDIO_BUFFER_MS)
+#define AUDIO_BUFFER_SIZE AUDIO_BUFFER_SAMPLES * (BITS_PER_SAMPLE / 8)
 #define AUDIO_BUFFER_SLOTS 8
 #define AUDIO_BUFFER_TRACKS 10
 
 // Fixed-point math
 typedef int32_t fp_int;
-#define FIXED_POINT_SHIFT 10
+#define FIXED_POINT_SHIFT 14
 #define FIXED_POINT_ONE (1 << FIXED_POINT_SHIFT)
 #define FP1 FIXED_POINT_ONE
 
@@ -111,7 +111,7 @@ enum DSP_Tracks {
 #define I2S_CHANNELS 2 //hard coded in the pio program
 #define I2S_BUFFER_SAMPLES AUDIO_BUFFER_SAMPLES
 #define I2S_BUFFER_NUM 2
-#define I2S_BUFFER_SIZE I2S_BUFFER_SAMPLES * I2S_CHANNELS * I2S_BITS_PER_CHANNEL / 8
+#define I2S_BUFFER_SIZE (I2S_BUFFER_SAMPLES * I2S_CHANNELS * I2S_BITS_PER_CHANNEL / 8)
 
 // UART configuration - LIB_PICO_STDIO_UART defined implicitly in CMakeLists.txt
 #define UART_INST uart0  //deconflicting the name with the standard macro

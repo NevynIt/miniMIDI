@@ -24,6 +24,7 @@ add_executable(miniMIDI
     mod_I2S_Audio.cpp
     mod_DSP.cpp
     mod_Blink.cpp
+    midi_frequencies.cpp
     mod_Synth.cpp
     ledColors/led_colors.cpp
     # QuadratureDecoder/QuadratureDecoder.cpp

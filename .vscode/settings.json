@@ -119,6 +119,9 @@
         "semaphore": "cpp",
         "stop_token": "cpp",
         "thread": "cpp",
-        "gpio.h": "c"
-    }
+        "gpio.h": "c",
+        "usb_descriptors.h": "c",
+        "common.h": "c"
+    },
+    "cortex-debug.variableUseNaturalFormat": false
 }

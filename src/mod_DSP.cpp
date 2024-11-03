@@ -5,6 +5,7 @@
 #include "hwConfig.h"
 #include "stdio.h"
 #include "App.h"
+#include "midi_frequencies.h"
 
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
@@ -31,7 +32,7 @@ void mod_DSP::Init()
         fp_int phase = 0;
         for (int s = 0; s < AUDIO_BUFFER_SLOTS; ++s)
         {
-            phase = GenerateSineWave(buffers[t][s], t * 110.0f * FP1, FP1, phase);
+            phase = GenerateSineWave(buffers[t][s], (t+1) * 110 * FP1, FP1, phase);
         }
     }
 
@@ -57,15 +58,17 @@ fp_int mod_DSP::GenerateSineWave(sample_ptr buf, fp_int frequency, fp_int amplit
 {
     fp_int increment = (frequency / SAMPLE_RATE); // angle increment per sample
     fp_int angle = phase & (FP1 - 1);
-    sample_t half_range = amplitude * SAMPLE_MAX / 2 / FP1;
+    sample_t half_range = SAMPLE_MAX / 2 * amplitude / FP1;
     for (int i = 0; i < AUDIO_BUFFER_SAMPLES; ++i)
     {
-        buf[i] = SAMPLE_ZERO + half_range * sin_fixed(angle) / FP1;
+        fp_int s = sin_fixed(angle);
+        buf[i] = SAMPLE_ZERO + half_range * s / FP1;
         angle = (angle + increment) & (FP1 - 1);
     }
     return angle;
 }
 
+// __attribute__((optimize("O0")))
 fp_int mod_DSP::GenerateSquareWave(sample_ptr buf, fp_int frequency, fp_int amplitude, fp_int phase)
 {
     int period = (FP1 * SAMPLE_RATE / frequency); // period in samples

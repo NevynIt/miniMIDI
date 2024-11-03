@@ -12,10 +12,10 @@ public:
     void Init() override;
     void Tick() override;
 
-    static fp_int GenerateSineWave(sample_ptr buf, fp_int frequency = 440.0f * FP1, fp_int amplitude = FP1, fp_int phase = 0);
-    static fp_int GenerateSquareWave(sample_ptr buf, fp_int frequency = 440.0f * FP1, fp_int amplitude = FP1, fp_int phase = 0);
-    static fp_int GenerateTriangleWave(sample_ptr buf, fp_int frequency = 440.0f * FP1, fp_int amplitude = FP1, fp_int phase = 0);
-    static fp_int GenerateSawtoothWave(sample_ptr buf, fp_int frequency = 440.0f * FP1, fp_int amplitude = FP1, fp_int phase = 0);
+    static fp_int GenerateSineWave(sample_ptr buf, fp_int frequency = 440 * FP1, fp_int amplitude = FP1, fp_int phase = 0);
+    static fp_int GenerateSquareWave(sample_ptr buf, fp_int frequency = 440 * FP1, fp_int amplitude = FP1, fp_int phase = 0);
+    static fp_int GenerateTriangleWave(sample_ptr buf, fp_int frequency = 440 * FP1, fp_int amplitude = FP1, fp_int phase = 0);
+    static fp_int GenerateSawtoothWave(sample_ptr buf, fp_int frequency = 440 * FP1, fp_int amplitude = FP1, fp_int phase = 0);
     static void GenerateNoise(sample_ptr buf, fp_int amplitude = FP1);
     static void MixBuffers(sample_ptr dst, sample_ptr src, fp_int dry, fp_int wet);
     static void ScaleBuffer(sample_ptr buf, sample_ptr gain);
