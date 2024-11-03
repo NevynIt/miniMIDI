@@ -2,6 +2,7 @@
 #define HWCONFIG_H
 
 #include "hardware/gpio.h"
+#include "fpm/fixed.hpp"
 
 typedef enum {
     GPIO_Enc0_A = 0,    // 0
@@ -90,10 +91,21 @@ typedef const sample_t* sample_cptr;
 #define AUDIO_BUFFER_TRACKS 10
 
 // Fixed-point math
-typedef int32_t fp_int;
-#define FIXED_POINT_SHIFT 15
-#define FIXED_POINT_ONE (1 << FIXED_POINT_SHIFT)
-#define FP1 FIXED_POINT_ONE
+typedef fpm::fixed_16_16 fp_int;
+// typedef float fp_int;
+
+template <typename B, typename I, unsigned int F, bool R>
+inline fpm::fixed<B, I, F, R> mod1(fpm::fixed<B, I, F, R> x) noexcept
+{
+    constexpr auto mask = (B(1) << F) - 1;
+    return fpm::fixed<B, I, F, R>::from_raw_value(x.raw_value() & mask);
+}
+
+template<typename T>
+inline T mod1(T x) noexcept
+{
+    return x - (int)x;
+}
 
 enum DSP_Tracks {
     DSP_TRACK_USB_IN_LEFT,

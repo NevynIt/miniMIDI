@@ -2,6 +2,7 @@
 #include "App.h"
 #include "stdio.h"
 #include "midi_frequencies.h"
+#include "WT_BASE.h"
 
 // Audio controls
 #define CFG_TUD_AUDIO_FUNC_1_N_CHANNELS_TX 2
@@ -29,8 +30,10 @@ void mod_USB_Audio::Tick()
 
 void mod_USB_Audio::Test()
 {
-    static fp_int phaseL = 0;
-    static fp_int phaseR = 0;
+    return;
+
+    static fp_int phaseL(0);
+    static fp_int phaseR(0);
     static int last_slot = 0;
 
     int slot = app.dsp.getWritingSlot();
@@ -39,26 +42,23 @@ void mod_USB_Audio::Test()
         last_slot = slot;
 
         int noteL = app.encoders.count[0]/4 + 60;
-        fp_int ampL = (app.encoders.count[1]/4 + 50) * FP1 / 100;
+        fp_int ampL = fp_int(app.encoders.count[1]/4 + 50) / 100;
         int noteR = app.encoders.count[2]/4 + 60;
-        fp_int ampR = (app.encoders.count[3]/4 + 50) * FP1 / 100;
+        fp_int ampR = fp_int(app.encoders.count[3]/4 + 50) / 100;
 
         if (noteL < 0) noteL = 0;
         if (noteL > 127) noteL = 127;
         if (noteR < 0) noteR = 0;
         if (noteR > 127) noteR = 127;
         if (ampL < 0) ampL = 0;
-        if (ampL > FP1) ampL = FP1;
+        if (ampL > 1) ampL = 1;
         if (ampR < 0) ampR = 0;
-        if (ampR > FP1) ampR = FP1;
+        if (ampR > 1) ampR = 1;
 
         sample_ptr left = app.dsp.getWritingBuffer(DSP_TRACK_USB_OUT_LEFT);
         sample_ptr right = app.dsp.getWritingBuffer(DSP_TRACK_USB_OUT_RIGHT);
-        phaseL = app.dsp.GenerateSineWave(left, midi_frequencies[noteL], ampL, phaseL);
-        phaseR = app.dsp.GenerateSineWave(right, midi_frequencies[noteR], ampR, phaseR);
-        // phaseL = app.dsp.GenerateSquareWave(left, midi_frequencies[noteL], ampL, phaseL);
-        // phaseR = app.dsp.GenerateSquareWave(right, midi_frequencies[noteR], ampR, phaseR);
-
+        phaseL = app.dsp.GenerateWave(left, WT_BASE, 0, midi_frequencies[noteL], ampL, phaseL);
+        phaseR = app.dsp.GenerateWave(right, WT_BASE, 0, midi_frequencies[noteR], ampR, phaseR);
     }
 }
 

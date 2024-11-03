@@ -22,3 +22,6 @@
 [submodule "src/pico-i2c-dma"]
 	path = src/pico-i2c-dma
 	url = https://github.com/fivdi/pico-i2c-dma
+[submodule "src/fpm"]
+	path = src/fpm
+	url = https://github.com/MikeLankamp/fpm

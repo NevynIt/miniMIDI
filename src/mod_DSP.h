@@ -11,17 +11,21 @@ class mod_DSP : public Module {
 public:
     void Init() override;
     void Tick() override;
+    void Test() override;
 
-    static fp_int GenerateWave1Hz(sample_ptr buf, sample_cptr waveform, uint16_t size, fp_int frequency, fp_int amplitude, fp_int phase);
-    static fp_int GenerateSineWave(sample_ptr buf, fp_int frequency = 440 * FP1, fp_int amplitude = FP1, fp_int phase = 0);
-    static fp_int GenerateSquareWave(sample_ptr buf, fp_int frequency = 440 * FP1, fp_int amplitude = FP1, fp_int phase = 0);
-    static fp_int GenerateTriangleWave(sample_ptr buf, fp_int frequency = 440 * FP1, fp_int amplitude = FP1, fp_int phase = 0);
-    static fp_int GenerateSawtoothWave(sample_ptr buf, fp_int frequency = 440 * FP1, fp_int amplitude = FP1, fp_int phase = 0);
-    static void GenerateNoise(sample_ptr buf, fp_int amplitude = FP1);
-    static void MixBuffers(sample_ptr dst, sample_ptr src, fp_int dry, fp_int wet);
+    static fp_int GenerateWave1Hz(sample_ptr buf, sample_cptr waveform, uint16_t size, const fp_int frequency = fp_int(440), const fp_int amplitude = fp_int(1), const fp_int phase = fp_int(0));
+    static fp_int GenerateWave1HzInterp(sample_ptr buf, sample_cptr waveform, uint16_t size, const fp_int frequency = fp_int(440), const fp_int amplitude = fp_int(1), const fp_int phase = fp_int(0));
+    static fp_int GenerateWave(sample_ptr buf, sample_cptr wavetable, uint8_t waveform_num, const fp_int frequency_ratio = fp_int(1), const fp_int amplitude = fp_int(1), const fp_int phase = fp_int(0));
+    static fp_int GenerateWaveInterp(sample_ptr buf, sample_cptr wavetable, uint8_t waveform_num, const fp_int frequency_ratio = fp_int(1), const fp_int amplitude = fp_int(1), const fp_int phase = fp_int(0));
+    static fp_int GenerateSineWave(sample_ptr buf, const fp_int frequency = fp_int(440), const fp_int amplitude = fp_int(1), const fp_int phase = fp_int(0));
+    static fp_int GenerateSquareWave(sample_ptr buf, const fp_int frequency = fp_int(440), const fp_int amplitude = fp_int(1), const fp_int phase = fp_int(0));
+    static fp_int GenerateTriangleWave(sample_ptr buf, const fp_int frequency = fp_int(440), const fp_int amplitude = fp_int(1), const fp_int phase = fp_int(0));
+    static fp_int GenerateSawtoothWave(sample_ptr buf, const fp_int frequency = fp_int(440), const fp_int amplitude = fp_int(1), const fp_int phase = fp_int(0));
+    static void GenerateNoise(sample_ptr buf, const fp_int amplitude = fp_int(1));
+    static void MixBuffers(sample_ptr dst, sample_ptr src, const fp_int dry, const fp_int wet);
     static void ScaleBuffer(sample_ptr buf, sample_ptr gain);
-    static void ClipBuffer(sample_ptr buf, fp_int threshold);
-    static void AmplifyBuffer(sample_ptr buf, fp_int gain);
+    static void ClipBuffer(sample_ptr buf, const fp_int threshold);
+    static void AmplifyBuffer(sample_ptr buf, const fp_int gain);
     static void ClearBuffer(sample_ptr buf);
 
     // waveform structure is:
@@ -44,12 +48,12 @@ public:
     static inline uint16_t WT_GetWaveformSize(sample_cptr wavetable, uint8_t waveform) {
         return wavetable[2 + (waveform * 2) + 1];
     }
-    static inline sample_t getSample(sample_cptr wavetable, uint16_t waveform, fp_int phase) {
+    static inline sample_t getSample(sample_cptr wavetable, uint16_t waveform, const fp_int phase) {
         return WT_GetWaveform(wavetable, waveform)[(uint16_t)(phase * WT_GetWaveformSize(wavetable, waveform))];
     }
-    static inline sample_t getSampleInterp(sample_cptr wavetable, uint16_t waveform, fp_int phase) {
+    static inline sample_t getSampleInterp(sample_cptr wavetable, uint16_t waveform, const fp_int phase) {
         uint16_t size = WT_GetWaveformSize(wavetable, waveform);
-        int index = phase * size;
+        int index = (int)(phase * size);
         uint16_t index_int = static_cast<uint16_t>(index);
         int frac = index - index_int;
 
@@ -58,7 +62,6 @@ public:
 
         return static_cast<sample_t>(sample1 * (1.0f - frac) + sample2 * frac);
     }
-    static fp_int GenerateWave(sample_ptr buf, sample_cptr wavetable, uint8_t waveform, fp_int frequency_ratio = FP1, fp_int phase = 0, bool interp = false);
 
     uint8_t getWritingSlot() const { return (currentSlot + 1) % AUDIO_BUFFER_SLOTS; }
     uint8_t getReadingSlot() const { return (currentSlot - 1 + AUDIO_BUFFER_SLOTS) % AUDIO_BUFFER_SLOTS; }

@@ -23,7 +23,7 @@ const fp_int midi_frequencies[128] = {
     frequencies = []
     for i in range(128):
         frequency = reference_frequency * (2 ** ((i - 69) / 12.0))
-        frequencies.append(f"    (fp_int)({frequency:16.10f} * FP1),  // MIDI Note {i}")
+        frequencies.append(f"    fp_int({frequency:16.10f}),  // MIDI Note {i}")
 
     cpp_content += ",\n".join(frequencies)
     cpp_content += "\n};\n"

@@ -37,6 +37,9 @@ add_executable(miniMIDI
     # i2s_example.c
 )
 
+# Add this line to set the compile option to disable the warning about the parameter passing convention for fp_int
+target_compile_options(miniMIDI PRIVATE -Wno-psabi)
+
 # Set the output directories to the root build directory
 set_target_properties(miniMIDI PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}
@@ -87,6 +90,7 @@ target_include_directories(miniMIDI PRIVATE
   ${CMAKE_CURRENT_LIST_DIR}/ledColors
   ${CMAKE_CURRENT_LIST_DIR}/wavetables
   ${CMAKE_CURRENT_LIST_DIR}/midi_const
+  ${CMAKE_CURRENT_LIST_DIR}/fpm/include
   ${CMAKE_CURRENT_LIST_DIR}/rp2040_i2s_example
   ${CMAKE_CURRENT_LIST_DIR}/RP2040-pico_synth_ex
   ${CMAKE_CURRENT_LIST_DIR}/RP2040-pico_synth_ex/sound_i2s

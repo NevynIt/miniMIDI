@@ -21,7 +21,6 @@ void App::Init_c0() {
 
     // User interface modules
     mods.push_back(&uart); //Supports STDIO for debugging if enabled on CMakelists.txt
-    mods.push_back(&display); //Basic implementation using a library -- very slow refresh, and keeps the CPU busy, should be updated with DMA - Scroll is buggy
     mods.push_back(&config); //Dummy module for now
 
     mods.push_back(&dsp);
@@ -45,9 +44,9 @@ void App::Init_c1() {
 
     // parked modules
     mods.push_back(&sd); 
+    mods.push_back(&display); //Updated implementation using DMA
     mods.push_back(&ledStrip); //Implemented correctly with PIO and DMA
     mods.push_back(&encoders); //reimplemented with polling without PIO, a bit slow but it works, includes button support
-
 
     // time critical modules on core 1
     mods.push_back(&joys); //Basic implementation using ADC polling every tick
