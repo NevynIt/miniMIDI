@@ -33,13 +33,9 @@ void mod_USB_Audio::Test()
     static fp_int phaseR = 0;
     static int last_slot = 0;
 
-    static uint64_t duration = 0;
-
     int slot = app.dsp.getWritingSlot();
     if (slot != last_slot)
     {
-        uint64_t t0 = time_us_64();
-
         last_slot = slot;
 
         int noteL = app.encoders.count[0]/4 + 60;
@@ -63,17 +59,7 @@ void mod_USB_Audio::Test()
         // phaseL = app.dsp.GenerateSquareWave(left, midi_frequencies[noteL], ampL, phaseL);
         // phaseR = app.dsp.GenerateSquareWave(right, midi_frequencies[noteR], ampR, phaseR);
 
-        duration = time_us_64() - t0;
     }
-
-    static uint32_t stored_time = 0;
-    uint32_t current_time;
-    current_time = to_ms_since_boot(get_absolute_time());
-    if (current_time - stored_time > 500) {
-        printf("USB Audio Test: %lld us\n", duration);
-        stored_time = current_time;
-    }
-
 }
 
 //--------------------------------------------------------------------+
@@ -186,11 +172,8 @@ bool tud_audio_tx_done_pre_load_cb(uint8_t rhport, uint8_t itf, uint8_t ep_in, u
     sample_ptr right = app.dsp.getReadingBuffer(DSP_TRACK_USB_OUT_RIGHT);
     for (size_t cnt = 0; cnt < AUDIO_BUFFER_SAMPLES * 2;)
     {
-        sample_t l = *left++;
-        sample_t r = *right++;
-
-        buf[cnt++] = (int32_t)l - SAMPLE_ZERO;
-        buf[cnt++] = (int32_t)r - SAMPLE_ZERO;
+        buf[cnt++] = *left++;
+        buf[cnt++] = *right++;
     }
 
     tud_audio_write((uint8_t *)buf, 2 * AUDIO_BUFFER_SAMPLES * BITS_PER_SAMPLE / 8);

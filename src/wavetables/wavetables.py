@@ -23,7 +23,7 @@ def write_header_file(filename, bin_data, array_name, waveforms, sample_rate):
 
         header_file.write(f"#define {array_name}_SAMPLE_RATE {sample_rate}\n")
         for i, (offset, samples, name) in enumerate(waveforms):
-            header_file.write(f"#define {array_name}_{name} ({array_name} + {2 + len(waveforms) + offset})\n")
+            header_file.write(f"#define {array_name}_{name} ({array_name} + {2 + len(waveforms)*2 + offset})\n")
             header_file.write(f"#define {array_name}_{name}_SIZE {samples}\n")
         header_file.write("\n")
 

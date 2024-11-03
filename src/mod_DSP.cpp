@@ -14,9 +14,8 @@
 
 fp_int sin_fixed(fp_int angle)
 {
-    // Normalize angle to the range [0, WT_BASE_sin_SIZE)
     angle = angle % (WT_BASE_sin_SIZE * FP1);
-    return WT_BASE_sin[angle / FP1] * FP1 / SAMPLE_MAX;
+    return WT_BASE_sin[(angle * WT_BASE_sin_SIZE) / FP1] * FP1 / SAMPLE_MAX;
 }
 
 void mod_DSP::Init()
@@ -55,13 +54,13 @@ void mod_DSP::Tick()
 fp_int mod_DSP::GenerateSineWave(sample_ptr buf, fp_int frequency, fp_int amplitude, fp_int phase)
 {
     fp_int increment = (frequency / SAMPLE_RATE); // angle increment per sample
-    fp_int angle = phase & (FP1 - 1);
-    sample_t half_range = SAMPLE_MAX / 2 * amplitude / FP1;
+    fp_int angle = phase % FP1;
+    sample_t range = (amplitude * SAMPLE_MAX) / FP1;
     for (int i = 0; i < AUDIO_BUFFER_SAMPLES; ++i)
     {
         fp_int s = sin_fixed(angle);
-        buf[i] = SAMPLE_ZERO + half_range * s / FP1;
-        angle = (angle + increment) & (FP1 - 1);
+        buf[i] = SAMPLE_ZERO + range * s / FP1;
+        angle = (angle + increment) % FP1;
     }
     return angle;
 }
@@ -71,8 +70,8 @@ fp_int mod_DSP::GenerateSquareWave(sample_ptr buf, fp_int frequency, fp_int ampl
 {
     int period = (FP1 * SAMPLE_RATE / frequency); // period in samples
     int position = (phase * SAMPLE_RATE / frequency) % period;
-    sample_t up = SAMPLE_ZERO + amplitude * SAMPLE_MAX / 2 / FP1;
-    sample_t down = SAMPLE_ZERO - amplitude * SAMPLE_MAX / 2 / FP1;
+    sample_t up = SAMPLE_ZERO + (amplitude * SAMPLE_MAX) / FP1;
+    sample_t down = SAMPLE_ZERO - (amplitude * SAMPLE_MAX) / FP1;
     for (int i = 0; i < AUDIO_BUFFER_SAMPLES; ++i)
     {
         buf[i] = (position < period / 2) ? up : down;
@@ -85,11 +84,11 @@ fp_int mod_DSP::GenerateSawtoothWave(sample_ptr buf, fp_int frequency, fp_int am
 {
     int period = (FP1 * SAMPLE_RATE / frequency); // period in samples
     int position = (phase * SAMPLE_RATE / frequency) % period;
-    sample_t down = SAMPLE_ZERO - amplitude * SAMPLE_MAX / 2 / FP1;
+    sample_t down = SAMPLE_ZERO - (amplitude * SAMPLE_MAX) / FP1;
     for (int i = 0; i < AUDIO_BUFFER_SAMPLES; ++i)
     {
         int pos = (position + i) % period;
-        buf[i] = down + position * amplitude * SAMPLE_MAX / period / FP1;
+        buf[i] = down + position * (amplitude * 2 * SAMPLE_MAX) / period / FP1;
     }
     return FP1 * position / period;
 }
@@ -98,13 +97,13 @@ fp_int mod_DSP::GenerateTriangleWave(sample_ptr buf, fp_int frequency, fp_int am
 {
     int period = (FP1 * SAMPLE_RATE / frequency); // period in samples
     int position = (phase * SAMPLE_RATE / frequency) % period;
-    sample_t up = SAMPLE_ZERO + amplitude * SAMPLE_MAX / 2 / FP1;
-    sample_t down = SAMPLE_ZERO - amplitude * SAMPLE_MAX / 2 / FP1;
+    sample_t up = SAMPLE_ZERO + (amplitude * SAMPLE_MAX) / FP1;
+    sample_t down = SAMPLE_ZERO - (amplitude * SAMPLE_MAX) / FP1;
     for (int i = 0; i < AUDIO_BUFFER_SAMPLES; ++i)
     {
         buf[i] = (position < period / 2)
-                     ? down + position * amplitude * SAMPLE_MAX / period / 2 / FP1
-                     : up - (position - period / 2) * amplitude * SAMPLE_MAX / period / 2 / FP1;
+                     ? down + position * (amplitude * SAMPLE_MAX) / period / FP1
+                     : up - (position - period / 2) * (amplitude * SAMPLE_MAX) / period / FP1;
         position = (position + 1) % period;
     }
     return FP1 * position / period;
@@ -112,8 +111,8 @@ fp_int mod_DSP::GenerateTriangleWave(sample_ptr buf, fp_int frequency, fp_int am
 
 void mod_DSP::GenerateNoise(sample_ptr buf, fp_int amplitude)
 {
-    sample_t range = amplitude * SAMPLE_MAX / FP1;
-    sample_t down = SAMPLE_ZERO - amplitude * SAMPLE_MAX / 2 / FP1;
+    sample_t range = (amplitude * 2 * SAMPLE_MAX) / FP1;
+    sample_t down = SAMPLE_ZERO - (amplitude * SAMPLE_MAX) / FP1;
 
     for (int i = 0; i < AUDIO_BUFFER_SAMPLES; ++i)
     {
@@ -133,13 +132,13 @@ void mod_DSP::ScaleBuffer(sample_ptr buf, sample_ptr gain)
 {
     for (int i = 0; i < AUDIO_BUFFER_SAMPLES; ++i)
     {
-        buf[i] = (((fp_int)gain[i]) - SAMPLE_ZERO) * FP1 / (SAMPLE_MAX / 2) * (((fp_int)buf[i]) - SAMPLE_ZERO) / FP1 + SAMPLE_ZERO;
+        buf[i] = ((((fp_int)gain[i]) - SAMPLE_ZERO) * FP1) / SAMPLE_MAX * (((fp_int)buf[i]) - SAMPLE_ZERO) / FP1 + SAMPLE_ZERO;
     }
 }
 
 void mod_DSP::ClipBuffer(sample_ptr buf, fp_int threshold)
 {
-    sample_t thresh = threshold * SAMPLE_MAX / FP1 / 2;
+    sample_t thresh = (threshold * SAMPLE_MAX) / FP1;
     for (int i = 0; i < AUDIO_BUFFER_SAMPLES; ++i)
     {
         if (buf[i] > SAMPLE_ZERO + thresh)
