@@ -9,6 +9,7 @@ class mod_Joys : public Module {
 public:
     void Init() override;
     void Tick() override;
+    void Test() override;
 
     inline uint16_t GetX() const { return xValue; }
     inline uint16_t GetY() const { return yValue; }

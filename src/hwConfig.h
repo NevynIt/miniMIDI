@@ -82,6 +82,7 @@ typedef SAMPLE_TYPE sample_t;
 #define SAMPLE_MAX INT16_MAX
 #define SAMPLE_ZERO 0
 typedef sample_t* sample_ptr;
+typedef const sample_t* sample_cptr;
 #define AUDIO_BUFFER_MS 1 //1ms to be consistent with the USB audio buffer
 #define AUDIO_BUFFER_SAMPLES (SAMPLE_RATE / 1000 * AUDIO_BUFFER_MS)
 #define AUDIO_BUFFER_SIZE AUDIO_BUFFER_SAMPLES * (BITS_PER_SAMPLE / 8)
@@ -90,7 +91,7 @@ typedef sample_t* sample_ptr;
 
 // Fixed-point math
 typedef int32_t fp_int;
-#define FIXED_POINT_SHIFT 14
+#define FIXED_POINT_SHIFT 15
 #define FIXED_POINT_ONE (1 << FIXED_POINT_SHIFT)
 #define FP1 FIXED_POINT_ONE
 

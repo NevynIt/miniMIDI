@@ -59,6 +59,20 @@ void mod_Encoders::Tick()
     // app.display.draw_text(0,16,1,buffer);
 }
 
+void mod_Encoders::Test()
+{
+    INTERVALCHECK(1000)
+
+    for (int i = 0; i < NUM_ENCODERS; i++)
+    {
+        count[i] += (rand() % 3 + 1) * 4 * (rand() % 2 ? 1 : -1);
+        if (count[i] > 60)
+            count[i] = 60;
+        if (count[i] < -60)
+            count[i] = -60;
+    }
+}
+
 // Expected initial signal levels
 #define QUADRATURE_INIT (~(~0 << (NUM_ENCODERS * 2)))
 

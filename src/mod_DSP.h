@@ -12,6 +12,7 @@ public:
     void Init() override;
     void Tick() override;
 
+    static fp_int GenerateWave1Hz(sample_ptr buf, sample_cptr waveform, uint16_t size, fp_int frequency, fp_int amplitude, fp_int phase);
     static fp_int GenerateSineWave(sample_ptr buf, fp_int frequency = 440 * FP1, fp_int amplitude = FP1, fp_int phase = 0);
     static fp_int GenerateSquareWave(sample_ptr buf, fp_int frequency = 440 * FP1, fp_int amplitude = FP1, fp_int phase = 0);
     static fp_int GenerateTriangleWave(sample_ptr buf, fp_int frequency = 440 * FP1, fp_int amplitude = FP1, fp_int phase = 0);
@@ -23,31 +24,30 @@ public:
     static void AmplifyBuffer(sample_ptr buf, fp_int gain);
     static void ClearBuffer(sample_ptr buf);
 
-
     // waveform structure is:
     // 1 sample for the number of waveforms
     // 1 sample representing the original sampling frequency
     // 2 samples with offset and lenght for each waveform
     // the data samples
-    static inline sample_ptr WT_GetWaveform(sample_ptr wavetable, uint8_t waveform) {
+    static inline sample_cptr WT_GetWaveform(sample_cptr wavetable, uint8_t waveform) {
         return wavetable + 2 + (waveform * 2);
     }
-    static inline uint16_t WT_GetWaveformOffset(sample_ptr wavetable, uint8_t waveform) {
+    static inline uint16_t WT_GetWaveformOffset(sample_cptr wavetable, uint8_t waveform) {
         return wavetable[2 + (waveform * 2)];
     }
-    static inline uint16_t WT_GetSampleRate(sample_ptr wavetable) {
+    static inline uint16_t WT_GetSampleRate(sample_cptr wavetable) {
         return wavetable[1];
     }
-    static inline uint16_t WT_GetSize(sample_ptr wavetable) {
+    static inline uint16_t WT_GetSize(sample_cptr wavetable) {
         return wavetable[0];
     }
-    static inline uint16_t WT_GetWaveformSize(sample_ptr wavetable, uint8_t waveform) {
+    static inline uint16_t WT_GetWaveformSize(sample_cptr wavetable, uint8_t waveform) {
         return wavetable[2 + (waveform * 2) + 1];
     }
-    static inline sample_t getSample(sample_ptr wavetable, uint16_t waveform, fp_int phase) {
+    static inline sample_t getSample(sample_cptr wavetable, uint16_t waveform, fp_int phase) {
         return WT_GetWaveform(wavetable, waveform)[(uint16_t)(phase * WT_GetWaveformSize(wavetable, waveform))];
     }
-    static inline sample_t getSampleInterp(sample_ptr wavetable, uint16_t waveform, fp_int phase) {
+    static inline sample_t getSampleInterp(sample_cptr wavetable, uint16_t waveform, fp_int phase) {
         uint16_t size = WT_GetWaveformSize(wavetable, waveform);
         int index = phase * size;
         uint16_t index_int = static_cast<uint16_t>(index);
@@ -58,7 +58,7 @@ public:
 
         return static_cast<sample_t>(sample1 * (1.0f - frac) + sample2 * frac);
     }
-    static fp_int GenerateWave(sample_ptr buf, sample_ptr wavetable, uint8_t waveform, fp_int frequency_ratio = FP1, fp_int phase = 0, bool interp = false);
+    static fp_int GenerateWave(sample_ptr buf, sample_cptr wavetable, uint8_t waveform, fp_int frequency_ratio = FP1, fp_int phase = 0, bool interp = false);
 
     uint8_t getWritingSlot() const { return (currentSlot + 1) % AUDIO_BUFFER_SLOTS; }
     uint8_t getReadingSlot() const { return (currentSlot - 1 + AUDIO_BUFFER_SLOTS) % AUDIO_BUFFER_SLOTS; }

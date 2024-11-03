@@ -16,6 +16,7 @@ class mod_Display : public Module {
 public:
     void Init() override;
     void Tick() override;
+    void Test() override;
 
     void clear();
     void show();

@@ -12,26 +12,10 @@
 #define M_PI 3.14159265358979323846
 #endif
 
-fp_int sin_fixed(fp_int angle)
-{
-    angle = angle % (WT_BASE_sin_SIZE * FP1);
-    return WT_BASE_sin[(angle * WT_BASE_sin_SIZE) / FP1] * FP1 / SAMPLE_MAX;
-}
-
 void mod_DSP::Init()
 {
     // Initialize the DSP module
     time_reference = time_us_32();
-
-    // fill the tracks with some data
-    for (int t = 0; t < AUDIO_BUFFER_TRACKS; ++t)
-    {
-        fp_int phase = 0;
-        for (int s = 0; s < AUDIO_BUFFER_SLOTS; ++s)
-        {
-            phase = GenerateSineWave(buffers[t][s], (t+1) * 110 * FP1, FP1, phase);
-        }
-    }
 
     app.display.println("DSP initialized");
     printf("DSP initialized\n");
@@ -51,21 +35,28 @@ void mod_DSP::Tick()
 
 // Generators do not handle clipping correctly, they rely just on int overflow
 
-fp_int mod_DSP::GenerateSineWave(sample_ptr buf, fp_int frequency, fp_int amplitude, fp_int phase)
+fp_int mod_DSP::GenerateWave1Hz(sample_ptr buf, sample_cptr waveform, uint16_t size, fp_int frequency, fp_int amplitude, fp_int phase)
 {
     fp_int increment = (frequency / SAMPLE_RATE); // angle increment per sample
     fp_int angle = phase % FP1;
-    sample_t range = (amplitude * SAMPLE_MAX) / FP1;
+    int32_t range = (amplitude * SAMPLE_MAX) / FP1; // go bigger to avoid clipping
+
     for (int i = 0; i < AUDIO_BUFFER_SAMPLES; ++i)
     {
-        fp_int s = sin_fixed(angle);
-        buf[i] = SAMPLE_ZERO + range * s / FP1;
-        angle = (angle + increment) % FP1;
+        buf[i] = SAMPLE_ZERO + range * waveform[(angle * size) / FP1] / SAMPLE_MAX;
+        angle += increment;
+        if (angle >= FP1) {
+            angle -= FP1;
+        }
     }
     return angle;
 }
 
-// __attribute__((optimize("O0")))
+fp_int mod_DSP::GenerateSineWave(sample_ptr buf, fp_int frequency, fp_int amplitude, fp_int phase)
+{
+    return GenerateWave1Hz(buf, WT_BASE_sin, WT_BASE_sin_SIZE, frequency, amplitude, phase);
+}
+
 fp_int mod_DSP::GenerateSquareWave(sample_ptr buf, fp_int frequency, fp_int amplitude, fp_int phase)
 {
     int period = (FP1 * SAMPLE_RATE / frequency); // period in samples
@@ -161,7 +152,7 @@ void mod_DSP::ClearBuffer(sample_ptr buf)
     memset(buf, SAMPLE_ZERO, AUDIO_BUFFER_SAMPLES * sizeof(sample_t));
 }
 
-fp_int mod_DSP::GenerateWave(sample_ptr buf, sample_ptr wavetable, uint8_t waveform, fp_int frequency_ratio, fp_int phase, bool interp)
+fp_int mod_DSP::GenerateWave(sample_ptr buf, sample_cptr wavetable, uint8_t waveform, fp_int frequency_ratio, fp_int phase, bool interp)
 {
     uint16_t size = WT_GetWaveformSize(wavetable, waveform);
 
@@ -169,7 +160,9 @@ fp_int mod_DSP::GenerateWave(sample_ptr buf, sample_ptr wavetable, uint8_t wavef
     uint32_t index = (uint32_t)(phase * size);
     uint32_t increment = ((uint64_t)frequency_ratio * size) / SAMPLE_RATE;
 
-    sample_ptr waveform_data = WT_GetWaveform(wavetable, waveform);
+    sample_cptr waveform_data = WT_GetWaveform(wavetable, waveform);
+
+    uint32_t size_fp1 = size * FP1;
 
     for (int i = 0; i < AUDIO_BUFFER_SAMPLES; ++i) {
         uint16_t index_int = (uint16_t)(index / FP1);
@@ -187,8 +180,8 @@ fp_int mod_DSP::GenerateWave(sample_ptr buf, sample_ptr wavetable, uint8_t wavef
         buf[i] = sample;
 
         index += increment;
-        if (index >= size * FP1) {
-            index -= size * FP1;
+        if (index >= size_fp1) {
+            index -= size_fp1;
         }
     }
 

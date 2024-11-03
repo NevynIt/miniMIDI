@@ -23,3 +23,8 @@ void mod_Joys::Tick() {
     // Read button
     button = !gpio_get(GPIO_Joys_Btn);
 }
+
+void mod_Joys::Test()
+{
+    
+}

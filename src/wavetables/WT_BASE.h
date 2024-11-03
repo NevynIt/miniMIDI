@@ -1,7 +1,7 @@
 #ifndef WT_BASE_H
 #define WT_BASE_H
 
-#include <stdint.h>
+#include "hwConfig.h"
 
 #define WT_BASE_SAMPLE_RATE 1024
 #define WT_BASE_sin (WT_BASE + 12)
@@ -15,5 +15,5 @@
 #define WT_BASE_noise (WT_BASE + 4108)
 #define WT_BASE_noise_SIZE 1024
 
-extern const int16_t WT_BASE[5132];
+extern const sample_t WT_BASE[5132];
 #endif // WT_BASE_H

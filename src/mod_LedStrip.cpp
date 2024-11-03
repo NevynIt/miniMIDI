@@ -37,6 +37,8 @@ void mod_LedStrip::Tick() {
 }
 
 void mod_LedStrip::Test() {
+    INTERVALCHECK(100)
+
     static uint8_t mode = 0;
 
     uint8_t btn = app.encoders.buttons;

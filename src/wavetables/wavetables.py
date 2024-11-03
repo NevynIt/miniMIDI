@@ -19,7 +19,7 @@ def write_header_file(filename, bin_data, array_name, waveforms, sample_rate):
     with open(filename + ".h", 'w') as header_file:
         header_file.write(f"#ifndef {array_name}_H\n")
         header_file.write(f"#define {array_name}_H\n\n")
-        header_file.write("#include <stdint.h>\n\n")
+        header_file.write("#include \"hwConfig.h\"\n\n")
 
         header_file.write(f"#define {array_name}_SAMPLE_RATE {sample_rate}\n")
         for i, (offset, samples, name) in enumerate(waveforms):
@@ -27,13 +27,13 @@ def write_header_file(filename, bin_data, array_name, waveforms, sample_rate):
             header_file.write(f"#define {array_name}_{name}_SIZE {samples}\n")
         header_file.write("\n")
 
-        header_file.write(f"extern const int16_t {array_name}[{int(len(bin_data)/2)}];\n")  # Use 'int16_t'
+        header_file.write(f"extern const sample_t {array_name}[{int(len(bin_data)/2)}];\n")  # Use 'int16_t'
         header_file.write(f"#endif // {array_name}_H\n")
 
 def write_cpp_file(filename, bin_data, array_name):
     with open(filename + ".cpp", 'w') as cpp_file:
         cpp_file.write(f'#include "{filename}.h"\n\n')
-        cpp_file.write(f"const int16_t {array_name}[{int(len(bin_data)/2)}] = {{\n")  # Use 'int16_t'
+        cpp_file.write(f"const sample_t {array_name}[{int(len(bin_data)/2)}] = {{\n")  # Use 'int16_t'
         for i in range(0, len(bin_data), 2):
             if i % 32 == 0 and i != 0:
                 cpp_file.write("\n")

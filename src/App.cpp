@@ -1,5 +1,7 @@
 #include "App.h"
 
+//  __attribute__((optimize("O0"))) // function attribute to disable optimization
+
 // Define the static instance of App
 App App::appInstance;
 
@@ -62,11 +64,13 @@ void App::Init_c1() {
 void App::Tick_c0() {
     for (auto& module : modules_c0) {
         module->Tick();
+        module->Test();
     }
 }
 
 void App::Tick_c1() {
     for (auto& module : modules_c1) {
         module->Tick();
+        module->Test();
     }
 }

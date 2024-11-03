@@ -12,6 +12,7 @@ class mod_Encoders : public Module {
 public:
     void Init() override;
     void Tick() override;
+    void Test() override;
 
     // Current quadrature count
     int32_t count[NUM_ENCODERS] = {0};

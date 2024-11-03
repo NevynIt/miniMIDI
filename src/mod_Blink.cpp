@@ -2,6 +2,7 @@
 #include "pico/stdlib.h"
 
 #include "stdio.h"
+#include "App.h"
 
 void mod_Blink::Init() {
     gpio_init(GPIO_Board_Led);
@@ -14,10 +15,12 @@ void mod_Blink::Init() {
 }
 
 void mod_Blink::Tick() {
-    uint32_t currentTime = to_ms_since_boot(get_absolute_time());
-    if (currentTime - lastTickTime >= BLINK_MS) {
-        ledState = !ledState;
-        gpio_put(GPIO_Board_Led, ledState);
-        lastTickTime = currentTime;
-    }
+    INTERVALCHECK(BLINK_MS)
+    Toggle();
+}
+
+void mod_Blink::Toggle()
+{
+    ledState = !ledState;
+    gpio_put(GPIO_Board_Led, ledState);
 }

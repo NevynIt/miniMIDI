@@ -10,6 +10,8 @@ public:
     void Init() override;
     void Tick() override;
 
+    void Toggle();
+
 private:
     bool ledState = false;
     uint32_t lastTickTime = 0;
