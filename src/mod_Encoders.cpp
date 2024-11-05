@@ -63,7 +63,7 @@ void mod_Encoders::Test()
 {
     INTERVALCHECK(1000)
 
-    printf("Encoder test\n");
+    // printf("Encoder test\n");
     for (int i = 0; i < NUM_ENCODERS; i++)
     {
         count[i] += (rand() % 3 + 1) * 4 * (rand() % 2 ? 1 : -1);

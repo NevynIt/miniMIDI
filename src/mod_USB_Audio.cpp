@@ -30,21 +30,23 @@ void mod_USB_Audio::Tick()
 
 void mod_USB_Audio::Test()
 {
-    return;
-
     static fp_int phaseL(0);
-    static fp_int phaseR(0);
-    static int last_slot = 0;
+    static fp_int phaseR(1000);
+    static sample_ptr last_left_buffer = nullptr;
 
-    int slot = app.dsp.getWritingSlot();
-    if (slot != last_slot)
+    auto left = getOutBuffer(0);
+
+    if (last_left_buffer != left)
     {
-        last_slot = slot;
+        // int noteL = app.encoders.count[0]/4 + 60;
+        // fp_int ampL = fp_int(app.encoders.count[1]/4 + 50) / 100;
+        // int noteR = app.encoders.count[2]/4 + 60;
+        // fp_int ampR = fp_int(app.encoders.count[3]/4 + 50) / 100;
 
-        int noteL = app.encoders.count[0]/4 + 60;
-        fp_int ampL = fp_int(app.encoders.count[1]/4 + 50) / 100;
-        int noteR = app.encoders.count[2]/4 + 60;
-        fp_int ampR = fp_int(app.encoders.count[3]/4 + 50) / 100;
+        int noteL = 57;
+        fp_int ampL = fp_int(0.75f);
+        int noteR = 69;
+        fp_int ampR = ampL;
 
         if (noteL < 0) noteL = 0;
         if (noteL > 127) noteL = 127;
@@ -55,11 +57,41 @@ void mod_USB_Audio::Test()
         if (ampR < 0) ampR = 0;
         if (ampR > 1) ampR = 1;
 
-        sample_ptr left = app.dsp.getWritingBuffer(DSP_TRACK_USB_OUT_LEFT);
-        sample_ptr right = app.dsp.getWritingBuffer(DSP_TRACK_USB_OUT_RIGHT);
-        phaseL = app.dsp.GenerateWave(left, WT_BASE, 0, midi_frequencies[noteL], ampL, phaseL);
-        phaseR = app.dsp.GenerateWave(right, WT_BASE, 0, midi_frequencies[noteR], ampR, phaseR);
+        auto right = getOutBuffer(1);
+        for (int i = 0; i < AUDIO_BUFFER_SAMPLES; ++i)
+        {
+            left[i] = (sample_t)phaseL;
+            right[i] = (sample_t)phaseR;
+        }
+        phaseL = phaseL + 1;
+        phaseR = phaseR + 1;
+
+        if (phaseL > SAMPLE_MAX)
+            phaseL = -SAMPLE_MAX;
+        if (phaseR > SAMPLE_MAX)
+            phaseR = -SAMPLE_MAX;
+
+        // phaseL = app.dsp.GenerateSquareWave(left, midi_frequencies[noteL], ampL, phaseL);
+        // phaseR = app.dsp.GenerateSquareWave(right, midi_frequencies[noteR], ampR, phaseR);
+        // phaseL = app.dsp.GenerateSineWave(left, midi_frequencies[noteL], ampL, phaseL);
+        // phaseR = app.dsp.GenerateSineWave(right, midi_frequencies[noteR], ampR, phaseR);
+        // phaseL = app.dsp.GenerateWave(left, WT_BASE, 0, midi_frequencies[noteL], ampL, phaseL);
+        // phaseR = app.dsp.GenerateWave(right, WT_BASE, 0, midi_frequencies[noteR], ampR, phaseR);
+
+        last_left_buffer = left;
     }
+}
+
+inline sample_ptr mod_USB_Audio::getOutBuffer(uint8_t channel) const
+{
+    auto slot = app.dsp.getSlotRelative(2, app.usb.SOF_sync_us);
+    return app.dsp.buffers[track_out[channel]][slot];
+}
+
+inline sample_ptr mod_USB_Audio::getInBuffer(uint8_t channel) const
+{
+    auto slot = app.dsp.getSlotRelative(-1, app.usb.SOF_sync_us);
+    return app.dsp.buffers[track_in[channel]][slot];
 }
 
 //--------------------------------------------------------------------+
@@ -164,12 +196,12 @@ bool tud_audio_tx_done_pre_load_cb(uint8_t rhport, uint8_t itf, uint8_t ep_in, u
     (void)itf;
     (void)ep_in;
     (void)cur_alt_setting;
-    auto buf = app.usbAudio.buffer_out;
 
     // printf("tud_audio_tx_done_pre_load_cb\r\n");
 
-    sample_ptr left = app.dsp.getReadingBuffer(DSP_TRACK_USB_OUT_LEFT);
-    sample_ptr right = app.dsp.getReadingBuffer(DSP_TRACK_USB_OUT_RIGHT);
+    auto buf = app.usbAudio.buffer_out;
+    sample_ptr left = app.usbAudio.getOutBuffer(0);
+    sample_ptr right = app.usbAudio.getOutBuffer(1);
     for (size_t cnt = 0; cnt < AUDIO_BUFFER_SAMPLES * 2;)
     {
         buf[cnt++] = *left++;
@@ -214,11 +246,10 @@ bool tud_audio_rx_done_pre_read_cb(uint8_t rhport, uint16_t n_bytes_received, ui
     printf("tud_audio_rx_done_pre_read_cb\r\n");
 
     auto buf = app.usbAudio.buffer_in;
-
-    sample_ptr left = app.dsp.getWritingBuffer(DSP_TRACK_USB_IN_LEFT);
-    sample_ptr right = app.dsp.getWritingBuffer(DSP_TRACK_USB_IN_RIGHT);
     uint16_t num_read = tud_audio_read(buf, 2 * AUDIO_BUFFER_SAMPLES * BITS_PER_SAMPLE / 8);
 
+    sample_ptr left = app.usbAudio.getInBuffer(0);
+    sample_ptr right = app.usbAudio.getInBuffer(1);
     for (size_t cnt = 0; cnt < AUDIO_BUFFER_SAMPLES * 2;)
     {
         *left++ = buf[cnt++];

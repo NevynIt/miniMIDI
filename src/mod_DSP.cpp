@@ -17,9 +17,6 @@ using namespace fpm;
 
 void mod_DSP::Init()
 {
-    // Initialize the DSP module
-    time_reference = time_us_32();
-
     app.display.println("DSP initialized");
     printf("DSP initialized\n");
 }
@@ -27,13 +24,6 @@ void mod_DSP::Init()
 void mod_DSP::Tick()
 {
     // Perform any periodic DSP tasks if needed
-    auto now = time_us_32();
-    if (now - time_reference > AUDIO_BUFFER_MS * 1000)
-    {
-        // Perform DSP tasks
-        time_reference += AUDIO_BUFFER_MS * 1000;
-        currentSlot = (currentSlot + 1) % AUDIO_BUFFER_SLOTS;
-    }
 }
 
 /*
@@ -118,11 +108,10 @@ fp_int mod_DSP::GenerateWave1Hz(sample_ptr buf, sample_cptr waveform, uint16_t s
 {
     fp_int increment = frequency / SAMPLE_RATE; // angle increment per sample
     fp_int angle = phase;
-    fp_int range = amplitude * SAMPLE_MAX;
 
     for (int i = 0; i < AUDIO_BUFFER_SAMPLES; ++i)
     {
-        buf[i] = (sample_t)(range * waveform[(int)(angle * size)] / SAMPLE_MAX + SAMPLE_ZERO);
+        buf[i] = (sample_t)(amplitude * waveform[(int)(angle * size)] + SAMPLE_ZERO);
         angle = mod1(angle + increment);
     }
     return angle;
@@ -132,14 +121,13 @@ fp_int mod_DSP::GenerateWave1HzInterp(sample_ptr buf, sample_cptr waveform, uint
 {
     fp_int increment = frequency / SAMPLE_RATE; // angle increment per sample
     fp_int angle = phase;
-    fp_int range = amplitude * SAMPLE_MAX;
 
     for (int i = 0; i < AUDIO_BUFFER_SAMPLES; ++i)
     {
         int index = (int)(angle * size);
         int next_index = (index + 1) % size;
         fp_int frac = mod1(angle * size);
-        buf[i] = (sample_t)(range * ((1 - frac) * waveform[index] + frac * waveform[next_index]) / SAMPLE_MAX + SAMPLE_ZERO);
+        buf[i] = (sample_t)(amplitude * ((1 - frac) * waveform[index] + frac * waveform[next_index]) + SAMPLE_ZERO);
         angle = mod1(angle + increment);
     }
     return angle;
@@ -154,11 +142,10 @@ fp_int mod_DSP::GenerateWave(sample_ptr buf, sample_cptr wavetable, uint8_t wave
 
     fp_int increment = frequency_ratio * sample_rate / SAMPLE_RATE / size; // source increment per destination sample
     fp_int angle = phase;
-    fp_int range = amplitude * SAMPLE_MAX;
 
     for (int i = 0; i < AUDIO_BUFFER_SAMPLES; ++i)
     {
-        buf[i] = (sample_t)(range * waveform[(int)(angle * size)] / SAMPLE_MAX + SAMPLE_ZERO);
+        buf[i] = (sample_t)((amplitude * waveform[(int)(angle * size)]) + SAMPLE_ZERO);
         angle = mod1(angle + increment);
     }
     return mod1(angle/size);
@@ -174,14 +161,13 @@ fp_int mod_DSP::GenerateWaveInterp(sample_ptr buf, sample_cptr wavetable, uint8_
 
     fp_int increment = frequency_ratio * sample_rate / SAMPLE_RATE / size; // source increment per destination sample
     fp_int angle = phase;
-    fp_int range = amplitude * SAMPLE_MAX;
 
     for (int i = 0; i < AUDIO_BUFFER_SAMPLES; ++i)
     {
         int index = (int)(angle * size);
         int next_index = (index + 1) % size;
         fp_int frac = mod1(angle * size);
-        buf[i] = (sample_t)(range * ((1 - frac) * waveform[index] + frac * waveform[next_index]) / SAMPLE_MAX + SAMPLE_ZERO);
+        buf[i] = (sample_t)(amplitude * ((1 - frac) * waveform[index] + frac * waveform[next_index]) + SAMPLE_ZERO);
         angle = mod1(angle + increment);
     }
     return mod1(angle / size);
@@ -193,7 +179,7 @@ fp_int mod_DSP::GenerateSineWave(sample_ptr buf, const fp_int frequency, const f
 
     fp_int increment = frequency / SAMPLE_RATE; // angle increment per sample
     fp_int angle = phase;
-    const fp_int range = amplitude * SAMPLE_MAX; // go bigger to avoid clipping
+    const fp_int range = amplitude * SAMPLE_MAX;
 
     for (int i = 0; i < AUDIO_BUFFER_SAMPLES; ++i)
     {

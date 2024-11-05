@@ -34,7 +34,7 @@ public:
     // 2 samples with offset and lenght for each waveform
     // the data samples
     static inline sample_cptr WT_GetWaveform(sample_cptr wavetable, uint8_t waveform) {
-        return wavetable + 2 + (waveform * 2);
+        return wavetable + WT_GetWaveformOffset(wavetable, waveform);
     }
     static inline uint16_t WT_GetWaveformOffset(sample_cptr wavetable, uint8_t waveform) {
         return wavetable[2 + (waveform * 2)];
@@ -51,30 +51,20 @@ public:
     static inline sample_t getSample(sample_cptr wavetable, uint16_t waveform, const fp_int phase) {
         return WT_GetWaveform(wavetable, waveform)[(uint16_t)(phase * WT_GetWaveformSize(wavetable, waveform))];
     }
-    static inline sample_t getSampleInterp(sample_cptr wavetable, uint16_t waveform, const fp_int phase) {
-        uint16_t size = WT_GetWaveformSize(wavetable, waveform);
-        int index = (int)(phase * size);
-        uint16_t index_int = static_cast<uint16_t>(index);
-        int frac = index - index_int;
 
-        sample_t sample1 = WT_GetWaveform(wavetable, waveform)[index_int];
-        sample_t sample2 = WT_GetWaveform(wavetable, waveform)[(index_int + 1) % size];
-
-        return static_cast<sample_t>(sample1 * (1.0f - frac) + sample2 * frac);
+    constexpr inline uint8_t getSlot(int delta = 0, uint64_t reference = 0) const {
+        return (reference / AUDIO_BUFFER_US + delta) & AUDIO_BUFFER_SLOTS_MASK;
     }
 
-    uint8_t getWritingSlot() const { return (currentSlot + 1) % AUDIO_BUFFER_SLOTS; }
-    uint8_t getReadingSlot() const { return (currentSlot - 1 + AUDIO_BUFFER_SLOTS) % AUDIO_BUFFER_SLOTS; }
-    uint8_t getDSPSlot() const { return currentSlot; }
+    inline uint8_t getSlotRelative(int delta = 0, int32_t delta_time = 0) const {
+        return getSlot(delta, time_us_64() + delta_time);
+    }
 
-    sample_ptr getWritingBuffer(uint8_t track) { return buffers[track][getWritingSlot()]; }
-    sample_ptr getReadingBuffer(uint8_t track) { return buffers[track][getReadingSlot()]; }
-    sample_ptr getDSPBuffer(uint8_t track) { return buffers[track][getDSPSlot()]; }
+    sample_ptr getBuffer(uint8_t track, int delta = 0, uint64_t reference = 0) {
+        return buffers[track][getSlot(delta, reference)];
+    }
 
     sample_t buffers[AUDIO_BUFFER_TRACKS][AUDIO_BUFFER_SLOTS][AUDIO_BUFFER_SAMPLES] = {0};
-private:
-    uint8_t currentSlot = 0;
-    uint32_t time_reference = 0;
 };
 
 #endif // MOD_DSP_H

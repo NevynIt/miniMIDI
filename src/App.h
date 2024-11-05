@@ -37,22 +37,22 @@ public:
     void Tick_c0();
     void Tick_c1();
 
-    mod_UART uart;
+    mod_I2S_Audio audio;
+    mod_Blink blink;
     mod_config config;
     mod_Display display;
-    mod_LedStrip ledStrip;
-    mod_USB usb;
-    mod_USB_UART usbUart;
-    mod_USB_MIDI usbMidi;
-    mod_USB_Audio usbAudio;
-    mod_SD sd;
+    mod_DSP dsp;
     mod_Encoders encoders;
     mod_Joys joys;
+    mod_LedStrip ledStrip;
+    mod_SD sd;
     mod_Sequencer sequencer;
-    mod_I2S_Audio audio;
-    mod_DSP dsp;
     mod_Synth synth;
-    mod_Blink blink;
+    mod_UART uart;
+    mod_USB usb;
+    mod_USB_Audio usbAudio;
+    mod_USB_MIDI usbMidi;
+    mod_USB_UART usbUart;
 
 private:
     App() = default; // Private constructor for singleton pattern

@@ -29,7 +29,6 @@ void App::Init_c0() {
     mods.push_back(&usb);
     mods.push_back(&usbUart); //Echoes data back to the sender
     mods.push_back(&usbMidi); //Empty module for now
-    mods.push_back(&usbAudio); //Empty module for now
     
     // mods.push_back(&sequencer); //Basic implementation, not very useful for now
 
@@ -48,6 +47,7 @@ void App::Init_c1() {
     mods.push_back(&ledStrip); //Implemented correctly with PIO and DMA
     mods.push_back(&encoders); //reimplemented with polling without PIO, a bit slow but it works, includes button support
 
+    mods.push_back(&usbAudio);
     // time critical modules on core 1
     mods.push_back(&joys); //Basic implementation using ADC polling every tick
 

@@ -85,9 +85,11 @@ typedef SAMPLE_TYPE sample_t;
 typedef sample_t* sample_ptr;
 typedef const sample_t* sample_cptr;
 #define AUDIO_BUFFER_MS 1 //1ms to be consistent with the USB audio buffer
+#define AUDIO_BUFFER_US (AUDIO_BUFFER_MS * 1000)
 #define AUDIO_BUFFER_SAMPLES (SAMPLE_RATE / 1000 * AUDIO_BUFFER_MS)
 #define AUDIO_BUFFER_SIZE AUDIO_BUFFER_SAMPLES * (BITS_PER_SAMPLE / 8)
-#define AUDIO_BUFFER_SLOTS 8
+#define AUDIO_BUFFER_SLOTS 32
+#define AUDIO_BUFFER_SLOTS_MASK (AUDIO_BUFFER_SLOTS - 1)
 #define AUDIO_BUFFER_TRACKS 10
 
 // Fixed-point math

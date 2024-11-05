@@ -2,9 +2,14 @@
 #include "stdio.h"
 #include "App.h"
 
+// TODO: get the slot from DSP when the distance between SOFs is > 1.5ms, otherwise, just increment the slot
+
+extern volatile uint32_t e15_last_sof;
+
 void mod_USB::Init()
 {
   tusb_init();
+  tud_sof_cb_enable(true);
 
   app.display.println("USB initialized");
   printf("USB initialized\n");
@@ -13,6 +18,54 @@ void mod_USB::Init()
 void mod_USB::Tick()
 {
   tud_task(); // TinyUSB device task
+
+  static uint32_t next_sync = 0; // target time for next sync, 20 us after the expected SOF
+  uint32_t now = time_us_32();
+
+  if (next_sync == 0)
+  {
+    // First sync
+    SOF_sync_us = e15_last_sof % 1000 - 1000;
+    next_sync = now - (now % 1000) + SOF_sync_us + 1000 + 20;
+  }
+  else if (now < next_sync)
+  {
+    // Not time to sync yet
+    return;
+  }
+  else
+  {
+    int32_t new_sync = e15_last_sof % 1000 - 1000;
+    auto sync_delta = abs((int)new_sync - SOF_sync_us);
+    if (sync_delta > 100 && sync_delta < 900)
+    {
+      // Sync
+      // auto slot_old = app.dsp.getSlotRelative(0, app.usb.SOF_sync_us);
+      // auto slot_new = app.dsp.getSlotRelative(0, new_sync);
+      // printf("sync delta: %d, slot old %d new %d\n", sync_delta, slot_old, slot_new);
+
+      SOF_sync_us = new_sync;
+      next_sync = now - (now % 1000) + SOF_sync_us + 1000 + 20;
+      count_sync_errors++;
+    }
+    else
+    {
+      // Just increment the slot
+      next_sync += 1000;
+    }
+  }
+}
+
+void mod_USB::Test()
+{
+  // INTERVALCHECK(1000)
+
+  // printf("SOF Sync errors %d\n", count_sync_errors);
+}
+
+inline uint32_t mod_USB::getLastSOF_us() const
+{
+  return e15_last_sof;
 }
 
 /* A combination of interfaces must have a unique product id, since PC will save device driver after the first plug.

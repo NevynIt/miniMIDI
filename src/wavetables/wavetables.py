@@ -10,7 +10,7 @@ def write_binary_file(bin_filename, audio_data, sample_rate, waveforms):
         
         # Write the offset and length for each waveform
         for offset, samples, name in waveforms:
-            bin_file.write(struct.pack('<hh', offset, samples))  # Use 'hh' instead of 'HH'
+            bin_file.write(struct.pack('<hh', offset + 1 + len(waveforms), samples))  # Use 'hh' instead of 'HH'
         
         # Write the audio data
         bin_file.write(audio_data.tobytes())
