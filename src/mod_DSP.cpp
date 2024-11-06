@@ -40,7 +40,7 @@ void mod_DSP::Test()
 {
     bool sdtest = false; //Set to true to write test files to SD card
     // sdtest = app.sd.mounted; //Uncomment to write test files to SD card if present
-    static bool test_done = false;
+    static bool test_done = true;
     if (test_done)
         return;
 

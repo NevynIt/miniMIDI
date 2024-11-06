@@ -23,7 +23,6 @@ void App::Init_c0() {
     mods.push_back(&uart); //Supports STDIO for debugging if enabled on CMakelists.txt
     mods.push_back(&config); //Dummy module for now
 
-    mods.push_back(&dsp);
     mods.push_back(&sd);
     
     // USB modules
@@ -44,11 +43,12 @@ void App::Init_c1() {
 
     // parked modules
     mods.push_back(&display); //Updated implementation using DMA
+
+    // time critical modules on core 1
+    mods.push_back(&usbAudio);
     mods.push_back(&ledStrip); //Implemented correctly with PIO and DMA
     mods.push_back(&encoders); //reimplemented with polling without PIO, a bit slow but it works, includes button support
-
-    mods.push_back(&usbAudio);
-    // time critical modules on core 1
+    mods.push_back(&dsp);
     mods.push_back(&joys); //Basic implementation using ADC polling every tick
 
     // Audio modules

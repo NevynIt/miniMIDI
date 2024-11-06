@@ -95,7 +95,7 @@ void mod_Display::Init()
     gpio_pull_up(GPIO_Display_SCL);
 
     // Initialize the display update commands
-    for (size_t i = 0; i < sizeof(refresh_Cmds16); i++)
+    for (size_t i = 0; i < sizeof(refresh_Cmds16)/sizeof(refresh_Cmds16[0]); i++)
     {
         buffer[i] = refresh_Cmds16[i];
     }
