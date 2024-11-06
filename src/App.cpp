@@ -24,6 +24,7 @@ void App::Init_c0() {
     mods.push_back(&config); //Dummy module for now
 
     mods.push_back(&dsp);
+    mods.push_back(&sd);
     
     // USB modules
     mods.push_back(&usb);
@@ -42,7 +43,6 @@ void App::Init_c1() {
     std::vector<Module*> &mods =  modules_c1;
 
     // parked modules
-    mods.push_back(&sd); 
     mods.push_back(&display); //Updated implementation using DMA
     mods.push_back(&ledStrip); //Implemented correctly with PIO and DMA
     mods.push_back(&encoders); //reimplemented with polling without PIO, a bit slow but it works, includes button support

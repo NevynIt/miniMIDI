@@ -15,7 +15,7 @@ void mod_Blink::Init() {
 }
 
 void mod_Blink::Tick() {
-    INTERVALCHECK(BLINK_MS)
+    INTERVALCHECK(interval)
 
     Toggle();
 }

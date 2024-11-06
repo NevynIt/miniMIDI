@@ -9,13 +9,13 @@ class mod_SD : public Module {
 public:
     void Init() override;
     void Tick() override;
+    void Test() override;
 
     bool Mount();
     bool Unmount();
     bool WriteFile(const std::string& path, const std::string& data);
     bool ReadFile(const std::string& path, std::string& data);
 
-private:
     FATFS fs; // File system object
     bool mounted;
 };

@@ -38,15 +38,10 @@ void mod_USB_Audio::Test()
 
     if (last_left_buffer != left)
     {
-        // int noteL = app.encoders.count[0]/4 + 60;
-        // fp_int ampL = fp_int(app.encoders.count[1]/4 + 50) / 100;
-        // int noteR = app.encoders.count[2]/4 + 60;
-        // fp_int ampR = fp_int(app.encoders.count[3]/4 + 50) / 100;
-
-        int noteL = 57;
-        fp_int ampL = fp_int(0.75f);
-        int noteR = 69;
-        fp_int ampR = ampL;
+        int noteL = app.encoders.count[0]/4 + 60;
+        fp_int ampL = fp_int(app.encoders.count[1]/4 + 50) / 100;
+        int noteR = app.encoders.count[2]/4 + 60;
+        fp_int ampR = fp_int(app.encoders.count[3]/4 + 50) / 100;
 
         if (noteL < 0) noteL = 0;
         if (noteL > 127) noteL = 127;
@@ -58,25 +53,13 @@ void mod_USB_Audio::Test()
         if (ampR > 1) ampR = 1;
 
         auto right = getOutBuffer(1);
-        for (int i = 0; i < AUDIO_BUFFER_SAMPLES; ++i)
-        {
-            left[i] = (sample_t)phaseL;
-            right[i] = (sample_t)phaseR;
-        }
-        phaseL = phaseL + 1;
-        phaseR = phaseR + 1;
-
-        if (phaseL > SAMPLE_MAX)
-            phaseL = -SAMPLE_MAX;
-        if (phaseR > SAMPLE_MAX)
-            phaseR = -SAMPLE_MAX;
 
         // phaseL = app.dsp.GenerateSquareWave(left, midi_frequencies[noteL], ampL, phaseL);
         // phaseR = app.dsp.GenerateSquareWave(right, midi_frequencies[noteR], ampR, phaseR);
         // phaseL = app.dsp.GenerateSineWave(left, midi_frequencies[noteL], ampL, phaseL);
         // phaseR = app.dsp.GenerateSineWave(right, midi_frequencies[noteR], ampR, phaseR);
-        // phaseL = app.dsp.GenerateWave(left, WT_BASE, 0, midi_frequencies[noteL], ampL, phaseL);
-        // phaseR = app.dsp.GenerateWave(right, WT_BASE, 0, midi_frequencies[noteR], ampR, phaseR);
+        phaseL = app.dsp.GenerateWave(left, WT_BASE, 0, midi_frequencies[noteL], ampL, phaseL);
+        phaseR = app.dsp.GenerateWave(right, WT_BASE, 0, midi_frequencies[noteR], ampR, phaseR);
 
         last_left_buffer = left;
     }

@@ -37,7 +37,7 @@ void mod_USB::Tick()
   {
     int32_t new_sync = e15_last_sof % 1000 - 1000;
     auto sync_delta = abs((int)new_sync - SOF_sync_us);
-    if (sync_delta > 100 && sync_delta < 900)
+    if (sync_delta > 400 && sync_delta < 600)
     {
       // Sync
       // auto slot_old = app.dsp.getSlotRelative(0, app.usb.SOF_sync_us);

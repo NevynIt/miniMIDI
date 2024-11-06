@@ -93,8 +93,12 @@ typedef const sample_t* sample_cptr;
 #define AUDIO_BUFFER_TRACKS 10
 
 // Fixed-point math
-typedef fpm::fixed_16_16 fp_int;
+// typedef fpm::fixed_16_16 fp_int;
+typedef fpm::fixed<int32_t, int64_t, 14> fp_int;
+#define TWO_PI (fp_int::two_pi())
+
 // typedef float fp_int;
+// #define TWO_PI (2.0f * M_PI)
 
 template <typename B, typename I, unsigned int F, bool R>
 inline fpm::fixed<B, I, F, R> mod1(fpm::fixed<B, I, F, R> x) noexcept

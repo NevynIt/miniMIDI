@@ -23,6 +23,18 @@ void mod_SD::Tick()
     // Perform any periodic SD card tasks if needed
 }
 
+void mod_SD::Test()
+{
+    static bool test_done = false;
+    if (test_done)
+        return;
+
+    test_done = true;
+
+    if (!mounted)
+        return;
+}
+
 bool mod_SD::Mount()
 {
     FRESULT res = f_mount(&fs, "", 1);
@@ -115,7 +127,7 @@ static spi_t spis[] = { // One for each SPI.
         .mosi_gpio = GPIO_SD_TX,
         .sck_gpio = GPIO_SD_CK,
 
-        .baud_rate = 1 * 1000 * 1000 //no idea why I can't go faster than this
+        .baud_rate = 1 * 100 * 1000 //I suppose I need to put pull-up resistors on the SPI lines to go faster
         // .baud_rate = 12500 * 1000
         // .baud_rate = 25 * 1000 * 1000 // Actual frequency: 20833333.
     }};

@@ -12,6 +12,7 @@ public:
 
     void Toggle();
 
+    uint32_t interval = BLINK_MS;
 private:
     bool ledState = false;
     uint32_t lastTickTime = 0;
