@@ -7,23 +7,24 @@ def generate_midi_frequencies(reference_frequency=440.0):
     header_content = """#ifndef MIDI_FREQUENCIES_H
 #define MIDI_FREQUENCIES_H
 
-#include "hwConfig.h"
-
-extern const fp_int midi_frequencies[128];
+extern const float midi_frequencies[128];
 
 #endif // MIDI_FREQUENCIES_H
 """
 
     cpp_content = """#include "midi_frequencies.h"
-#include <cmath>
 
-const fp_int midi_frequencies[128] = {
+const float midi_frequencies[128] = {
 """
 
     frequencies = []
+    note_names = ['C', 'C#', 'D', 'D#', 'E', 'F',
+                  'F#', 'G', 'G#', 'A', 'A#', 'B']
     for i in range(128):
         frequency = reference_frequency * (2 ** ((i - 69) / 12.0))
-        frequencies.append(f"    fp_int({frequency:16.10f}),  // MIDI Note {i}")
+        note = note_names[i % 12]
+        octave = (i // 12) - 1
+        frequencies.append(f"    ({frequency:16.10f}),  // MIDI Note {i} ({note}{octave})")
 
     cpp_content += ",\n".join(frequencies)
     cpp_content += "\n};\n"

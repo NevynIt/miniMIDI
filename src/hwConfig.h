@@ -81,6 +81,7 @@ typedef enum {
 typedef SAMPLE_TYPE sample_t;
 #define BITS_PER_SAMPLE (sizeof(SAMPLE_TYPE) * 8)
 #define SAMPLE_MAX INT16_MAX
+#define SAMPLE_MIN INT16_MIN
 #define SAMPLE_ZERO 0
 typedef sample_t* sample_ptr;
 typedef const sample_t* sample_cptr;
@@ -92,9 +93,12 @@ typedef const sample_t* sample_cptr;
 #define AUDIO_BUFFER_SLOTS_MASK (AUDIO_BUFFER_SLOTS - 1)
 #define AUDIO_BUFFER_TRACKS 10
 
+
 // Fixed-point math
 // typedef fpm::fixed_16_16 fp_int;
-typedef fpm::fixed<int32_t, int64_t, 14> fp_int;
+#define FRACTION_BITS 16
+typedef fpm::fixed<int32_t, int64_t, FRACTION_BITS> fp_int;
+typedef fpm::fixed<uint32_t, uint64_t, FRACTION_BITS> fp_uint;
 #define TWO_PI (fp_int::two_pi())
 
 // typedef float fp_int;

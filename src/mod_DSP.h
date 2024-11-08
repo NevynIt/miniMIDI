@@ -13,8 +13,10 @@ public:
     void Tick() override;
     void Test() override;
 
-    static fp_int GenerateWave1Hz(sample_ptr buf, sample_cptr waveform, uint16_t size, const fp_int frequency = fp_int(440), const fp_int amplitude = fp_int(1), const fp_int phase = fp_int(0));
-    static fp_int GenerateWave1HzInterp(sample_ptr buf, sample_cptr waveform, uint16_t size, const fp_int frequency = fp_int(440), const fp_int amplitude = fp_int(1), const fp_int phase = fp_int(0));
+    //fixed size defined in hwConfig.h
+    static sample_t GenerateWave1Hz(sample_ptr buf, sample_cptr waveform, const fp_int frequency, const sample_t amplitude, const sample_t phase);
+
+    // static fp_int GenerateWave1HzInterp(sample_ptr buf, sample_cptr waveform, uint16_t size, const fp_int frequency = fp_int(440), const fp_int amplitude = fp_int(1), const fp_int phase = fp_int(0));
     static fp_int GenerateWave(sample_ptr buf, sample_cptr wavetable, uint8_t waveform_num, const fp_int frequency_ratio = fp_int(1), const fp_int amplitude = fp_int(1), const fp_int phase = fp_int(0));
     static fp_int GenerateWaveInterp(sample_ptr buf, sample_cptr wavetable, uint8_t waveform_num, const fp_int frequency_ratio = fp_int(1), const fp_int amplitude = fp_int(1), const fp_int phase = fp_int(0));
     static fp_int GenerateSineWave(sample_ptr buf, const fp_int frequency = fp_int(440), const fp_int amplitude = fp_int(1), const fp_int phase = fp_int(0));

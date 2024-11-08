@@ -13,7 +13,7 @@ public:
 
     bool Mount();
     bool Unmount();
-    bool WriteFile(const std::string& path, const std::string& data);
+    bool WriteFile(const std::string &path, const void *data, unsigned int size);
     bool ReadFile(const std::string& path, std::string& data);
 
     FATFS fs; // File system object

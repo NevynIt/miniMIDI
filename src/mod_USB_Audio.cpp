@@ -3,6 +3,7 @@
 #include "stdio.h"
 #include "midi_frequencies.h"
 #include "WT_BASE.h"
+#include "wave.h"
 
 // Audio controls
 #define CFG_TUD_AUDIO_FUNC_1_N_CHANNELS_TX 2
@@ -30,9 +31,9 @@ void mod_USB_Audio::Tick()
 
 void mod_USB_Audio::Test()
 {
-    static fp_int phaseL(0);
-    static fp_int phaseR(1000);
     static sample_ptr last_left_buffer = nullptr;
+    static auto wave_left = wave(WT_BASE_sin);
+    static auto wave_right = wave(WT_BASE_sin);
 
     auto left = getOutBuffer(0);
 
@@ -54,12 +55,17 @@ void mod_USB_Audio::Test()
 
         auto right = getOutBuffer(1);
 
-        // phaseL = app.dsp.GenerateSquareWave(left, midi_frequencies[noteL], ampL, phaseL);
-        // phaseR = app.dsp.GenerateSquareWave(right, midi_frequencies[noteR], ampR, phaseR);
-        // phaseL = app.dsp.GenerateSineWave(left, midi_frequencies[noteL], ampL, phaseL);
-        // phaseR = app.dsp.GenerateSineWave(right, midi_frequencies[noteR], ampR, phaseR);
-        phaseL = app.dsp.GenerateWave(left, WT_BASE, 0, midi_frequencies[noteL], ampL, phaseL);
-        phaseR = app.dsp.GenerateWave(right, WT_BASE, 0, midi_frequencies[noteR], ampR, phaseR);
+        wave_left.setFrequency_f(midi_frequencies[noteL]);
+        wave_right.setFrequency_f(midi_frequencies[noteR]);
+
+        auto wave_AM_L = wave_const(sample_t(ampL*SAMPLE_MAX));
+        auto wave_AM_R = wave_const(sample_t(ampR*SAMPLE_MAX));
+
+        auto wl = wave_mod_AM(wave_left, wave_AM_L);
+        auto wr = wave_mod_AM(wave_right, wave_AM_R);
+
+        fill(left, AUDIO_BUFFER_SAMPLES, wl);
+        fill(right, AUDIO_BUFFER_SAMPLES, wr);
 
         last_left_buffer = left;
     }

@@ -49,7 +49,7 @@ bool mod_SD::Unmount()
     return (res == FR_OK);
 }
 
-bool mod_SD::WriteFile(const std::string &path, const std::string &data)
+bool mod_SD::WriteFile(const std::string &path, const void *data, unsigned int size)
 {
     if (!mounted)
         return false;
@@ -60,10 +60,10 @@ bool mod_SD::WriteFile(const std::string &path, const std::string &data)
         return false;
 
     UINT written;
-    res = f_write(&file, data.c_str(), data.size(), &written);
+    res = f_write(&file, data, size, &written);
     f_close(&file);
 
-    return (res == FR_OK && written == data.size());
+    return (res == FR_OK && written == size);
 }
 
 bool mod_SD::ReadFile(const std::string &path, std::string &data)

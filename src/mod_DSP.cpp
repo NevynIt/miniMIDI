@@ -8,6 +8,7 @@
 #include "midi_frequencies.h"
 #include "WT_BASE.h"
 #include "fpm/math.hpp"
+#include "wave.h"
 
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
@@ -39,8 +40,8 @@ Lookup table interpolated: 69.93 us
 void mod_DSP::Test()
 {
     bool sdtest = false; //Set to true to write test files to SD card
-    // sdtest = app.sd.mounted; //Uncomment to write test files to SD card if present
-    static bool test_done = true;
+    sdtest = app.sd.mounted; //Uncomment to write test files to SD card if present
+    static bool test_done = false;
     if (test_done)
         return;
 
@@ -54,88 +55,111 @@ void mod_DSP::Test()
     sample_ptr buffer = new sample_t[AUDIO_BUFFER_SAMPLES * 1000];
     uint32_t t0, t1;
 
-    // Sine wave
-    phase = fp_int(0);
-    t0 = time_us_32();
-    for (int i = 0; i < 1000; ++i)
-    {
-        phase = app.dsp.GenerateSineWave(buffer + i * AUDIO_BUFFER_SAMPLES, fp_int(440), fp_int(1), phase);
-    }
-    t1 = time_us_32();
-    printf("Sine: %.2f us\n", (t1 - t0) / 1000.0f);
-    if (sdtest)
-        app.sd.WriteFile("sine.raw", std::string((char*)buffer, AUDIO_BUFFER_SAMPLES*1000*sizeof(sample_t)));
+    // // Sine wave
+    // phase = fp_int(0);
+    // t0 = time_us_32();
+    // for (int i = 0; i < 1000; ++i)
+    // {
+    //     phase = app.dsp.GenerateSineWave(buffer + i * AUDIO_BUFFER_SAMPLES, fp_int(440), fp_int(1), phase);
+    // }
+    // t1 = time_us_32();
+    // printf("Sine: %.2f us\n", (t1 - t0) / 1000.0f);
+    // if (sdtest)
+    //     app.sd.WriteFile("sine.raw", std::string((char*)buffer, AUDIO_BUFFER_SAMPLES*1000*sizeof(sample_t)));
 
-    // Square wave
-    phase = fp_int(0);
-    t0 = time_us_32();
-    for (int i = 0; i < 1000; ++i)
-    {
-        phase = app.dsp.GenerateSquareWave(buffer + i * AUDIO_BUFFER_SAMPLES, fp_int(440), fp_int(1), phase);
-    }
-    t1 = time_us_32();
-    printf("Square: %.2f us\n", (t1 - t0) / 1000.0f);
-    if (sdtest)
-        app.sd.WriteFile("square.raw", std::string((char*)buffer, AUDIO_BUFFER_SAMPLES*1000*sizeof(sample_t)));
+    // // Square wave
+    // phase = fp_int(0);
+    // t0 = time_us_32();
+    // for (int i = 0; i < 1000; ++i)
+    // {
+    //     phase = app.dsp.GenerateSquareWave(buffer + i * AUDIO_BUFFER_SAMPLES, fp_int(440), fp_int(1), phase);
+    // }
+    // t1 = time_us_32();
+    // printf("Square: %.2f us\n", (t1 - t0) / 1000.0f);
+    // if (sdtest)
+    //     app.sd.WriteFile("square.raw", std::string((char*)buffer, AUDIO_BUFFER_SAMPLES*1000*sizeof(sample_t)));
 
-    // Sawtooth wave
-    phase = fp_int(0);
-    t0 = time_us_32();
-    for (int i = 0; i < 1000; ++i)
-    {
-        phase = app.dsp.GenerateSawtoothWave(buffer + i * AUDIO_BUFFER_SAMPLES, fp_int(440), fp_int(1), phase);
-    }
-    t1 = time_us_32();
-    printf("Sawtooth: %.2f us\n", (t1 - t0) / 1000.0f);
-    if (sdtest)
-        app.sd.WriteFile("sawtooth.raw", std::string((char *)buffer, AUDIO_BUFFER_SAMPLES * 1000 * sizeof(sample_t)));
+    // // Sawtooth wave
+    // phase = fp_int(0);
+    // t0 = time_us_32();
+    // for (int i = 0; i < 1000; ++i)
+    // {
+    //     phase = app.dsp.GenerateSawtoothWave(buffer + i * AUDIO_BUFFER_SAMPLES, fp_int(440), fp_int(1), phase);
+    // }
+    // t1 = time_us_32();
+    // printf("Sawtooth: %.2f us\n", (t1 - t0) / 1000.0f);
+    // if (sdtest)
+    //     app.sd.WriteFile("sawtooth.raw", buffer, AUDIO_BUFFER_SAMPLES * 1000 * sizeof(sample_t));
 
-    // Triangle wave
-    phase = fp_int(0);
-    t0 = time_us_32();
-    for (int i = 0; i < 1000; ++i)
-    {
-        phase = app.dsp.GenerateTriangleWave(buffer + i * AUDIO_BUFFER_SAMPLES, fp_int(440), fp_int(1), phase);
-    }
-    t1 = time_us_32();
-    printf("Triangle: %.2f us\n", (t1 - t0) / 1000.0f);
-    if (sdtest)
-        app.sd.WriteFile("triangle.raw", std::string((char *)buffer, AUDIO_BUFFER_SAMPLES * 1000 * sizeof(sample_t)));
+    // // Triangle wave
+    // phase = fp_int(0);
+    // t0 = time_us_32();
+    // for (int i = 0; i < 1000; ++i)
+    // {
+    //     phase = app.dsp.GenerateTriangleWave(buffer + i * AUDIO_BUFFER_SAMPLES, fp_int(440), fp_int(1), phase);
+    // }
+    // t1 = time_us_32();
+    // printf("Triangle: %.2f us\n", (t1 - t0) / 1000.0f);
+    // if (sdtest)
+    //     app.sd.WriteFile("triangle.raw", buffer, AUDIO_BUFFER_SAMPLES * 1000 * sizeof(sample_t));
 
-    // Noise
-    t0 = time_us_32();
-    for (int i = 0; i < 1000; ++i)
-    {
-        app.dsp.GenerateNoise(buffer + i * AUDIO_BUFFER_SAMPLES, fp_int(1));
-    }
-    t1 = time_us_32();
-    printf("Noise: %.2f us\n", (t1 - t0) / 1000.0f);
-    if (sdtest)
-        app.sd.WriteFile("noise.raw", std::string((char*)buffer, AUDIO_BUFFER_SAMPLES*1000*sizeof(sample_t)));
+    // // Noise
+    // t0 = time_us_32();
+    // for (int i = 0; i < 1000; ++i)
+    // {
+    //     app.dsp.GenerateNoise(buffer + i * AUDIO_BUFFER_SAMPLES, fp_int(1));
+    // }
+    // t1 = time_us_32();
+    // printf("Noise: %.2f us\n", (t1 - t0) / 1000.0f);
+    // if (sdtest)
+    //     app.sd.WriteFile("noise.raw", std::string((char*)buffer, AUDIO_BUFFER_SAMPLES*1000*sizeof(sample_t)));
 
-    // Lookup table sin
-    phase = fp_int(0);
-    t0 = time_us_32();
-    for (int i = 0; i < 1000; ++i)
-    {
-        phase = app.dsp.GenerateWave(buffer + i * AUDIO_BUFFER_SAMPLES, WT_BASE, 0, fp_int(440), fp_int(1), phase);
-    }
-    t1 = time_us_32();
-    printf("Lookup table: %.2f us\n", (t1 - t0) / 1000.0f);
-    if (sdtest)
-        app.sd.WriteFile("lut.raw", std::string((char *)buffer, AUDIO_BUFFER_SAMPLES * 1000 * sizeof(sample_t)));
+    // // Lookup table sin
+    // phase = fp_int(0);
+    // t0 = time_us_32();
+    // for (int i = 0; i < 1000; ++i)
+    // {
+    //     phase = app.dsp.GenerateWave(buffer + i * AUDIO_BUFFER_SAMPLES, WT_BASE, 0, fp_int(440), fp_int(1), phase);
+    // }
+    // t1 = time_us_32();
+    // printf("Lookup table: %.2f us\n", (t1 - t0) / 1000.0f);
+    // if (sdtest)
+    //     app.sd.WriteFile("lut.raw", buffer, AUDIO_BUFFER_SAMPLES * 1000 * sizeof(sample_t));
 
-    // Lookup table sin interp
-    phase = fp_int(0);
+    // // Lookup table sin interp
+    // phase = fp_int(0);
+    // t0 = time_us_32();
+    // for (int i = 0; i < 1000; ++i)
+    // {
+    //     phase = app.dsp.GenerateWaveInterp(buffer + i * AUDIO_BUFFER_SAMPLES, WT_BASE, 0, fp_int(440), fp_int(1), phase);
+    // }
+    // t1 = time_us_32();
+    // printf("Lookup table interpolated: %.2f us\n", (t1 - t0) / 1000.0f);
+    // if (sdtest)
+    //     app.sd.WriteFile("lut_interp.raw", buffer, AUDIO_BUFFER_SAMPLES * 1000 * sizeof(sample_t));
+
+    
+    // Lookup table sin - NEW!
     t0 = time_us_32();
-    for (int i = 0; i < 1000; ++i)
-    {
-        phase = app.dsp.GenerateWaveInterp(buffer + i * AUDIO_BUFFER_SAMPLES, WT_BASE, 0, fp_int(440), fp_int(1), phase);
-    }
+    auto w = wave(WT_BASE_sin, 440.0f);
+    fill(buffer, AUDIO_BUFFER_SAMPLES * 1000, w);
     t1 = time_us_32();
-    printf("Lookup table interpolated: %.2f us\n", (t1 - t0) / 1000.0f);
+    printf("Lookup table new: %.2f us\n", (t1 - t0) / 1000.0f);
     if (sdtest)
-        app.sd.WriteFile("lut_interp.raw", std::string((char *)buffer, AUDIO_BUFFER_SAMPLES * 1000 * sizeof(sample_t)));
+        app.sd.WriteFile("wave.raw", buffer, AUDIO_BUFFER_SAMPLES * 1000 * sizeof(sample_t));
+
+    
+    // Lookup table sin freq_mod - NEW!
+    t0 = time_us_32();
+    auto w1 = wave(WT_BASE_sin, 440.0f);
+    auto w2 = wave(WT_BASE_sin, 11.0f);
+    auto w3 = wave_mod_FM(w1, w2, 20.0f);
+    fill(buffer, AUDIO_BUFFER_SAMPLES * 1000, w3);
+    t1 = time_us_32();
+    printf("lookup table FM modulation: %.2f us\n", (t1 - t0) / 1000.0f);
+    if (sdtest)
+        app.sd.WriteFile("waveFM.raw", buffer, AUDIO_BUFFER_SAMPLES * 1000 * sizeof(sample_t));
+
 
     delete[] buffer;
 
@@ -146,19 +170,19 @@ void mod_DSP::Test()
 
 // Generators do not handle clipping correctly, they rely just on int overflow
 
-//These two functions have not been checked and likely don't work
-
-// fp_int mod_DSP::GenerateWave1Hz(sample_ptr buf, sample_cptr waveform, uint16_t size, const fp_int frequency, const fp_int amplitude, const fp_int phase)
+// //new implementation, super optimized, I am curious about the performance! OBE by wave.h
+// sample_t mod_DSP::GenerateWave1Hz(sample_ptr buf, sample_cptr waveform, const fp_int frequency, const sample_t amplitude, const sample_t phase)
 // {
-//     fp_int increment = frequency / SAMPLE_RATE; // angle increment per sample
-//     fp_int angle = phase;
+//     const fp_int increment = frequency * fp_int(WAVEFORM_SIZE / SAMPLE_RATE); // index increment per sample
+//     fp_int index = fp_int::from_raw_value(phase) << WAVEFORM_SIZE_BITS; // convert phase to index
 
 //     for (int i = 0; i < AUDIO_BUFFER_SAMPLES; ++i)
 //     {
-//         buf[i] = (sample_t)(amplitude * waveform[(int)(angle * size)] + SAMPLE_ZERO);
-//         angle = mod1(angle + increment);
+//         buf[i] = (sample_t)((int32_t(amplitude) * waveform[(int)(index)]) >> 15);
+//         index += increment;
+//         index &= WAVEFORM_SIZE_FP_MASK;
 //     }
-//     return angle;
+//     return static_cast<int16_t>((index >> WAVEFORM_SIZE_BITS).raw_value());
 // }
 
 // fp_int mod_DSP::GenerateWave1HzInterp(sample_ptr buf, sample_cptr waveform, uint16_t size, const fp_int frequency, const fp_int amplitude, const fp_int phase)
@@ -184,7 +208,7 @@ fp_int mod_DSP::GenerateWave(sample_ptr buf, sample_cptr wavetable, uint8_t wave
     const sample_cptr waveform = WT_GetWaveform(wavetable, waveform_num);
     const uint16_t sample_rate = WT_GetSampleRate(wavetable);
     const fp_int period = fp_int(float(SAMPLE_RATE) / size * sample_rate / float(frequency_ratio)); // period in samples
-    const fp_int increment = size/period; // index increment per sample
+    const fp_int increment = size / period; // index increment per sample
     fp_int index = phase * size;
 
     int i;
