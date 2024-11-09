@@ -25,3 +25,12 @@
 [submodule "src/fpm"]
 	path = src/fpm
 	url = https://github.com/MikeLankamp/fpm
+[submodule "src/cpp-utilities"]
+	path = src/cpp-utilities
+	url = https://github.com/eteran/cpp-utilities
+[submodule "src/picoX7"]
+	path = src/picoX7
+	url = https://github.com/AnotherJohnH/picoX7
+[submodule "src/Platform"]
+	path = src/Platform
+	url = https://github.com/AnotherJohnH/Platform

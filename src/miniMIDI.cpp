@@ -25,6 +25,19 @@ void core1_entry()
 //     return 0;
 // }
 
+// template<class T>
+// int ilog2(T x)
+// {
+//     return (sizeof(T)*8 -1 ) - __builtin_clz(abs(x));
+// }
+
+// #include <random>
+// void test()
+// {
+//     int x = rand();
+//     printf("log2(%d) = %d\n", x, ilog2(x));
+// }
+
 int main()
 {
     set_sys_clock_khz(CPU_KHZ, true);
@@ -34,9 +47,14 @@ int main()
 
     multicore_launch_core1(core1_entry);
 
+
+    auto p = fp_int(0x2342).to_signed();
+    
+
     while (true)
     {
         app.Tick_c0();
+        // test();
     }
 
     return 0;

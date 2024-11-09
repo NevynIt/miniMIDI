@@ -96,26 +96,26 @@ typedef const sample_t* sample_cptr;
 
 // Fixed-point math
 // typedef fpm::fixed_16_16 fp_int;
-#define FRACTION_BITS 16
-typedef fpm::fixed<int32_t, int64_t, FRACTION_BITS> fp_int;
-typedef fpm::fixed<uint32_t, uint64_t, FRACTION_BITS> fp_uint;
+// #define FRACTION_BITS 16
+typedef fpm::fixed<16,16,true> fp_int;
+typedef fpm::fixed<16,16,false> fp_uint;
 #define TWO_PI (fp_int::two_pi())
 
 // typedef float fp_int;
 // #define TWO_PI (2.0f * M_PI)
 
-template <typename B, typename I, unsigned int F, bool R>
-inline fpm::fixed<B, I, F, R> mod1(fpm::fixed<B, I, F, R> x) noexcept
-{
-    constexpr auto mask = (B(1) << F) - 1;
-    return fpm::fixed<B, I, F, R>::from_raw_value(x.raw_value() & mask);
-}
+// template <typename B, typename I, unsigned int F, bool R>
+// inline fpm::fixed<B, I, F, R> mod1(fpm::fixed<B, I, F, R> x) noexcept
+// {
+//     constexpr auto mask = (B(1) << F) - 1;
+//     return fpm::fixed<B, I, F, R>::from_raw_value(x.raw_value() & mask);
+// }
 
-template<typename T>
-inline T mod1(T x) noexcept
-{
-    return x - (int)x;
-}
+// template<typename T>
+// inline T mod1(T x) noexcept
+// {
+//     return x - (int)x;
+// }
 
 enum DSP_Tracks {
     DSP_TRACK_USB_IN_LEFT,

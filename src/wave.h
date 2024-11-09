@@ -5,8 +5,8 @@
 #define WAVEFORM_SIZE (1 << WAVEFORM_SIZE_BITS)
 #define WAVEFORM_SIZE_MASK (WAVEFORM_SIZE - 1)
 
-typedef fpm::fixed<int16_t, int32_t, 16 - WAVEFORM_SIZE_BITS, false> fp_index;
-typedef fpm::fixed<int16_t, int32_t, 7, false> fp_ratio;
+typedef fpm::fixed<WAVEFORM_SIZE_BITS, 16 - WAVEFORM_SIZE_BITS, false> fp_index;
+typedef fpm::fixed<16-7, 7, false> fp_ratio;
 
 inline constexpr sample_t scale(sample_t x, fp_ratio r)
 {
@@ -360,13 +360,13 @@ public:
     inline sample_t getRelease() { return release; }
 
     // Set parameter using time (must scale by SAMPLE_RATE)
-    inline void setAttack_ms(fp_index a) { attack = (a * (SAMPLE_RATE / 1000)).int_fast(); }
+    inline void setAttack_ms(fp_index a) { attack = (a * (SAMPLE_RATE / 1000)).integral(); }
     inline fp_index getAttack_ms() { return (fp_index)(attack) / (SAMPLE_RATE / 1000); }
-    inline void setSustain_ms(fp_index s) { sustain = (s * (SAMPLE_RATE / 1000)).int_fast(); }
+    inline void setSustain_ms(fp_index s) { sustain = (s * (SAMPLE_RATE / 1000)).integral(); }
     inline fp_index getSustain_ms() { return (fp_index)(sustain) / (SAMPLE_RATE / 1000); }
-    inline void setDecay_ms(fp_index d) { decay = (d * (SAMPLE_RATE / 1000)).int_fast(); }
+    inline void setDecay_ms(fp_index d) { decay = (d * (SAMPLE_RATE / 1000)).integral(); }
     inline fp_index getDecay_ms() { return (fp_index)(decay) / (SAMPLE_RATE / 1000); }
-    inline void setRelease_ms(fp_index r) { release = (r * (SAMPLE_RATE / 1000)).int_fast(); }
+    inline void setRelease_ms(fp_index r) { release = (r * (SAMPLE_RATE / 1000)).integral(); }
     inline fp_index getRelease_ms() { return (fp_index)(release); }
 
     // set parameter using float (must scale by (1 << 16))

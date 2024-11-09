@@ -219,7 +219,7 @@ fp_int mod_DSP::GenerateWave(sample_ptr buf, sample_cptr wavetable, uint8_t wave
         if (index >= size)
             index -= size;
     }
-    return mod1(index / size);
+    return (index / size).mod1();
 }
 
 // __attribute__((optimize("O0"))) // function attribute to disable optimization
@@ -235,7 +235,7 @@ fp_int mod_DSP::GenerateWaveInterp(sample_ptr buf, sample_cptr wavetable, uint8_
     int i;
     for (i = 0; i < AUDIO_BUFFER_SAMPLES; ++i)
     {
-        fp_int frac = mod1(index);
+        fp_int frac = index.mod1();
         int index_plus_0 = (int)(index);
         int index_plus_1 = (index_plus_0 + 1);
         if (index_plus_1 >= size)
@@ -245,7 +245,7 @@ fp_int mod_DSP::GenerateWaveInterp(sample_ptr buf, sample_cptr wavetable, uint8_
         if (index >= size)
             index -= size;
     }
-    return mod1(index / size);
+    return (index / size).mod1();
 }
 
 // __attribute__((optimize("O0"))) // function attribute to disable optimization
@@ -260,7 +260,7 @@ fp_int mod_DSP::GenerateSineWave(sample_ptr buf, const fp_int frequency, const f
     for (int i = 0; i < AUDIO_BUFFER_SAMPLES; ++i)
     {
         buf[i] = (sample_t)(range * sin(angle * TWO_PI) + SAMPLE_ZERO);
-        angle = mod1(angle + increment);
+        angle = (angle + increment).mod1();
     }
     return angle;
 }
@@ -274,9 +274,9 @@ fp_int mod_DSP::GenerateSquareWave(sample_ptr buf, const fp_int frequency, const
     int i;
     for (i = 0; i < AUDIO_BUFFER_SAMPLES; ++i)
     {
-        buf[i] = (mod1(phase + i / period) < fp_int(0.5)) ? up : down;
+        buf[i] = ((phase + i / period).mod1() < fp_int(0.5)) ? up : down;
     }
-    return mod1(phase + i / period);
+    return (phase + i / period).mod1();
 }
 
 // __attribute__((optimize("O0"))) // function attribute to disable optimization
@@ -288,9 +288,9 @@ fp_int mod_DSP::GenerateSawtoothWave(sample_ptr buf, const fp_int frequency, con
     for (i = 0; i < AUDIO_BUFFER_SAMPLES; ++i)
     {
         // buf[i] = down + (sample_t)(mod1(phase + i / period) * (amplitude * 2 * SAMPLE_MAX) / period);
-        buf[i] = (sample_t)(((amplitude * (mod1(phase + i / period)) * 2 - 1) * SAMPLE_MAX) + SAMPLE_ZERO);
+        buf[i] = (sample_t)(((amplitude * ((phase + i / period).mod1()) * 2 - 1) * SAMPLE_MAX) + SAMPLE_ZERO);
     }
-    return mod1(phase + i / period);
+    return (phase + i / period).mod1();
 }
 
 // __attribute__((optimize("O0"))) // function attribute to disable optimization
@@ -300,9 +300,9 @@ fp_int mod_DSP::GenerateTriangleWave(sample_ptr buf, const fp_int frequency, con
     int i;
     for (i = 0; i < AUDIO_BUFFER_SAMPLES; ++i)
     {
-        buf[i] = (sample_t)((fp_int(0.5f) - 2 * abs(fp_int(0.5f) - mod1(phase + i / period + fp_int(0.25f)))) * 2 * amplitude * SAMPLE_MAX + SAMPLE_ZERO);
+        buf[i] = (sample_t)((fp_int(0.5f) - 2 * abs(fp_int(0.5f) - (phase + i / period + fp_int(0.25f)).mod1())) * 2 * amplitude * SAMPLE_MAX + SAMPLE_ZERO);
     }
-    return mod1(phase + i / period);
+    return (phase + i / period).mod1();
 }
 
 // __attribute__((optimize("O0"))) // function attribute to disable optimization
