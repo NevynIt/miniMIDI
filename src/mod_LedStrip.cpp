@@ -26,18 +26,16 @@ void mod_LedStrip::Init() {
 }
 
 void mod_LedStrip::Tick() {
-    static uint32_t stored_time = 0;
-    uint32_t current_time;
-    current_time = to_ms_since_boot(get_absolute_time());
-    if (current_time - stored_time > 100) {
-        //update display
+    INTERVALCHECK(LEDS_REFRESH_MS)
+    // Check if DMA transfer is finished
+    if (!dma_channel_is_busy(dma_channel)) {
+        // Update display
         dma_channel_set_read_addr(dma_channel, led_buffer, true);
-        stored_time = current_time;
     }
 }
 
 void mod_LedStrip::Test() {
-    INTERVALCHECK(100)
+    INTERVALCHECK(LEDS_REFRESH_MS/10)
 
     static uint8_t mode = 0;
 
@@ -59,7 +57,7 @@ void mod_LedStrip::Test() {
         break;
     }
 
-    uint8_t i, r, g, b, t;
+    int i, r, g, b, t;
 
     switch (mode)
     {
@@ -69,6 +67,13 @@ void mod_LedStrip::Test() {
         r = (app.encoders.count[1] / 4);
         g = (app.encoders.count[2] / 4);
         b = (app.encoders.count[3] / 4);
+        if (r > 127) r = 127;
+        if (g > 127) g = 127;
+        if (b > 127) b = 127;
+        if (r < 0) r = 0;
+        if (g < 0) g = 0;
+        if (b < 0) b = 0;
+
         app.ledStrip.SetColor(i, r, g, b);
         break;
     case 1:
@@ -77,19 +82,25 @@ void mod_LedStrip::Test() {
         t = (128 * 8 + app.encoders.count[1] / 4) % 128;
         t & 0b01111110;
         b = (app.encoders.count[2] / 4) % 128;
+        if (b > 127) b = 127;
+        if (b < 0) b = 0;
         app.ledStrip.SetColor(i, t, b);
         break;
     case 2:
         i = rand() % LEDS_COUNT;
         t = rand() % 128;
         b = (app.encoders.count[2] / 4) % 128;
+        if (b > 127) b = 127;
+        if (b < 0) b = 0;
         app.ledStrip.SetColor(i, t, b);
         break;
     case 3:
+        b = app.encoders.count[2] / 4;
+        if (b > 127) b = 127;
+        if (b < 0) b = 0;
         for (i = 0; i < LEDS_COUNT; i++)
         {
             t = (i + app.encoders.count[0] / 4) % 128;
-            b = (app.encoders.count[2] / 4) % 128;
             app.ledStrip.SetColor(i, t, b);
         }
         break;

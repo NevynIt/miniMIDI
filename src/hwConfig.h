@@ -40,7 +40,7 @@ typedef enum {
 
 // Board Configuration
 #define CPU_KHZ 12*12*1000 //12MHz multiple needed for USB
-#define BLINK_MS 500
+#define BLINK_REFRESH_HZ 24
 
 // Flash Configuration
 #define FLASH_SIZE 16*1024*1024 //16MB on the current motherboard
@@ -72,7 +72,7 @@ typedef enum {
 // RGB LED configuration
 #define PIO_WS2812B  pio1
 #define LEDS_COUNT 23 // For testing purposes, the actual number of LEDs for the piano is 169
-#define LEDS_REFRESH_MS 100
+#define LEDS_REFRESH_MS (1000/25)
 //pixel map defined in mod_LedStrip.cpp
 
 // Audio DSP configuration
@@ -95,27 +95,8 @@ typedef const sample_t* sample_cptr;
 
 
 // Fixed-point math
-// typedef fpm::fixed_16_16 fp_int;
-// #define FRACTION_BITS 16
 typedef fpm::fixed<16,16,true> fp_int;
-typedef fpm::fixed<16,16,false> fp_uint;
 #define TWO_PI (fp_int::two_pi())
-
-// typedef float fp_int;
-// #define TWO_PI (2.0f * M_PI)
-
-// template <typename B, typename I, unsigned int F, bool R>
-// inline fpm::fixed<B, I, F, R> mod1(fpm::fixed<B, I, F, R> x) noexcept
-// {
-//     constexpr auto mask = (B(1) << F) - 1;
-//     return fpm::fixed<B, I, F, R>::from_raw_value(x.raw_value() & mask);
-// }
-
-// template<typename T>
-// inline T mod1(T x) noexcept
-// {
-//     return x - (int)x;
-// }
 
 enum DSP_Tracks {
     DSP_TRACK_USB_IN_LEFT,

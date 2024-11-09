@@ -145,6 +145,10 @@ void mod_Display::show()
     if (dma_channel == -1)
         return; // DMA channel not claimed, either not initialized yet or failed initialization
 
+    // Check if the DMA transfer is finished
+    if (dma_channel_is_busy(dma_channel))
+        return; // DMA transfer is still in progress, do not start a new one
+
     // using two buffers to prevent updates while the DMA is active
     for (size_t i = 0; i < sizeof(frame); i++)
     {
@@ -157,7 +161,7 @@ void mod_Display::show()
         &dma_cfg,
         &i2c_get_hw(I2C_DISPLAY)->data_cmd, // Write to I2C data command register
         buffer,                             // Read from buffer
-        sizeof(buffer) / sizeof(buffer[0]),   // Number of transfers
+        sizeof(buffer) / sizeof(buffer[0]), // Number of transfers
         true // Start!!!
     );
 }

@@ -235,7 +235,6 @@ bool tud_audio_get_req_itf_cb(uint8_t rhport, tusb_control_request_t const *p_re
     return false; // Yet not implemented
 }
 
-DEOPTIMIZE
 bool tud_audio_tx_done_pre_load_cb(uint8_t rhport, uint8_t itf, uint8_t ep_in, uint8_t cur_alt_setting)
 {
     (void)rhport;
