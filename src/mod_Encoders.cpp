@@ -59,8 +59,21 @@ void mod_Encoders::Tick()
     // app.display.draw_text(0,16,1,buffer);
 }
 
+bool skiptest = false;
+
 void mod_Encoders::Test()
 {
+    if (skiptest)
+        return;
+    if (buttons)
+    {
+        skiptest = true;
+        for (int i = 0; i < NUM_ENCODERS; i++)
+        {
+            count[i] = 0;
+        }
+        return;
+    }
     INTERVALCHECK(1000)
 
     // printf("Encoder test\n");

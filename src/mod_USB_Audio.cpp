@@ -31,14 +31,19 @@ void mod_USB_Audio::Tick()
 
 void mod_USB_Audio::Test()
 {
-    static sample_ptr last_left_buffer = nullptr;
+    static int8_t last_slot = -1;
     static auto wave_left = wave(WT_BASE_sin);
     static auto wave_right = wave(WT_BASE_sin);
 
-    auto left = getOutBuffer(0);
-
-    if (last_left_buffer != left)
+    if (slot_out < 0)
     {
+        last_slot = -1;
+        return;
+    }
+
+    if (last_slot != slot_out)
+    {
+        auto left = getOutBuffer(0);
         int noteL = app.encoders.count[0]/4 + 60;
         fp_int ampL = fp_int(app.encoders.count[1]/4 + 50) / 100;
         int noteR = app.encoders.count[2]/4 + 60;
@@ -67,20 +72,56 @@ void mod_USB_Audio::Test()
         fill(left, AUDIO_BUFFER_SAMPLES, wl);
         fill(right, AUDIO_BUFFER_SAMPLES, wr);
 
-        last_left_buffer = left;
+        last_slot = slot_out;
     }
+}
+
+void mod_USB_Audio::reset_slot_in()
+{
+    slot_in = -1;
+}
+
+void mod_USB_Audio::reset_slot_out()
+{
+    slot_out = -1;
+}
+
+void mod_USB_Audio::start_slot_in()
+{
+    slot_in = app.dsp.getSlotRelative(-1, app.usb.SOF_sync_us);
+}
+
+void mod_USB_Audio::start_slot_out()
+{
+    slot_out = app.dsp.getSlotRelative(2, app.usb.SOF_sync_us);
+}
+
+void mod_USB_Audio::next_slot_in()
+{
+    slot_in++;
+    if (slot_in >= AUDIO_BUFFER_SLOTS)
+        slot_in = 0;
+}
+
+void mod_USB_Audio::next_slot_out()
+{
+    slot_out++;
+    if (slot_out >= AUDIO_BUFFER_SLOTS)
+        slot_out = 0;
 }
 
 inline sample_ptr mod_USB_Audio::getOutBuffer(uint8_t channel) const
 {
-    auto slot = app.dsp.getSlotRelative(2, app.usb.SOF_sync_us);
-    return app.dsp.buffers[track_out[channel]][slot];
+    if (slot_out < 0)
+        __breakpoint();
+    return app.dsp.buffers[track_out[channel]][slot_out];
 }
 
 inline sample_ptr mod_USB_Audio::getInBuffer(uint8_t channel) const
 {
-    auto slot = app.dsp.getSlotRelative(-1, app.usb.SOF_sync_us);
-    return app.dsp.buffers[track_in[channel]][slot];
+    if (slot_in < 0)
+        __breakpoint();
+    return app.dsp.buffers[track_in[channel]][slot_in];
 }
 
 //--------------------------------------------------------------------+
@@ -150,6 +191,9 @@ bool tud_audio_get_req_ep_cb(uint8_t rhport, tusb_control_request_t const *p_req
     return false; // Yet not implemented
 }
 
+int alt_in = 0;
+int alt_out = 0;
+
 // Invoked when audio set interface request received
 bool tud_audio_set_itf_cb(uint8_t rhport, tusb_control_request_t const *p_request)
 {
@@ -159,6 +203,18 @@ bool tud_audio_set_itf_cb(uint8_t rhport, tusb_control_request_t const *p_reques
 
     printf("Audio set interface: itf=%d, alt=%d\r\n", itf, alt);
 
+    if (itf == ITF_NUM_mM_Sound_LineIn)
+    {
+        // Line In
+        app.usbAudio.start_slot_out();
+        alt_out = alt;
+    }
+    else if (itf == ITF_NUM_mM_Sound_LineOut)
+    {
+        // Line Out
+        app.usbAudio.start_slot_in();
+        alt_in = alt;
+    }
     return true;
 }
 
@@ -179,6 +235,7 @@ bool tud_audio_get_req_itf_cb(uint8_t rhport, tusb_control_request_t const *p_re
     return false; // Yet not implemented
 }
 
+DEOPTIMIZE
 bool tud_audio_tx_done_pre_load_cb(uint8_t rhport, uint8_t itf, uint8_t ep_in, uint8_t cur_alt_setting)
 {
     (void)rhport;
@@ -188,6 +245,12 @@ bool tud_audio_tx_done_pre_load_cb(uint8_t rhport, uint8_t itf, uint8_t ep_in, u
 
     // printf("tud_audio_tx_done_pre_load_cb\r\n");
 
+    if (app.usbAudio.slot_out < 0)
+        return false;
+
+    if (alt_out == 0)
+        return true;
+
     auto buf = app.usbAudio.buffer_out;
     sample_ptr left = app.usbAudio.getOutBuffer(0);
     sample_ptr right = app.usbAudio.getOutBuffer(1);
@@ -196,7 +259,8 @@ bool tud_audio_tx_done_pre_load_cb(uint8_t rhport, uint8_t itf, uint8_t ep_in, u
         buf[cnt++] = *left++;
         buf[cnt++] = *right++;
     }
-
+    app.usbAudio.next_slot_out();
+    
     tud_audio_write((uint8_t *)buf, 2 * AUDIO_BUFFER_SAMPLES * BITS_PER_SAMPLE / 8);
 
     return true;
@@ -218,9 +282,21 @@ bool tud_audio_set_itf_close_EP_cb(uint8_t rhport, tusb_control_request_t const 
 {
     (void)rhport;
     (void)p_request;
+    uint8_t const itf = tu_u16_low(tu_le16toh(p_request->wIndex));
+    uint8_t const alt = tu_u16_low(tu_le16toh(p_request->wValue));
 
-    printf("tud_audio_set_itf_close_EP_cb\r\n");
+    printf("tud_audio_set_itf_close_EP_cb itf=%d, alt=%d\r\n", itf, alt);
 
+    if (itf == ITF_NUM_mM_Sound_LineIn)
+    {
+        // Line In
+        app.usbAudio.reset_slot_in();
+    }
+    else if (itf == ITF_NUM_mM_Sound_LineOut)
+    {
+        // Line Out
+        app.usbAudio.reset_slot_out();
+    }
     return true;
 }
 
@@ -234,6 +310,9 @@ bool tud_audio_rx_done_pre_read_cb(uint8_t rhport, uint16_t n_bytes_received, ui
 
     printf("tud_audio_rx_done_pre_read_cb\r\n");
 
+    if (app.usbAudio.slot_in < 0)
+        return false;
+
     auto buf = app.usbAudio.buffer_in;
     uint16_t num_read = tud_audio_read(buf, 2 * AUDIO_BUFFER_SAMPLES * BITS_PER_SAMPLE / 8);
 
@@ -244,6 +323,7 @@ bool tud_audio_rx_done_pre_read_cb(uint8_t rhport, uint16_t n_bytes_received, ui
         *left++ = buf[cnt++];
         *right++ = buf[cnt++];
     }
+    app.usbAudio.next_slot_in();
 
     return true;
 }

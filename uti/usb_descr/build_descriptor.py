@@ -727,7 +727,7 @@ def build_audio_descr(name, func, params):
         params.defines['CFG_TUD_AUDIO_ENABLE_EP_IN'] = 1
         params.defines['CFG_TUD_AUDIO_EP_SZ_IN'] = max_TUD_AUDIO_EP_SIZE
         # params.defines['CFG_TUD_AUDIO_ENABLE_ENCODING'] = 0
-        # params.defines['CFG_TUD_AUDIO_EP_IN_FLOW_CONTROL'] = 0
+        params.defines['CFG_TUD_AUDIO_EP_IN_FLOW_CONTROL'] = 0
         params.defines['CFG_TUD_AUDIO_FUNC_1_EP_IN_SZ_MAX'] = 'CFG_TUD_AUDIO_EP_SZ_IN'
         params.defines['CFG_TUD_AUDIO_FUNC_1_EP_IN_SW_BUF_SZ'] = 'CFG_TUD_AUDIO_EP_SZ_IN'
         # params.defines['CFG_TUD_AUDIO_ENABLE_TYPE_I_ENCODING'] = 0
@@ -738,7 +738,7 @@ def build_audio_descr(name, func, params):
         params.defines['CFG_TUD_AUDIO_ENABLE_EP_OUT'] = 1
         params.defines['CFG_TUD_AUDIO_EP_SZ_OUT'] = max_TUD_AUDIO_EP_SIZE
         # params.defines['CFG_TUD_AUDIO_ENABLE_DECODING'] = 0
-        # params.defines['CFG_TUD_AUDIO_EP_OUT_FLOW_CONTROL'] = 0
+        params.defines['CFG_TUD_AUDIO_EP_OUT_FLOW_CONTROL'] = 0
         params.defines['CFG_TUD_AUDIO_FUNC_1_EP_OUT_SZ_MAX'] = 'CFG_TUD_AUDIO_EP_SZ_OUT'
         params.defines['CFG_TUD_AUDIO_FUNC_1_EP_OUT_SW_BUF_SZ'] = 'CFG_TUD_AUDIO_EP_SZ_OUT'
         # params.defines['CFG_TUD_AUDIO_ENABLE_TYPE_I_DECODING'] = 0

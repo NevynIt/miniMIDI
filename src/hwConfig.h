@@ -144,6 +144,7 @@ enum DSP_Tracks {
     #define UART_BAUD_RATE 31250
 #endif
 
+#define DEOPTIMIZE __attribute__((optimize("O0"))) 
 //USB configuration mostly defined in mod_USB.cpp
 
 #endif // HWCONFIG_H
