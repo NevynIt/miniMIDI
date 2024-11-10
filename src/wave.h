@@ -42,13 +42,13 @@ public:
         setPhase_f(phase);
     }
 
-    inline void setFrequency(fp_index frequency) { increment = frequency / SAMPLE_RATE; }
-    inline fp_index getFrequency() { return increment * SAMPLE_RATE; }
+    inline void setFrequency(fp_index frequency, uint32_t sample_rate = SAMPLE_RATE) { increment = frequency / sample_rate; }
+    inline fp_index getFrequency(uint32_t sample_rate = SAMPLE_RATE) { return increment * sample_rate; }
     inline void setPhase(fp_index phase) { index = phase; }
     inline fp_index getPhase() { return index; }
 
-    inline void setFrequency_f(float frequency) { increment = (fp_index)((frequency * WAVEFORM_SIZE) / SAMPLE_RATE); }
-    inline float getFrequency_f() { return ((float)increment * SAMPLE_RATE) / WAVEFORM_SIZE; }
+    inline void setFrequency_f(float frequency, uint32_t sample_rate = SAMPLE_RATE) { increment = (fp_index)((frequency * WAVEFORM_SIZE) / sample_rate); }
+    inline float getFrequency_f(uint32_t sample_rate = SAMPLE_RATE) { return ((float)increment * sample_rate) / WAVEFORM_SIZE; }
     inline void setPhase_f(float phase) { index = (fp_index)(phase * (1 << (16 - WAVEFORM_SIZE_BITS))); }
     inline float getPhase_f() { return (float)index / (1 << (16 - WAVEFORM_SIZE_BITS)); }
 

@@ -44,10 +44,10 @@ void mod_USB_Audio::Test()
     if (last_slot != slot_out)
     {
         auto left = getOutBuffer(0);
-        int noteL = app.encoders.count[0]/4 + 60;
-        fp_int ampL = fp_int(app.encoders.count[1]/4 + 50) / 100;
-        int noteR = app.encoders.count[2]/4 + 60;
-        fp_int ampR = fp_int(app.encoders.count[3]/4 + 50) / 100;
+        int noteL = mMApp.encoders.count[0]/4 + 60;
+        fp_int ampL = fp_int(mMApp.encoders.count[1]/4 + 50) / 100;
+        int noteR = mMApp.encoders.count[2]/4 + 60;
+        fp_int ampR = fp_int(mMApp.encoders.count[3]/4 + 50) / 100;
 
         if (noteL < 0) noteL = 0;
         if (noteL > 127) noteL = 127;
@@ -88,12 +88,12 @@ void mod_USB_Audio::reset_slot_out()
 
 void mod_USB_Audio::start_slot_in()
 {
-    slot_in = app.dsp.getSlotRelative(-1, app.usb.SOF_sync_us);
+    slot_in = mMApp.dsp.getSlotRelative(-1, mMApp.usb.SOF_sync_us);
 }
 
 void mod_USB_Audio::start_slot_out()
 {
-    slot_out = app.dsp.getSlotRelative(2, app.usb.SOF_sync_us);
+    slot_out = mMApp.dsp.getSlotRelative(2, mMApp.usb.SOF_sync_us);
 }
 
 void mod_USB_Audio::next_slot_in()
@@ -114,14 +114,14 @@ inline sample_ptr mod_USB_Audio::getOutBuffer(uint8_t channel) const
 {
     if (slot_out < 0)
         __breakpoint();
-    return app.dsp.buffers[track_out[channel]][slot_out];
+    return mMApp.dsp.buffers[track_out[channel]][slot_out];
 }
 
 inline sample_ptr mod_USB_Audio::getInBuffer(uint8_t channel) const
 {
     if (slot_in < 0)
         __breakpoint();
-    return app.dsp.buffers[track_in[channel]][slot_in];
+    return mMApp.dsp.buffers[track_in[channel]][slot_in];
 }
 
 //--------------------------------------------------------------------+
@@ -206,13 +206,13 @@ bool tud_audio_set_itf_cb(uint8_t rhport, tusb_control_request_t const *p_reques
     if (itf == ITF_NUM_mM_Sound_LineIn)
     {
         // Line In
-        app.usbAudio.start_slot_out();
+        mMApp.usbAudio.start_slot_out();
         alt_out = alt;
     }
     else if (itf == ITF_NUM_mM_Sound_LineOut)
     {
         // Line Out
-        app.usbAudio.start_slot_in();
+        mMApp.usbAudio.start_slot_in();
         alt_in = alt;
     }
     return true;
@@ -244,21 +244,21 @@ bool tud_audio_tx_done_pre_load_cb(uint8_t rhport, uint8_t itf, uint8_t ep_in, u
 
     // printf("tud_audio_tx_done_pre_load_cb\r\n");
 
-    if (app.usbAudio.slot_out < 0)
+    if (mMApp.usbAudio.slot_out < 0)
         return false;
 
     if (alt_out == 0)
         return true;
 
-    auto buf = app.usbAudio.buffer_out;
-    sample_ptr left = app.usbAudio.getOutBuffer(0);
-    sample_ptr right = app.usbAudio.getOutBuffer(1);
+    auto buf = mMApp.usbAudio.buffer_out;
+    sample_ptr left = mMApp.usbAudio.getOutBuffer(0);
+    sample_ptr right = mMApp.usbAudio.getOutBuffer(1);
     for (size_t cnt = 0; cnt < AUDIO_BUFFER_SAMPLES * 2;)
     {
         buf[cnt++] = *left++;
         buf[cnt++] = *right++;
     }
-    app.usbAudio.next_slot_out();
+    mMApp.usbAudio.next_slot_out();
     
     tud_audio_write((uint8_t *)buf, 2 * AUDIO_BUFFER_SAMPLES * BITS_PER_SAMPLE / 8);
 
@@ -289,12 +289,12 @@ bool tud_audio_set_itf_close_EP_cb(uint8_t rhport, tusb_control_request_t const 
     if (itf == ITF_NUM_mM_Sound_LineIn)
     {
         // Line In
-        app.usbAudio.reset_slot_in();
+        mMApp.usbAudio.reset_slot_in();
     }
     else if (itf == ITF_NUM_mM_Sound_LineOut)
     {
         // Line Out
-        app.usbAudio.reset_slot_out();
+        mMApp.usbAudio.reset_slot_out();
     }
     return true;
 }
@@ -309,20 +309,20 @@ bool tud_audio_rx_done_pre_read_cb(uint8_t rhport, uint16_t n_bytes_received, ui
 
     printf("tud_audio_rx_done_pre_read_cb\r\n");
 
-    if (app.usbAudio.slot_in < 0)
+    if (mMApp.usbAudio.slot_in < 0)
         return false;
 
-    auto buf = app.usbAudio.buffer_in;
+    auto buf = mMApp.usbAudio.buffer_in;
     uint16_t num_read = tud_audio_read(buf, 2 * AUDIO_BUFFER_SAMPLES * BITS_PER_SAMPLE / 8);
 
-    sample_ptr left = app.usbAudio.getInBuffer(0);
-    sample_ptr right = app.usbAudio.getInBuffer(1);
+    sample_ptr left = mMApp.usbAudio.getInBuffer(0);
+    sample_ptr right = mMApp.usbAudio.getInBuffer(1);
     for (size_t cnt = 0; cnt < AUDIO_BUFFER_SAMPLES * 2;)
     {
         *left++ = buf[cnt++];
         *right++ = buf[cnt++];
     }
-    app.usbAudio.next_slot_in();
+    mMApp.usbAudio.next_slot_in();
 
     return true;
 }

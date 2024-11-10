@@ -11,7 +11,7 @@ void mod_USB::Init()
   tusb_init();
   tud_sof_cb_enable(true);
 
-  app.display.println("USB initialized");
+  mMApp.display.println("USB initialized");
   printf("USB initialized\n");
 }
 
@@ -40,8 +40,8 @@ void mod_USB::Tick()
     if (sync_delta > 400 && sync_delta < 600)
     {
       // Sync
-      // auto slot_old = app.dsp.getSlotRelative(0, app.usb.SOF_sync_us);
-      // auto slot_new = app.dsp.getSlotRelative(0, new_sync);
+      // auto slot_old = mMApp.dsp.getSlotRelative(0, mMApp.usb.SOF_sync_us);
+      // auto slot_new = mMApp.dsp.getSlotRelative(0, new_sync);
       // printf("sync delta: %d, slot old %d new %d\n", sync_delta, slot_old, slot_new);
 
       SOF_sync_us = new_sync;

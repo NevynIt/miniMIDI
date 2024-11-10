@@ -6,11 +6,11 @@
 
 void core1_entry()
 {
-    app.Init_c1();
+    mMApp.Init_c1();
 
     while (true)
     {
-        app.Tick_c1();
+        mMApp.Tick_c1();
     }
 }
 
@@ -25,35 +25,47 @@ void core1_entry()
 //     return 0;
 // }
 
-// template<class T>
-// int ilog2(T x)
-// {
-//     return (sizeof(T)*8 -1 ) - __builtin_clz(abs(x));
-// }
+// IIR can be used with some performance redefining the pieces that are used by the "filter" function
+// that is:
+//  - within Biquad class, the member variables and the filter function
+//  - within the CascadeStages class, the filter function and the biquad member variables
+// I think it's possible to create a super lightweight version of the filter function that just copies the coefficient from the IIR implementation
+// identification of parameters will be slow but precise (using double precision)
+// execution can be fast (using fixed precision math)
+#define IIR1_NO_EXCEPTIONS
+#include "iir.h"
 
-// #include <random>
-// void test()
-// {
-//     int x = rand();
-//     printf("log2(%d) = %d\n", x, ilog2(x));
-// }
+void test()
+{
+    // Create a Butterworth lowpass filter
+    Iir::ChebyshevI::BandPass<4> f;
+    // Set the cutoff frequency to 0.2 of Nyquist
+    f.setup(2, 0.3, 0.05, 10);
+
+    // Filter some data
+    double x = 0;
+    for (int i = 0; i < 100; ++i)
+    {
+        double y = f.filter(x);
+        printf("%10.6f\n", y);
+        x = (i == 10) ? 1 : 0;
+    }
+}
 
 int main()
 {
     set_sys_clock_khz(CPU_KHZ, true);
 
     // Initialise the modules on core 0 first
-    app.Init_c0();
+    mMApp.Init_c0();
+
+    test();
 
     multicore_launch_core1(core1_entry);
 
-    
-    auto p = fp_int(0x2342).to_signed();
-    
-
     while (true)
     {
-        app.Tick_c0();
+        mMApp.Tick_c0();
         // test();
     }
 

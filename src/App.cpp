@@ -17,13 +17,10 @@ void App::Init_c0() {
     std::vector<Module*> &mods =  modules_c0;
 
     // non time critical modules on core 0
-    mods.push_back(&blink); // basic visual feedback of operation
 
     // User interface modules
     mods.push_back(&uart); //Supports STDIO for debugging if enabled on CMakelists.txt
     mods.push_back(&config); //Dummy module for now
-
-    mods.push_back(&sd);
     
     // USB modules
     mods.push_back(&usb);
@@ -42,7 +39,9 @@ void App::Init_c1() {
     std::vector<Module*> &mods =  modules_c1;
 
     // parked modules
+    mods.push_back(&blink); // basic visual feedback of operation
     mods.push_back(&display); //Updated implementation using DMA
+    mods.push_back(&sd);
 
     // time critical modules on core 1
     mods.push_back(&usbAudio);

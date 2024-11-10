@@ -178,12 +178,12 @@ void mod_Display::Test()
 {
     INTERVALCHECK(DISPLAY_REFRESH_MS)
 
-    app.display.clear();
+    mMApp.display.clear();
     char buffer[100];
-    sprintf(buffer, "%d, %d, %d, %d, %d\n", app.encoders.buttons, app.encoders.count[0], app.encoders.count[1], app.encoders.count[2], app.encoders.count[3]);
-    app.display.draw_text(0, 16, 1, buffer);
-    sprintf(buffer, "%d, %d, %d\n", app.joys.button, app.joys.GetX(), app.joys.GetY());
-    app.display.draw_text(0, 24, 1, buffer);
+    sprintf(buffer, "%d, %d, %d, %d, %d\n", mMApp.encoders.buttons, mMApp.encoders.count[0], mMApp.encoders.count[1], mMApp.encoders.count[2], mMApp.encoders.count[3]);
+    mMApp.display.draw_text(0, 16, 1, buffer);
+    sprintf(buffer, "%d, %d, %d\n", mMApp.joys.button, mMApp.joys.GetX(), mMApp.joys.GetY());
+    mMApp.display.draw_text(0, 24, 1, buffer);
 }
 
 void mod_Display::clear()

@@ -34,3 +34,6 @@
 [submodule "src/Platform"]
 	path = src/Platform
 	url = https://github.com/AnotherJohnH/Platform
+[submodule "src/iir1"]
+	path = src/iir1
+	url = https://github.com/berndporr/iir1

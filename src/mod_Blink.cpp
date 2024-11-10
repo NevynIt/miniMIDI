@@ -34,7 +34,8 @@ void mod_Blink::Tick() {
     // Toggle();
 
     // Update PWM duty cycle based on wave sample
-    ledWave.increment = fp_index(freq * (1000.0f / BLINK_REFRESH_HZ));
+    ledWave.setFrequency_f(freq, BLINK_REFRESH_HZ);
+    // ledWave.increment = fp_index(freq * (1000.0f / BLINK_REFRESH_HZ));
     sample_t sample = ledWave.getSample();
     uint16_t duty = (float(sample) - SAMPLE_MIN) / ((float)SAMPLE_MAX - SAMPLE_MIN) * level;
     pwm_set_gpio_level(GPIO_Board_Led, duty);

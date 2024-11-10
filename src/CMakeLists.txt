@@ -1,6 +1,8 @@
 # Add executable. Default name is the project name, version 0.1
 
 add_subdirectory(no-OS-FatFS-SD-SPI-RPi-Pico/FatFs_SPI build)
+add_subdirectory(iir1 iir1_build)
+
 
 add_executable(miniMIDI 
     miniMIDI.cpp
@@ -68,9 +70,15 @@ target_compile_definitions(miniMIDI PUBLIC
   PICO_DEFAULT_UART=0
   )
 
-  # Modify the below lines to enable/disable output over UART/USB
-  pico_enable_stdio_usb(miniMIDI 0)
-  pico_enable_stdio_uart(miniMIDI 1)
+
+set (_GLIBCXX_USE_C99_COMPLEX 0)
+target_compile_definitions(iir PUBLIC
+_GLIBCXX_USE_C99_COMPLEX=0
+)
+
+# Modify the below lines to enable/disable output over UART/USB
+pico_enable_stdio_usb(miniMIDI 0)
+pico_enable_stdio_uart(miniMIDI 1)
 
 # Add the standard library to the build
 target_link_libraries(miniMIDI
@@ -78,6 +86,7 @@ target_link_libraries(miniMIDI
         stdc++
         tinyusb_device
         tinyusb_board
+        iir
 )
 
 # Add the standard include files to the build

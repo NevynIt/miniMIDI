@@ -21,7 +21,7 @@ void mod_LedStrip::Init() {
     channel_config_set_dreq(&c, pio_get_dreq(PIO_WS2812B, sm, true));
     dma_channel_configure(dma_channel, &c, &PIO_WS2812B->txf[sm], led_buffer, LEDS_COUNT, false);
 
-    app.display.println("LedStrip initialized");
+    mMApp.display.println("LedStrip initialized");
     printf("LedStrip initialized\n");
 }
 
@@ -39,7 +39,7 @@ void mod_LedStrip::Test() {
 
     static uint8_t mode = 0;
 
-    uint8_t btn = app.encoders.buttons;
+    uint8_t btn = mMApp.encoders.buttons;
 
     switch (btn)
     {
@@ -62,11 +62,11 @@ void mod_LedStrip::Test() {
     switch (mode)
     {
     case 0:
-        app.ledStrip.Clear();
-        i = (app.encoders.count[0] / 4) % LEDS_COUNT;
-        r = (app.encoders.count[1] / 4);
-        g = (app.encoders.count[2] / 4);
-        b = (app.encoders.count[3] / 4);
+        mMApp.ledStrip.Clear();
+        i = (mMApp.encoders.count[0] / 4) % LEDS_COUNT;
+        r = (mMApp.encoders.count[1] / 4);
+        g = (mMApp.encoders.count[2] / 4);
+        b = (mMApp.encoders.count[3] / 4);
         if (r > 127) r = 127;
         if (g > 127) g = 127;
         if (b > 127) b = 127;
@@ -74,34 +74,34 @@ void mod_LedStrip::Test() {
         if (g < 0) g = 0;
         if (b < 0) b = 0;
 
-        app.ledStrip.SetColor(i, r, g, b);
+        mMApp.ledStrip.SetColor(i, r, g, b);
         break;
     case 1:
-        app.ledStrip.Clear();
-        i = (app.encoders.count[0] / 4) % LEDS_COUNT;
-        t = (128 * 8 + app.encoders.count[1] / 4) % 128;
+        mMApp.ledStrip.Clear();
+        i = (mMApp.encoders.count[0] / 4) % LEDS_COUNT;
+        t = (128 * 8 + mMApp.encoders.count[1] / 4) % 128;
         t & 0b01111110;
-        b = (app.encoders.count[2] / 4) % 128;
+        b = (mMApp.encoders.count[2] / 4) % 128;
         if (b > 127) b = 127;
         if (b < 0) b = 0;
-        app.ledStrip.SetColor(i, t, b);
+        mMApp.ledStrip.SetColor(i, t, b);
         break;
     case 2:
         i = rand() % LEDS_COUNT;
         t = rand() % 128;
-        b = (app.encoders.count[2] / 4) % 128;
+        b = (mMApp.encoders.count[2] / 4) % 128;
         if (b > 127) b = 127;
         if (b < 0) b = 0;
-        app.ledStrip.SetColor(i, t, b);
+        mMApp.ledStrip.SetColor(i, t, b);
         break;
     case 3:
-        b = app.encoders.count[2] / 4;
+        b = mMApp.encoders.count[2] / 4;
         if (b > 127) b = 127;
         if (b < 0) b = 0;
         for (i = 0; i < LEDS_COUNT; i++)
         {
-            t = (i + app.encoders.count[0] / 4) % 128;
-            app.ledStrip.SetColor(i, t, b);
+            t = (i + mMApp.encoders.count[0] / 4) % 128;
+            mMApp.ledStrip.SetColor(i, t, b);
         }
         break;
     default:

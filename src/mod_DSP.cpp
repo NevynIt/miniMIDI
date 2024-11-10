@@ -18,7 +18,7 @@ using namespace fpm;
 
 void mod_DSP::Init()
 {
-    app.display.println("DSP initialized");
+    mMApp.display.println("DSP initialized");
     printf("DSP initialized\n");
 }
 
@@ -40,7 +40,7 @@ Lookup table interpolated: 69.93 us
 void mod_DSP::Test()
 {
     bool sdtest = false; //Set to true to write test files to SD card
-    sdtest = app.sd.mounted; //Uncomment to write test files to SD card if present
+    sdtest = mMApp.sd.mounted; //Uncomment to write test files to SD card if present
     static bool test_done = false;
     if (test_done)
         return;
@@ -60,83 +60,83 @@ void mod_DSP::Test()
     // t0 = time_us_32();
     // for (int i = 0; i < 1000; ++i)
     // {
-    //     phase = app.dsp.GenerateSineWave(buffer + i * AUDIO_BUFFER_SAMPLES, fp_int(440), fp_int(1), phase);
+    //     phase = mMApp.dsp.GenerateSineWave(buffer + i * AUDIO_BUFFER_SAMPLES, fp_int(440), fp_int(1), phase);
     // }
     // t1 = time_us_32();
     // printf("Sine: %.2f us\n", (t1 - t0) / 1000.0f);
     // if (sdtest)
-    //     app.sd.WriteFile("sine.raw", std::string((char*)buffer, AUDIO_BUFFER_SAMPLES*1000*sizeof(sample_t)));
+    //     mMApp.sd.WriteFile("sine.raw", std::string((char*)buffer, AUDIO_BUFFER_SAMPLES*1000*sizeof(sample_t)));
 
     // // Square wave
     // phase = fp_int(0);
     // t0 = time_us_32();
     // for (int i = 0; i < 1000; ++i)
     // {
-    //     phase = app.dsp.GenerateSquareWave(buffer + i * AUDIO_BUFFER_SAMPLES, fp_int(440), fp_int(1), phase);
+    //     phase = mMApp.dsp.GenerateSquareWave(buffer + i * AUDIO_BUFFER_SAMPLES, fp_int(440), fp_int(1), phase);
     // }
     // t1 = time_us_32();
     // printf("Square: %.2f us\n", (t1 - t0) / 1000.0f);
     // if (sdtest)
-    //     app.sd.WriteFile("square.raw", std::string((char*)buffer, AUDIO_BUFFER_SAMPLES*1000*sizeof(sample_t)));
+    //     mMApp.sd.WriteFile("square.raw", std::string((char*)buffer, AUDIO_BUFFER_SAMPLES*1000*sizeof(sample_t)));
 
     // // Sawtooth wave
     // phase = fp_int(0);
     // t0 = time_us_32();
     // for (int i = 0; i < 1000; ++i)
     // {
-    //     phase = app.dsp.GenerateSawtoothWave(buffer + i * AUDIO_BUFFER_SAMPLES, fp_int(440), fp_int(1), phase);
+    //     phase = mMApp.dsp.GenerateSawtoothWave(buffer + i * AUDIO_BUFFER_SAMPLES, fp_int(440), fp_int(1), phase);
     // }
     // t1 = time_us_32();
     // printf("Sawtooth: %.2f us\n", (t1 - t0) / 1000.0f);
     // if (sdtest)
-    //     app.sd.WriteFile("sawtooth.raw", buffer, AUDIO_BUFFER_SAMPLES * 1000 * sizeof(sample_t));
+    //     mMApp.sd.WriteFile("sawtooth.raw", buffer, AUDIO_BUFFER_SAMPLES * 1000 * sizeof(sample_t));
 
     // // Triangle wave
     // phase = fp_int(0);
     // t0 = time_us_32();
     // for (int i = 0; i < 1000; ++i)
     // {
-    //     phase = app.dsp.GenerateTriangleWave(buffer + i * AUDIO_BUFFER_SAMPLES, fp_int(440), fp_int(1), phase);
+    //     phase = mMApp.dsp.GenerateTriangleWave(buffer + i * AUDIO_BUFFER_SAMPLES, fp_int(440), fp_int(1), phase);
     // }
     // t1 = time_us_32();
     // printf("Triangle: %.2f us\n", (t1 - t0) / 1000.0f);
     // if (sdtest)
-    //     app.sd.WriteFile("triangle.raw", buffer, AUDIO_BUFFER_SAMPLES * 1000 * sizeof(sample_t));
+    //     mMApp.sd.WriteFile("triangle.raw", buffer, AUDIO_BUFFER_SAMPLES * 1000 * sizeof(sample_t));
 
     // // Noise
     // t0 = time_us_32();
     // for (int i = 0; i < 1000; ++i)
     // {
-    //     app.dsp.GenerateNoise(buffer + i * AUDIO_BUFFER_SAMPLES, fp_int(1));
+    //     mMApp.dsp.GenerateNoise(buffer + i * AUDIO_BUFFER_SAMPLES, fp_int(1));
     // }
     // t1 = time_us_32();
     // printf("Noise: %.2f us\n", (t1 - t0) / 1000.0f);
     // if (sdtest)
-    //     app.sd.WriteFile("noise.raw", std::string((char*)buffer, AUDIO_BUFFER_SAMPLES*1000*sizeof(sample_t)));
+    //     mMApp.sd.WriteFile("noise.raw", std::string((char*)buffer, AUDIO_BUFFER_SAMPLES*1000*sizeof(sample_t)));
 
     // // Lookup table sin
     // phase = fp_int(0);
     // t0 = time_us_32();
     // for (int i = 0; i < 1000; ++i)
     // {
-    //     phase = app.dsp.GenerateWave(buffer + i * AUDIO_BUFFER_SAMPLES, WT_BASE, 0, fp_int(440), fp_int(1), phase);
+    //     phase = mMApp.dsp.GenerateWave(buffer + i * AUDIO_BUFFER_SAMPLES, WT_BASE, 0, fp_int(440), fp_int(1), phase);
     // }
     // t1 = time_us_32();
     // printf("Lookup table: %.2f us\n", (t1 - t0) / 1000.0f);
     // if (sdtest)
-    //     app.sd.WriteFile("lut.raw", buffer, AUDIO_BUFFER_SAMPLES * 1000 * sizeof(sample_t));
+    //     mMApp.sd.WriteFile("lut.raw", buffer, AUDIO_BUFFER_SAMPLES * 1000 * sizeof(sample_t));
 
     // // Lookup table sin interp
     // phase = fp_int(0);
     // t0 = time_us_32();
     // for (int i = 0; i < 1000; ++i)
     // {
-    //     phase = app.dsp.GenerateWaveInterp(buffer + i * AUDIO_BUFFER_SAMPLES, WT_BASE, 0, fp_int(440), fp_int(1), phase);
+    //     phase = mMApp.dsp.GenerateWaveInterp(buffer + i * AUDIO_BUFFER_SAMPLES, WT_BASE, 0, fp_int(440), fp_int(1), phase);
     // }
     // t1 = time_us_32();
     // printf("Lookup table interpolated: %.2f us\n", (t1 - t0) / 1000.0f);
     // if (sdtest)
-    //     app.sd.WriteFile("lut_interp.raw", buffer, AUDIO_BUFFER_SAMPLES * 1000 * sizeof(sample_t));
+    //     mMApp.sd.WriteFile("lut_interp.raw", buffer, AUDIO_BUFFER_SAMPLES * 1000 * sizeof(sample_t));
 
     
     // Lookup table sin - NEW!
@@ -146,7 +146,7 @@ void mod_DSP::Test()
     t1 = time_us_32();
     printf("Lookup table new: %.2f us\n", (t1 - t0) / 1000.0f);
     if (sdtest)
-        app.sd.WriteFile("wave.raw", buffer, AUDIO_BUFFER_SAMPLES * 1000 * sizeof(sample_t));
+        mMApp.sd.WriteFile("wave.raw", buffer, AUDIO_BUFFER_SAMPLES * 1000 * sizeof(sample_t));
 
     
     // Lookup table sin freq_mod - NEW!
@@ -158,7 +158,7 @@ void mod_DSP::Test()
     t1 = time_us_32();
     printf("lookup table FM modulation: %.2f us\n", (t1 - t0) / 1000.0f);
     if (sdtest)
-        app.sd.WriteFile("waveFM.raw", buffer, AUDIO_BUFFER_SAMPLES * 1000 * sizeof(sample_t));
+        mMApp.sd.WriteFile("waveFM.raw", buffer, AUDIO_BUFFER_SAMPLES * 1000 * sizeof(sample_t));
 
 
     delete[] buffer;

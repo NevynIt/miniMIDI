@@ -8,12 +8,12 @@ void mod_SD::Init()
 
     if (mounted)
     {
-        app.display.println("SD Card mounted");
+        mMApp.display.println("SD Card mounted");
         printf("SD Card mounted\n");
     }
     else
     {
-        app.display.println("No SD Card");
+        mMApp.display.println("No SD Card");
         printf("No SD Card\n");
     }
 }
