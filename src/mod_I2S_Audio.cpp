@@ -3,6 +3,18 @@
 #include "pico/stdlib.h"
 // #include "i2s.h"
 
+
+// extern "C"
+// {
+// int i2s_example_main();
+// }
+
+// int main() {
+
+//     i2s_example_main();
+//     return 0;
+// }
+
 void mod_I2S_Audio::Init() {
     // Initialize the I2S interface with default configuration
     // i2s_program_start_slaved(pio0, &i2s_config_default, DefaultDMAHandler, &i2s_instance);

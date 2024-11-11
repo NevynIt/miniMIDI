@@ -41,6 +41,7 @@ add_executable(miniMIDI
 
 # Add this line to set the compile option to disable the warning about the parameter passing convention for fp_int
 target_compile_options(miniMIDI PRIVATE -Wno-psabi)
+target_compile_options(iir PRIVATE -Wno-psabi)
 
 # Set the output directories to the root build directory
 set_target_properties(miniMIDI PROPERTIES
@@ -68,6 +69,7 @@ target_compile_definitions(miniMIDI PUBLIC
   PICO_DEFAULT_UART_RX_PIN=17
   PICO_DEFAULT_UART_BAUD_RATE=115200
   PICO_DEFAULT_UART=0
+  IIR1_NO_EXCEPTIONS=1
   )
 
 
