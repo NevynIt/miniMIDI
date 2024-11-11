@@ -20,6 +20,7 @@ void App::Init_c0() {
 
     // User interface modules
     mods.push_back(&uart); //Supports STDIO for debugging if enabled on CMakelists.txt
+    mods.push_back(&blink); // basic visual feedback of operation
     mods.push_back(&config); //Dummy module for now
     
     // USB modules
@@ -39,7 +40,6 @@ void App::Init_c1() {
     std::vector<Module*> &mods =  modules_c1;
 
     // parked modules
-    mods.push_back(&blink); // basic visual feedback of operation
     mods.push_back(&display); //Updated implementation using DMA
     mods.push_back(&sd);
 

@@ -21,14 +21,11 @@ int main()
     // Initialise the modules on core 0 first
     mMApp.Init_c0();
 
-    test();
-
     multicore_launch_core1(core1_entry);
 
     while (true)
     {
         mMApp.Tick_c0();
-        // test();
     }
 
     return 0;

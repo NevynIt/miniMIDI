@@ -28,7 +28,8 @@ add_executable(miniMIDI
     mod_Blink.cpp
     mod_Synth.cpp
 
-    wavetables/WT_BASE.cpp
+    # wavetables/WT_BASE.cpp
+    dsp/Table_sinWave.cpp
     midi_const/midi_frequencies.cpp
     ledColors/led_colors.cpp
     # QuadratureDecoder/QuadratureDecoder.cpp

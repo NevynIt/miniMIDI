@@ -4,8 +4,7 @@
 #include "Module.h"
 #include "hardware/gpio.h"
 #include "hwConfig.h"
-#include "wave.h"
-#include "wavetables/WT_BASE.h"
+#include "dsp/wave.h"
 
 class mod_Blink : public Module {
 public:
@@ -14,14 +13,13 @@ public:
 
     void Toggle();
 
-    void setWaveform(sample_cptr waveform);
+    void setFreq(float freq);
 
     float freq = 1;
     int level = 128;
 private:
-    bool ledState = false;
     uint32_t lastTickTime = 0;
-    wave ledWave = wave(WT_BASE_sin); // Initialize with WT_BASE_sin
+    dsp::sinWave ledWave;
     uint slice_num; // PWM slice number
 };
 

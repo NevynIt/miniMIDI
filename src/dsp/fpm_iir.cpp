@@ -10,6 +10,7 @@
 #include "hardware/clocks.h"
 
 using fp_int = fpm::fixed<16, 16>;
+using namespace Iir;
 
 void test()
 {

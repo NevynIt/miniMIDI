@@ -450,3 +450,195 @@ public:
     uint8_t state;
     sample_t level;
 };
+
+//even older version
+
+
+// Generators do not handle clipping correctly, they rely just on int overflow
+
+// //new implementation, super optimized, I am curious about the performance! OBE by wave.h
+// sample_t mod_DSP::GenerateWave1Hz(sample_ptr buf, sample_cptr waveform, const fp_int frequency, const sample_t amplitude, const sample_t phase)
+// {
+//     const fp_int increment = frequency * fp_int(WAVEFORM_SIZE / SAMPLE_RATE); // index increment per sample
+//     fp_int index = fp_int::from_raw_value(phase) << WAVEFORM_SIZE_BITS; // convert phase to index
+
+//     for (int i = 0; i < AUDIO_BUFFER_SAMPLES; ++i)
+//     {
+//         buf[i] = (sample_t)((int32_t(amplitude) * waveform[(int)(index)]) >> 15);
+//         index += increment;
+//         index &= WAVEFORM_SIZE_FP_MASK;
+//     }
+//     return static_cast<int16_t>((index >> WAVEFORM_SIZE_BITS).raw_value());
+// }
+
+// fp_int mod_DSP::GenerateWave1HzInterp(sample_ptr buf, sample_cptr waveform, uint16_t size, const fp_int frequency, const fp_int amplitude, const fp_int phase)
+// {
+//     fp_int increment = frequency / SAMPLE_RATE; // angle increment per sample
+//     fp_int angle = phase;
+
+//     for (int i = 0; i < AUDIO_BUFFER_SAMPLES; ++i)
+//     {
+//         int index = (int)(angle * size);
+//         int next_index = (index + 1) % size;
+//         fp_int frac = mod1(angle * size);
+//         buf[i] = (sample_t)(amplitude * ((1 - frac) * waveform[index] + frac * waveform[next_index]) + SAMPLE_ZERO);
+//         angle = mod1(angle + increment);
+//     }
+//     return angle;
+// }
+
+// // __attribute__((optimize("O0"))) // function attribute to disable optimization
+// fp_int mod_DSP::GenerateWave(sample_ptr buf, sample_cptr wavetable, uint8_t waveform_num, const fp_int frequency_ratio, const fp_int amplitude, const fp_int phase)
+// {
+//     const uint16_t size = WT_GetWaveformSize(wavetable, waveform_num);
+//     const sample_cptr waveform = WT_GetWaveform(wavetable, waveform_num);
+//     const uint16_t sample_rate = WT_GetSampleRate(wavetable);
+//     const fp_int period = fp_int(float(SAMPLE_RATE) / size * sample_rate / float(frequency_ratio)); // period in samples
+//     const fp_int increment = size / period; // index increment per sample
+//     fp_int index = phase * size;
+
+//     int i;
+//     for (i = 0; i < AUDIO_BUFFER_SAMPLES; ++i)
+//     {
+//         buf[i] = (sample_t)(amplitude * waveform[(int)(index)]);
+//         index += increment;
+//         if (index >= size)
+//             index -= size;
+//     }
+//     return (index / size).mod1();
+// }
+
+// // __attribute__((optimize("O0"))) // function attribute to disable optimization
+// fp_int mod_DSP::GenerateWaveInterp(sample_ptr buf, sample_cptr wavetable, uint8_t waveform_num, const fp_int frequency_ratio, const fp_int amplitude, const fp_int phase)
+// {
+//     const uint16_t size = WT_GetWaveformSize(wavetable, waveform_num);
+//     const sample_cptr waveform = WT_GetWaveform(wavetable, waveform_num);
+//     const uint16_t sample_rate = WT_GetSampleRate(wavetable);
+//     const fp_int period = fp_int(float(SAMPLE_RATE) / size * sample_rate / float(frequency_ratio)); // period in samples
+//     const fp_int increment = size/period; // index increment per sample
+//     fp_int index = phase * size;
+
+//     int i;
+//     for (i = 0; i < AUDIO_BUFFER_SAMPLES; ++i)
+//     {
+//         fp_int frac = index.mod1();
+//         int index_plus_0 = (int)(index);
+//         int index_plus_1 = (index_plus_0 + 1);
+//         if (index_plus_1 >= size)
+//             index_plus_1 -= size;
+//         buf[i] = (sample_t)(amplitude * ((1-frac) * waveform[index_plus_0] + frac * waveform[index_plus_1]));
+//         index += increment;
+//         if (index >= size)
+//             index -= size;
+//     }
+//     return (index / size).mod1();
+// }
+
+// // __attribute__((optimize("O0"))) // function attribute to disable optimization
+// fp_int mod_DSP::GenerateSineWave(sample_ptr buf, const fp_int frequency, const fp_int amplitude, const fp_int phase)
+// {
+//     // return GenerateWave1Hz(buf, WT_BASE_sin, WT_BASE_sin_SIZE, frequency, amplitude, phase);
+
+//     fp_int increment = frequency / SAMPLE_RATE; // angle increment per sample
+//     fp_int angle = phase;
+//     const fp_int range = amplitude * SAMPLE_MAX;
+
+//     for (int i = 0; i < AUDIO_BUFFER_SAMPLES; ++i)
+//     {
+//         buf[i] = (sample_t)(range * sin(angle * TWO_PI) + SAMPLE_ZERO);
+//         angle = (angle + increment).mod1();
+//     }
+//     return angle;
+// }
+
+// // __attribute__((optimize("O0"))) // function attribute to disable optimization
+// fp_int mod_DSP::GenerateSquareWave(sample_ptr buf, const fp_int frequency, const fp_int amplitude, const fp_int phase)
+// {
+//     fp_int period = SAMPLE_RATE / frequency; // period in samples
+//     const sample_t up = (sample_t)(SAMPLE_ZERO + (amplitude * SAMPLE_MAX));
+//     const sample_t down = (sample_t)(SAMPLE_ZERO - (amplitude * SAMPLE_MAX));
+//     int i;
+//     for (i = 0; i < AUDIO_BUFFER_SAMPLES; ++i)
+//     {
+//         buf[i] = ((phase + i / period).mod1() < fp_int(0.5)) ? up : down;
+//     }
+//     return (phase + i / period).mod1();
+// }
+
+// // __attribute__((optimize("O0"))) // function attribute to disable optimization
+// fp_int mod_DSP::GenerateSawtoothWave(sample_ptr buf, const fp_int frequency, const fp_int amplitude, const fp_int phase)
+// {
+//     fp_int period = SAMPLE_RATE / frequency; // period in samples
+//     // const sample_t down = (sample_t)(SAMPLE_ZERO - (amplitude * SAMPLE_MAX));
+//     int i;
+//     for (i = 0; i < AUDIO_BUFFER_SAMPLES; ++i)
+//     {
+//         // buf[i] = down + (sample_t)(mod1(phase + i / period) * (amplitude * 2 * SAMPLE_MAX) / period);
+//         buf[i] = (sample_t)(((amplitude * ((phase + i / period).mod1()) * 2 - 1) * SAMPLE_MAX) + SAMPLE_ZERO);
+//     }
+//     return (phase + i / period).mod1();
+// }
+
+// // __attribute__((optimize("O0"))) // function attribute to disable optimization
+// fp_int mod_DSP::GenerateTriangleWave(sample_ptr buf, const fp_int frequency, const fp_int amplitude, const fp_int phase)
+// {
+//     fp_int period = SAMPLE_RATE / frequency; // period in samples
+//     int i;
+//     for (i = 0; i < AUDIO_BUFFER_SAMPLES; ++i)
+//     {
+//         buf[i] = (sample_t)((fp_int(0.5f) - 2 * abs(fp_int(0.5f) - (phase + i / period + fp_int(0.25f)).mod1())) * 2 * amplitude * SAMPLE_MAX + SAMPLE_ZERO);
+//     }
+//     return (phase + i / period).mod1();
+// }
+
+// // __attribute__((optimize("O0"))) // function attribute to disable optimization
+// void mod_DSP::GenerateNoise(sample_ptr buf, const fp_int amplitude)
+// {
+//     const sample_t range = (sample_t)(amplitude * SAMPLE_MAX);
+
+//     for (int i = 0; i < AUDIO_BUFFER_SAMPLES; ++i)
+//     {
+//         buf[i] = ((rand() % 2) ? 1 : -1) * (rand() % range);
+//     }
+// }
+
+// void mod_DSP::MixBuffers(sample_ptr dst, sample_ptr src, const fp_int dry, const fp_int wet)
+// {
+//     for (int i = 0; i < AUDIO_BUFFER_SAMPLES; ++i)
+//     {
+//         dst[i] = (sample_t)(dry * dst[i] + wet * src[i]);
+//     }
+// }
+
+// void mod_DSP::ScaleBuffer(sample_ptr buf, sample_ptr gain)
+// {
+//     for (int i = 0; i < AUDIO_BUFFER_SAMPLES; ++i)
+//     {
+//         buf[i] = (sample_t)((fp_int(gain[i]) - SAMPLE_ZERO) / SAMPLE_MAX * ((fp_int(buf[i]) - SAMPLE_ZERO) + SAMPLE_ZERO));
+//     }
+// }
+
+// void mod_DSP::ClipBuffer(sample_ptr buf, const fp_int threshold)
+// {
+//     sample_t thresh = (sample_t)(threshold * SAMPLE_MAX);
+//     for (int i = 0; i < AUDIO_BUFFER_SAMPLES; ++i)
+//     {
+//         if (buf[i] > SAMPLE_ZERO + thresh)
+//             buf[i] = SAMPLE_ZERO + thresh;
+//         else if (buf[i] < SAMPLE_ZERO - thresh)
+//             buf[i] = SAMPLE_ZERO - thresh;
+//     }
+// }
+
+// void mod_DSP::AmplifyBuffer(sample_ptr buf, const fp_int gain)
+// {
+//     for (int i = 0; i < AUDIO_BUFFER_SAMPLES; ++i)
+//     {
+//         buf[i] = (sample_t)(gain * ((fp_int(buf[i]) - SAMPLE_ZERO) + SAMPLE_ZERO));
+//     }
+// }
+
+// void mod_DSP::ClearBuffer(sample_ptr buf)
+// {
+//     memset(buf, SAMPLE_ZERO, AUDIO_BUFFER_SAMPLES * sizeof(sample_t));
+// }
