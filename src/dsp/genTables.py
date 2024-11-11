@@ -34,10 +34,24 @@ BUFFER_SIZE = 1024
 
 Table.gen('sinWave',
           bits       = SAMPLE_WIDTH,
-          func       = lambda i,x : int(math.sin((i + 0.5) * 2 * math.pi / (1<<BUFFER_SIZE_BITS)) * (1 << (SAMPLE_WIDTH - 1)) + 0.5002),
+          func       = lambda i,x : int(math.sin((i+0.5) * 2 * math.pi / (1<<BUFFER_SIZE_BITS)) * (1 << (SAMPLE_WIDTH - 1))),
           log2_size  = BUFFER_SIZE_BITS,
           typename   = "int" + str(SAMPLE_WIDTH)+ "_t",
           include    = "<stdint.h>",
           prefix     = '',
           namespace  = 'dsp',
           fmt        = '12d')
+
+# SAMPLE_WIDTH = 32
+# BUFFER_SIZE_BITS = 10
+# BUFFER_SIZE = 1024
+
+# Table.gen('sinWave',
+#           bits       = 32,
+#           func       = lambda i,x : math.sin((i+0.5) * 2 * math.pi / (1<<BUFFER_SIZE_BITS)),
+#           log2_size  = BUFFER_SIZE_BITS,
+#           typename   = "float",
+#           include    = "<stdint.h>",
+#           prefix     = '',
+#           namespace  = 'dsp',
+#           fmt        = '12.10f')

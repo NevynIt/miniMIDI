@@ -2,8 +2,7 @@
 #include "App.h"
 #include "stdio.h"
 #include "midi_frequencies.h"
-// #include "WT_BASE.h"
-// #include "wave.h"
+#include "dsp/wave.h"
 
 // Audio controls
 #define CFG_TUD_AUDIO_FUNC_1_N_CHANNELS_TX 2
@@ -31,49 +30,52 @@ void mod_USB_Audio::Tick()
 
 void mod_USB_Audio::Test()
 {
-    // static int8_t last_slot = -1;
-    // static auto wave_left = wave(WT_BASE_sin);
-    // static auto wave_right = wave(WT_BASE_sin);
+    static int8_t last_slot = -1;
+    static auto wave_left = dsp::inharmonicWave();
+    static auto wave_right = dsp::harmonicWave();
+    dsp::FracType gains[5] = {1, 0.5, 0.25, 0.125, 0.0625};
+    // dsp::FracType gains[5] = {0.5, 0.7, 0.3, 0.2, 0.1};
+    wave_right.setHarmonics(gains);
 
-    // if (slot_out < 0)
-    // {
-    //     last_slot = -1;
-    //     return;
-    // }
+    dsp::FracType ratios[5] = {1,3,5,10,15};
+    wave_left.setup(ratios, gains, 5);
 
-    // if (last_slot != slot_out)
-    // {
-    //     auto left = getOutBuffer(0);
-    //     int noteL = mMApp.encoders.count[0]/4 + 60;
-    //     fp_int ampL = fp_int(mMApp.encoders.count[1]/4 + 50) / 100;
-    //     int noteR = mMApp.encoders.count[2]/4 + 60;
-    //     fp_int ampR = fp_int(mMApp.encoders.count[3]/4 + 50) / 100;
+    if (slot_out < 0)
+    {
+        last_slot = -1;
+        return;
+    }
 
-    //     if (noteL < 0) noteL = 0;
-    //     if (noteL > 127) noteL = 127;
-    //     if (noteR < 0) noteR = 0;
-    //     if (noteR > 127) noteR = 127;
-    //     if (ampL < 0) ampL = 0;
-    //     if (ampL > 1) ampL = 1;
-    //     if (ampR < 0) ampR = 0;
-    //     if (ampR > 1) ampR = 1;
+    if (last_slot != slot_out)
+    {
+        auto left = getOutBuffer(0);
+        int noteL = mMApp.encoders.count[0]/4 + 69;
+        auto ampL = dsp::FracType(mMApp.encoders.count[1]/4 + 50) / 100;
+        int noteR = mMApp.encoders.count[2]/4 + 69;
+        auto ampR = dsp::FracType(mMApp.encoders.count[3]/4 + 50) / 100;
 
-    //     auto right = getOutBuffer(1);
+        if (noteL < 0) noteL = 0;
+        if (noteL > 127) noteL = 127;
+        if (noteR < 0) noteR = 0;
+        if (noteR > 127) noteR = 127;
+        if (ampL < 0) ampL = 0;
+        if (ampL > 1) ampL = 1;
+        if (ampR < 0) ampR = 0;
+        if (ampR > 1) ampR = 1;
 
-    //     wave_left.setFrequency_f(midi_frequencies[noteL]);
-    //     wave_right.setFrequency_f(midi_frequencies[noteR]);
+        auto right = getOutBuffer(1);
 
-    //     auto wave_AM_L = wave_const(sample_t(ampL*SAMPLE_MAX));
-    //     auto wave_AM_R = wave_const(sample_t(ampR*SAMPLE_MAX));
+        wave_left.setFrequency(dsp::AngleType(midi_frequencies[noteL]), SAMPLE_RATE);
+        wave_right.setFrequency(dsp::AngleType(midi_frequencies[noteR]), SAMPLE_RATE);
 
-    //     auto wl = wave_mod_AM(wave_left, wave_AM_L);
-    //     auto wr = wave_mod_AM(wave_right, wave_AM_R);
+        wave_left.setLevel(ampL * dsp::SampleMax);
+        wave_right.setLevel(ampR * dsp::SampleMax);
 
-    //     fill(left, AUDIO_BUFFER_SAMPLES, wl);
-    //     fill(right, AUDIO_BUFFER_SAMPLES, wr);
+        dsp::fillBuffer(left, wave_left, AUDIO_BUFFER_SAMPLES);
+        dsp::fillBuffer(right, wave_right, AUDIO_BUFFER_SAMPLES);
 
-    //     last_slot = slot_out;
-    // }
+        last_slot = slot_out;
+    }
 }
 
 void mod_USB_Audio::reset_slot_in()

@@ -25,20 +25,25 @@ void mod_DSP::Tick()
 /*
 Generators performance results on RP2040
 V0 @16 bits
-Sine: 301.81 us
-Square: 83.90 us
-Sawtooth: 126.11 us
-Triangle: 131.08 us
-Noise: 58.67 us
-Lookup table: 22.96 us
-Lookup table interpolated: 69.93 us
+    Sine: 301.81 us
+    Square: 83.90 us
+    Sawtooth: 126.11 us
+    Triangle: 131.08 us
+    Noise: 58.67 us
+    Lookup table: 22.96 us
+    Lookup table interpolated: 69.93 us
 V1 @16 bits
-Lookup table new: ~9 us
+    Lookup table new: ~9 us
 V2 @32 bits
-Noise: 51.67 us
-Square: 13.55 us
-Sawtooth: 31.71 us
-Sine: 31.38 us
+    Noise: 51.67 us
+    Square: 13.55 us
+    Sawtooth: 31.71 us
+    Sine: 31.38 us
+V2 @16 bits
+    Noise: 28.28 us
+    Square: 13.14 us
+    Sawtooth: 8.90 us
+    Sine: 15.15 us
 */
 template <typename WaveType>
 void test_wave(WaveType wave, const char *name, sample_ptr buffer, size_t count, bool sdtest)
@@ -55,7 +60,7 @@ void test_wave(WaveType wave, const char *name, sample_ptr buffer, size_t count,
 void mod_DSP::Test()
 {
     bool sdtest = false; 
-    // sdtest = mMApp.sd.mounted; //Uncomment to write test files to SD card if present
+    sdtest = mMApp.sd.mounted; //Uncomment to write test files to SD card if present
     static bool test_done = false;
     if (test_done)
         return;
@@ -72,6 +77,12 @@ void mod_DSP::Test()
     test_wave(dsp::squareWave(freq, dsp::SampleMax, 48000), "Square", buffer, 1000, sdtest);
     test_wave(dsp::sawtoothWave(freq, dsp::SampleMax, 48000), "Sawtooth", buffer, 1000, sdtest);
     test_wave(dsp::sinWave(freq, dsp::SampleMax, 48000), "Sine", buffer, 1000, sdtest);
+    test_wave(dsp::harmonicWave(freq, dsp::SampleMax/5, 48000), "harmonic", buffer, 1000, sdtest);
+    auto iw = dsp::inharmonicWave(freq, dsp::SampleMax/5, 48000);
+    dsp::FracType gains[5] = {1, 0.5, 0.25, 0.125, 0.0625};
+    dsp::FracType ratios[5] = {1,2.5,5.4,12,15};
+    iw.setup(ratios, gains, 5);
+    test_wave(iw, "inharmonic", buffer, 1000, sdtest);
     // test_wave(dsp::triangleWave(), "Triangle", buffer, 1000, sdtest);
 
     delete[] buffer;

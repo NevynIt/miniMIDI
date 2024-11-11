@@ -127,9 +127,9 @@ static spi_t spis[] = { // One for each SPI.
         .mosi_gpio = GPIO_SD_TX,
         .sck_gpio = GPIO_SD_CK,
 
-        .baud_rate = 1 * 100 * 1000 //I suppose I need to put pull-up resistors on the SPI lines to go faster
+        // .baud_rate = 1 * 100 * 1000 //I suppose I need to put pull-up resistors on the SPI lines to go faster
         // .baud_rate = 12500 * 1000
-        // .baud_rate = 25 * 1000 * 1000 // Actual frequency: 20833333.
+        .baud_rate = 25 * 1000 * 1000 // Actual frequency: 20833333.
     }};
 
 // Hardware Configuration of the SD Card "objects"
