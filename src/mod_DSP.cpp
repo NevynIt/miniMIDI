@@ -44,6 +44,20 @@ V2 @16 bits
     Square: 13.14 us
     Sawtooth: 8.90 us
     Sine: 15.15 us
+V3 @32 bits - not tested
+    Noise: 36.79 us
+    Square: 7.42 us
+    Sawtooth: 16.79 us
+    Sine: 19.49 us
+    harmonic: 179.59 us
+    inharmonic: 115.26 us
+V3 @16 bits - not tested
+    Noise: 50.43 us
+    Square: 10.89 us
+    Sawtooth: 25.00 us
+    Sine: 27.73 us
+    harmonic: 260.98 us
+    inharmonic: 173.40 us
 */
 template <typename WaveType>
 void test_wave(WaveType wave, const char *name, sample_ptr buffer, size_t count, bool sdtest)
@@ -79,9 +93,9 @@ void mod_DSP::Test()
     test_wave(dsp::sinWave(freq, dsp::SampleMax, 48000), "Sine", buffer, 1000, sdtest);
     test_wave(dsp::harmonicWave(freq, dsp::SampleMax/5, 48000), "harmonic", buffer, 1000, sdtest);
     auto iw = dsp::inharmonicWave(freq, dsp::SampleMax/5, 48000);
-    dsp::FracType gains[5] = {1, 0.5, 0.25, 0.125, 0.0625};
-    dsp::FracType ratios[5] = {1,2.5,5.4,12,15};
-    iw.setup(ratios, gains, 5);
+    float gains[5] = {1, 0.5, 0.25, 0.125, 0.0625};
+    float ratios[5] = {1,2.5,5.4,12,15};
+    iw.setup(ratios, gains);
     test_wave(iw, "inharmonic", buffer, 1000, sdtest);
     // test_wave(dsp::triangleWave(), "Triangle", buffer, 1000, sdtest);
 

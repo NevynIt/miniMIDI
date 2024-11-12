@@ -32,8 +32,8 @@ namespace dsp {
 static const unsigned LOG2_TABLE_SINWAVE_SIZE = 10;
 static const unsigned TABLE_SINWAVE_SIZE      = 1 << LOG2_TABLE_SINWAVE_SIZE;
 static const unsigned TABLE_SINWAVE_MASK      = TABLE_SINWAVE_SIZE - 1;
-using TABLE_SINWAVE_TYPE = int32_t;
+using TABLE_SINWAVE_TYPE = int16_t;
 
-extern const int32_t table_sinWave[TABLE_SINWAVE_SIZE];
+extern const int16_t table_sinWave[TABLE_SINWAVE_SIZE];
 
 }

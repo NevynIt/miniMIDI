@@ -28,7 +28,7 @@ os.chdir(os.path.dirname(os.path.abspath(__file__)))
 import math
 import Table
 
-SAMPLE_WIDTH = 32
+SAMPLE_WIDTH = 16
 BUFFER_SIZE_BITS = 10
 BUFFER_SIZE = 1024
 

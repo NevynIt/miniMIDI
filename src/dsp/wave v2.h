@@ -1,26 +1,80 @@
 #pragma once
-#include "fpm.h"
+#include "fpm/fixed.hpp"
 #include <limits>
 #include "Table_sinWave.h"
 
 namespace dsp
 {
 
+#ifndef WAVE_SAMPLE_TYPE
+// #define WAVE_SAMPLE_TYPE float //broken
+// #define WAVE_SAMPLE_TYPE int16_t
+#define WAVE_SAMPLE_TYPE fpm::fixed<16, 16>
+#endif
+
+#ifndef WAVE_ANGLE_TYPE
+// #define WAVE_ANGLE_TYPE float //broken
+// #define WAVE_ANGLE_TYPE fpm::fixed<4, 12>
+#define WAVE_ANGLE_TYPE fpm::fixed<16, 16>
+#endif
+
+#ifndef WAVE_FRAC_TYPE
+// #define WAVE_FRAC_TYPE float
+// #define WAVE_FRAC_TYPE fpm::fixed<4, 12>
+#define WAVE_FRAC_TYPE fpm::fixed<16, 16>
+#endif
+
 #ifndef WAVE_BUFFER_SIZE
 #define WAVE_BUFFER_SIZE 1024
 #endif
 
     const size_t BufferSize = WAVE_BUFFER_SIZE;
-    using SampleType = fpm::base; //upper bits
-    using AngleType = fpm::base; //lower bits
-    using FracType = fpm::base; //middle bits
+    using SampleType = WAVE_SAMPLE_TYPE;
+    using AngleType = WAVE_ANGLE_TYPE;
+    using FracType = WAVE_FRAC_TYPE;
     const SampleType SampleMax = ::std::numeric_limits<SampleType>::max();
+
+    // assert that SampleType is compatible with table_sinWave
+    static_assert(
+        (sizeof(TABLE_SINWAVE_TYPE) == sizeof(SampleType)) && (
+            ((::std::is_integral<TABLE_SINWAVE_TYPE>::value) && (::std::is_integral<SampleType>::value || ::std::is_fixed_point<SampleType>::value))
+            || (::std::is_floating_point<SampleType>::value && ::std::is_floating_point<TABLE_SINWAVE_TYPE>::value)
+        )
+        , "SampleType must be compatible with table_sinWave"
+    );
+
+    // assert that AngleType is either floating point or fpm::fixed
+    static_assert(::std::is_floating_point<AngleType>::value || ::std::is_fixed_point<AngleType>::value, "AngleType must be floating point or fpm::fixed");
+
+    // assert that FracType is either floating point or fpm::fixed
+    static_assert(::std::is_floating_point<FracType>::value || ::std::is_fixed_point<FracType>::value, "FracType must be floating point or fpm::fixed");
 
     // assert that BufferSize is a power of 2
     static_assert((BufferSize > 1) && ((BufferSize & (BufferSize - 1)) == 0), "BufferSize must be a power of 2");
 
     // assert that table_sinWave is defined and has the same width as sampleType
     static_assert(sizeof(table_sinWave[0]) == sizeof(SampleType), "table_sinWave must have the same width as SampleType");
+
+    template <typename S, typename G>
+    inline S applyGain(S sample, G gain)
+    {
+        return sample * gain;
+    }
+
+    template <size_t I1, size_t F1, bool S1, bool R1, size_t I2, size_t F2, bool S2, bool R2>
+    inline fpm::fixed<I1, F1, S1, R1> applyGain(const fpm::fixed<I1, F1, S1, R1> sample, const fpm::fixed<I2, F2, S2, R2> gain)
+    {
+        using IntermediateType = typename fpm::fixed<I1, F1, S1, R1>::IntermediateType;
+        return fpm::fixed<I1, F1, S1>::from_raw_value(((IntermediateType)sample.raw_value() * gain.raw_value() * (S1 ? 2 : 1)) >> (I2 + F2));
+    }
+
+    template <size_t I, size_t F, bool S, bool R, typename G>
+    inline fpm::fixed<I, F, S, R> applyGain(const fpm::fixed<I, F, S, R> sample, const G gain, typename ::std::enable_if<::std::is_integral<G>::value>::type * = nullptr)
+    {
+        constexpr size_t I2 = 8 * sizeof(G);
+        using IntermediateType = typename fpm::fixed<I, F, S, R>::IntermediateType;
+        return fpm::fixed<I, F, S, R>::from_raw_value(((IntermediateType)sample.raw_value() * gain * (S ? 2 : 1)) >> I2);
+    }
 
     class wave
     {
@@ -48,57 +102,93 @@ namespace dsp
         }
     }
 
+    template <typename T>
+    inline T getRand(typename ::std::enable_if<std::is_floating_point<T>::value>::type* = nullptr)
+    {
+        return (T)(rand() << 1) / RAND_MAX;
+    }
+
+    template <typename T>
+    inline T getRand(typename ::std::enable_if<std::is_integral<T>::value>::type* = nullptr)
+    {
+        return (T)(rand() << 1);
+    }
+
+    template <typename T>
+    inline T getRand(typename ::std::enable_if<std::is_fixed_point<T>::value>::type* = nullptr)
+    {
+        return T::from_raw_value(getRand<typename T::BaseType>());
+    }
+
     class noiseWave : public wave
     {
     public:
         noiseWave() = default;
 
-        inline SampleType getSample() const { return fpm::u_mul_ul((SampleType)rand(), m_level); }
+        inline SampleType getSample() const { return applyGain(getRand<SampleType>(), this->m_level); }
     };
 
     class periodicWave : public wave
     {
     public:
         periodicWave() = default;
-        periodicWave(const float frequency, const SampleType level, const size_t sample_rate = 1) : wave(level) { setFrequency(frequency, sample_rate); }
+        periodicWave(const AngleType frequency, const SampleType level, const size_t sample_rate = 1) : m_increment(frequency / sample_rate), wave(level) {}
 
-        void setFrequency(const float frequency, const size_t sample_rate = 1) { m_increment = fpm::l_from_f(frequency / sample_rate * 2); }
-        float getFrequency(const size_t sample_rate = 1) { return fpm::f_from_l(m_increment) / 2 * sample_rate; }
-        void setPhase(const float phase) { m_phase = fpm::l_from_f(phase) * 2; }
+        void setFrequency(const AngleType frequency, const size_t sample_rate = 1) { m_increment = frequency / sample_rate; }
+        AngleType getFrequency(const size_t sample_rate = 1) { return m_increment * sample_rate; }
+        void setPhase(const AngleType phase) { m_phase = phase; }
         inline void advance() { m_phase += m_increment; }
-        inline void advance(const float increment, const size_t sample_rate = 1) { m_phase += fpm::l_from_f(increment / sample_rate * 2); }
-        float getPhase() { return fpm::f_from_l(m_phase)/2; }
-        inline SampleType getSample() const { return getSample(m_phase); }
-        inline SampleType getSample(const AngleType phase) const { return m_level; }
+        inline void advance(const AngleType increment, const size_t sample_rate = 1) { m_phase += increment / sample_rate; }
+        AngleType getPhase() { return m_phase; }
+        // SampleType getSample() const { return getSample(m_phase); }
+        // SampleType getSample(const AngleType phase) const { return m_level; }
 
     protected:
         AngleType m_increment = AngleType(0);
-        AngleType m_phase = AngleType(0); //phase is stored as double the actual phase to compensate the fact that it is signed
+        AngleType m_phase = AngleType(0);
     };
 
     class squareWave : public periodicWave
     {
     public:
         squareWave() = default;
-        squareWave(const float frequency, const SampleType level, const size_t sample_rate = 1) : periodicWave(frequency, level, sample_rate) {}
+        squareWave(const AngleType frequency, const SampleType level, const size_t sample_rate = 1) : periodicWave(frequency, level, sample_rate) {}
 
         inline SampleType getSample() const { return getSample(m_phase); }
         inline SampleType getSample(const AngleType phase) const
         {
-            return (phase > 0) ? m_level : -m_level;
+            return (int)(phase * 2) & 1 ? m_level : -m_level;
         }
     };
+
+    template <typename S>
+    inline S applyFractPart(const float x, const S s)
+    {
+        return s * fmodf(x, 1);
+    }
+
+    template <typename S>
+    inline S applyFractPart(const double x, const S s)
+    {
+        return s * fmod(x, 1);
+    }
+
+    template <size_t I, size_t F, bool S, bool R, typename sType>
+    inline typename fpm::fixed<I, F, S, R> applyFractPart(const fpm::fixed<I, F, S, R> x, const sType s)
+    {
+        return x.mod1() * s;
+    }
 
     class sawtoothWave : public periodicWave
     {
     public:
         sawtoothWave() = default;
-        sawtoothWave(const float frequency, const SampleType level, const size_t sample_rate = 1) : periodicWave(frequency, level, sample_rate) {}
+        sawtoothWave(const AngleType frequency, const SampleType level, const size_t sample_rate = 1) : periodicWave(frequency, level, sample_rate) {}
 
         inline SampleType getSample() const { return getSample(m_phase); }
         inline SampleType getSample(const AngleType phase) const
         {
-            return fpm::u_mul_ul(m_level, phase) * 2;
+            return applyFractPart(phase, m_level) * 2 - m_level;
         }
     };
 
@@ -126,7 +216,7 @@ namespace dsp
 
     public:
         bufferWave(const SampleType *buffer) : m_buffer(buffer) {}
-        bufferWave(const SampleType *buffer, const float frequency, const SampleType level, const size_t sample_rate = 1) : m_buffer(buffer) , periodicWave(frequency, level, sample_rate) {}
+        bufferWave(const SampleType *buffer, const AngleType frequency, const SampleType level, const size_t sample_rate = 1) : m_buffer(buffer) , periodicWave(frequency, level, sample_rate) {}
 
         void setBuffer(const SampleType *buffer)
         {
@@ -135,13 +225,27 @@ namespace dsp
 
         inline SampleType getSample() const { return getSample(this->m_phase); }
 
-        inline SampleType getSample(const AngleType phase) const
+        inline SampleType getSample(const float phase) const
+        {
+            const SampleType s = m_buffer[(size_t)fmodf(phase * count, count)];
+            return applyGain(s, this->m_level);
+        }
+
+        inline SampleType getSample(const double phase) const
+        {
+            const SampleType s = m_buffer[(size_t)fmod(phase * count, count)];
+            return applyGain(s, this->m_level);
+        }
+
+        template <typename AT>
+        inline SampleType getSample(const AT phase, typename ::std::enable_if<std::is_fixed_point<AT>::value>::type* = nullptr) const
         {
             constexpr static int count_bits = log2(count);
+            constexpr static int count_mask = (count - 1);
 
-            const size_t i = fpm::ubase(phase) >> (fpm::width - count_bits); 
+            const size_t i = (phase.raw_value() / (1 << (AT::fractional_bits - count_bits))) & count_mask;
             const SampleType s = m_buffer[i];
-            return fpm::u_mul_ul(s, this->m_level);
+            return applyGain(s, this->m_level);
         }
 
     private:
@@ -152,7 +256,7 @@ namespace dsp
     {
     public:
         sinWave() : bufferWave((const SampleType *)table_sinWave) {}
-        sinWave(const float frequency, const SampleType level, const size_t sample_rate = 1) : bufferWave((const SampleType *)table_sinWave, frequency, level, sample_rate) {}
+        sinWave(const AngleType frequency, const SampleType level, const size_t sample_rate = 1) : bufferWave((const SampleType *)table_sinWave, frequency, level, sample_rate) {}
     };
 
     template <size_t harmonics = 5, typename BaseWave = sinWave>
@@ -162,13 +266,13 @@ namespace dsp
 
     public:
         harmonicWave() = default;
-        harmonicWave(const float frequency, const SampleType level, const size_t sample_rate = 1) : BaseWave(frequency, level, sample_rate) {}
+        harmonicWave(const AngleType frequency, const SampleType level, const size_t sample_rate = 1) : BaseWave(frequency, level, sample_rate) {}
 
-        void setHarmonics(const float harmonics_f[harmonics])
+        void setHarmonics(const FracType *harmonics_ptr)
         {
             for (size_t i = 0; i < harmonics; ++i)
             {
-                m_harmonics[i] = fpm::l_from_f(harmonics_f[i]);
+                m_harmonics[i] = harmonics_ptr[i];
             }
         }
 
@@ -184,31 +288,29 @@ namespace dsp
             SampleType sample = 0;
             for (size_t i = 0; i < harmonics; ++i)
             {
-                sample += fpm::u_mul_um(BaseWave::getSample((i+1) * phase), m_harmonics[i]);
+                sample += BaseWave::getSample((i+1) * phase) * m_harmonics[i];
             }
             return sample;
         }
 
     public:
-        FracType m_harmonics[harmonics] = {fpm::m_from_f(1), fpm::m_from_f(0.5), fpm::m_from_f(0.25), fpm::m_from_f(0.125), fpm::m_from_f(0.0625)};
+        FracType m_harmonics[harmonics] = {1, 0.5, 0.25, 0.125, 0.0625};
     };
 
-    template <size_t harmonics = 5, typename BaseWave = sinWave>
+    template <typename BaseWave = sinWave>
     class inharmonicWave : public BaseWave
     {
         static_assert(std::is_base_of<periodicWave, BaseWave>::value, "BaseWave must be derived from wave");
 
         public:
         inharmonicWave() = default;
-        inharmonicWave(const float frequency, const SampleType level, const size_t sample_rate = 1) : BaseWave(frequency, level, sample_rate) {}
+        inharmonicWave(const AngleType frequency, const SampleType level, const size_t sample_rate = 1) : BaseWave(frequency, level, sample_rate) {}
 
-        void setup(const float ratios[harmonics], const float gains[harmonics])
+        void setup(const FracType *ratios, const FracType *gains, size_t count)
         {
-            for (size_t i = 0; i < harmonics; ++i)
-            {
-                m_ratios[i] = fpm::l_from_f(ratios[i]);
-                m_gains[i] = fpm::l_from_f(gains[i]);
-            }
+            m_count = count;
+            m_ratios = ratios;
+            m_gains = gains;
         }
 
         inline SampleType getSample() const { return getSample(this->m_phase); }
@@ -216,7 +318,7 @@ namespace dsp
         inline SampleType getSample(const AngleType phase) const
         {
             SampleType sample = 0;
-            for (size_t i = 0; i < harmonics; ++i)
+            for (size_t i = 0; i < m_count; ++i)
             {
                 sample += BaseWave::getSample((i+1) * phase * m_ratios[i]) * m_gains[i];
             }
@@ -224,8 +326,9 @@ namespace dsp
         }
 
     private:
-        FracType m_ratios[harmonics] = {fpm::m_from_f(1), fpm::m_from_f(2), fpm::m_from_f(3), fpm::m_from_f(4), fpm::m_from_f(5)};
-        FracType m_gains[harmonics] = {fpm::m_from_f(1), fpm::m_from_f(0.5), fpm::m_from_f(0.25), fpm::m_from_f(0.125), fpm::m_from_f(0.0625)};
+        const FracType *m_ratios = nullptr;
+        const FracType *m_gains = nullptr;
+        size_t m_count = 0;
     };
 
     class envelope
@@ -253,7 +356,7 @@ namespace dsp
         inline void stop()
         {
             m_state = State::idle;
-            m_level = 0;
+            m_level = FracType(0);
         }
 
         void setRates(const FracType attackRate, const FracType decayRate, const FracType releaseRate)
@@ -271,9 +374,9 @@ namespace dsp
         // time in seconds
         void setTimes(const FracType attackTime, const FracType decayTime, const FracType releaseTime, const size_t sampleRate = 1)
         {
-            m_attackRate = fpm::m_one / (attackTime * sampleRate);
-            m_decayRate = fpm::m_one / (decayTime * sampleRate);
-            m_releaseRate = fpm::m_one / (releaseTime * sampleRate);
+            m_attackRate = FracType(1) / (attackTime * sampleRate);
+            m_decayRate = FracType(1) / (decayTime * sampleRate);
+            m_releaseRate = FracType(1) / (releaseTime * sampleRate);
         }
 
         FracType getAttackRate() const { return m_attackRate; }
@@ -331,11 +434,11 @@ namespace dsp
         }
 
     private:
-        FracType m_attackRate = fpm::m_from_f(0.25);
-        FracType m_decayRate = fpm::m_from_f(0.25);
-        FracType m_sustainLevel = fpm::m_from_f(0.5);
-        FracType m_releaseRate = fpm::m_from_f(0.25);
-        FracType m_level = fpm::m_from_f(0);
+        FracType m_attackRate = FracType(0.25);
+        FracType m_decayRate = FracType(0.25);
+        FracType m_sustainLevel = FracType(0.5);
+        FracType m_releaseRate = FracType(0.25);
+        FracType m_level = FracType(1);
         State m_state = State::idle;
     };
 
