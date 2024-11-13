@@ -19,17 +19,16 @@ void mod_Blink::Init() {
         pwm_set_gpio_level(GPIO_Board_Led, level);
         level = 255 - level;
     }
+
+    ledWave.setLevel(128);
 }
 
-DEOPTIMIZE
 void mod_Blink::Tick() {
     INTERVALCHECK(1000.0f / BLINK_REFRESH_HZ)
 
     // Update PWM duty cycle based on wave sample
-    ledWave.setFrequency(dsp::AngleType(freq), BLINK_REFRESH_HZ);
+    ledWave.setFrequency(freq, BLINK_REFRESH_HZ);
     ledWave.advance();
-    // ledWave.increment = fp_index(freq * (1000.0f / BLINK_REFRESH_HZ));
-    auto sample = ledWave.getSample();
-    uint16_t duty = (float(sample) - SAMPLE_MIN) / ((float)SAMPLE_MAX - SAMPLE_MIN) * level;
+    uint16_t duty = ledWave.getSample() + 128;
     pwm_set_gpio_level(GPIO_Board_Led, duty);
 }

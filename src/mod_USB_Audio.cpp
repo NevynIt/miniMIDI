@@ -50,26 +50,26 @@ void mod_USB_Audio::Test()
     {
         auto left = getOutBuffer(0);
         int noteL = mMApp.encoders.count[0]/4 + 69;
-        auto ampL = dsp::FracType(mMApp.encoders.count[1]/4 + 50) / 100;
+        auto ampL = dsp::SampleMax / 100 * (mMApp.encoders.count[1]/4 + 50);
         int noteR = mMApp.encoders.count[2]/4 + 69;
-        auto ampR = dsp::FracType(mMApp.encoders.count[3]/4 + 50) / 100;
+        auto ampR = dsp::SampleMax / 100 * (mMApp.encoders.count[3]/4 + 50);
 
         if (noteL < 0) noteL = 0;
         if (noteL > 127) noteL = 127;
         if (noteR < 0) noteR = 0;
         if (noteR > 127) noteR = 127;
         if (ampL < 0) ampL = 0;
-        if (ampL > 1) ampL = 1;
+        if (ampL > dsp::SampleMax) ampL = dsp::SampleMax;
         if (ampR < 0) ampR = 0;
-        if (ampR > 1) ampR = 1;
+        if (ampR > dsp::SampleMax) ampR = dsp::SampleMax;
 
         auto right = getOutBuffer(1);
 
-        wave_left.setFrequency(dsp::AngleType(midi_frequencies[noteL]), SAMPLE_RATE);
-        wave_right.setFrequency(dsp::AngleType(midi_frequencies[noteR]), SAMPLE_RATE);
+        wave_left.setFrequency(midi_frequencies[noteL], SAMPLE_RATE);
+        wave_right.setFrequency(midi_frequencies[noteR], SAMPLE_RATE);
 
-        wave_left.setLevel(ampL * dsp::SampleMax);
-        wave_right.setLevel(ampR * dsp::SampleMax);
+        wave_left.setLevel(ampL);
+        wave_right.setLevel(ampR);
 
         dsp::fillBuffer(left, wave_left, AUDIO_BUFFER_SAMPLES);
         dsp::fillBuffer(right, wave_right, AUDIO_BUFFER_SAMPLES);

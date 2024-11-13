@@ -44,20 +44,34 @@ V2 @16 bits
     Square: 13.14 us
     Sawtooth: 8.90 us
     Sine: 15.15 us
-V3 @32 bits - not tested
-    Noise: 36.79 us
-    Square: 7.42 us
-    Sawtooth: 16.79 us
-    Sine: 19.49 us
-    harmonic: 179.59 us
-    inharmonic: 115.26 us
-V3 @16 bits - not tested
-    Noise: 50.43 us
-    Square: 10.89 us
-    Sawtooth: 25.00 us
-    Sine: 27.73 us
-    harmonic: 260.98 us
-    inharmonic: 173.40 us
+V3 @16 bits - my 64 bit multiplication
+    Noise: 44.08 us
+    Square: 8.23 us
+    Sawtooth: 14.78 us
+    Sine: 24.91 us
+    harmonic: 225.47 us
+    inharmonic: 271.67 us
+V3 @16 bits - using native 32 bit multiplication
+    Noise: 35.06 us
+    Square: 8.23 us
+    Sawtooth: 8.01 us
+    Sine: 14.00 us
+    harmonic: 78.83 us
+    inharmonic: 94.74 us
+V3 @32 bits - my 64 bit multiplication
+    Noise: 41.49 us
+    Square: 7.65 us
+    Sawtooth: 13.31 us
+    Sine: 25.06 us
+    harmonic: 204.52 us
+    inharmonic: 232.83 us
+V3 @32 bits - using native 64 bit multiplication
+    Noise: 45.75 us
+    Square: 7.63 us
+    Sawtooth: 18.69 us
+    Sine: 28.51 us
+    harmonic: 198.48 us
+    inharmonic: 262.88 us
 */
 template <typename WaveType>
 void test_wave(WaveType wave, const char *name, sample_ptr buffer, size_t count, bool sdtest)
@@ -85,7 +99,7 @@ void mod_DSP::Test()
     if (sdtest)
         printf("SD Card test start\n");
 
-    dsp::AngleType freq(440);
+    float freq(440);
     sample_ptr buffer = new sample_t[AUDIO_BUFFER_SAMPLES * 1000];
     test_wave(dsp::noiseWave(), "Noise", buffer, 1000, sdtest);
     test_wave(dsp::squareWave(freq, dsp::SampleMax, 48000), "Square", buffer, 1000, sdtest);
