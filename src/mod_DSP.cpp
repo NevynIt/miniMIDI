@@ -44,20 +44,7 @@ V2 @16 bits
     Square: 13.14 us
     Sawtooth: 8.90 us
     Sine: 15.15 us
-V3 @16 bits - my 64 bit multiplication
-    Noise: 44.08 us
-    Square: 8.23 us
-    Sawtooth: 14.78 us
-    Sine: 24.91 us
-    harmonic: 225.47 us
-    inharmonic: 271.67 us
-V3 @16 bits - using native 32 bit multiplication
-    Noise: 35.06 us
-    Square: 8.23 us
-    Sawtooth: 8.01 us
-    Sine: 14.00 us
-    harmonic: 78.83 us
-    inharmonic: 94.74 us
+
 V3 @32 bits - my 64 bit multiplication
     Noise: 41.49 us
     Square: 7.65 us
@@ -72,6 +59,35 @@ V3 @32 bits - using native 64 bit multiplication
     Sine: 28.51 us
     harmonic: 198.48 us
     inharmonic: 262.88 us
+V3 @32 bits - using native 64 bit multiplication and less bit shifting
+    Noise: 39.96 us
+    Square: 7.63 us
+    Sawtooth: 18.68 us
+    Sine: 23.72 us
+    harmonic: 195.87 us
+    inharmonic: 266.25 us
+V3 @16 bits - my 64 bit multiplication
+    Noise: 44.08 us
+    Square: 8.23 us
+    Sawtooth: 14.78 us
+    Sine: 24.91 us
+    harmonic: 225.47 us
+    inharmonic: 271.67 us
+    
+V3 @16 bits - using native 32 bit multiplication
+    Noise: 35.06 us
+    Square: 8.23 us
+    Sawtooth: 8.01 us
+    Sine: 14.00 us
+    harmonic: 78.83 us
+    inharmonic: 94.74 us
+V3 @16 bits - using native 32 bit multiplication and less bit shifting
+    Noise: 28.99 us
+    Square: 8.23 us
+    Sawtooth: 8.01 us
+    Sine: 9.71 us
+    harmonic: 68.75 us
+    inharmonic: 87.26 us
 */
 template <typename WaveType>
 void test_wave(WaveType wave, const char *name, sample_ptr buffer, size_t count, bool sdtest)

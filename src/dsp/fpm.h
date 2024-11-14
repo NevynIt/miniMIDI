@@ -20,7 +20,7 @@ namespace dsp
         using uhalf = uint8_t;
         using ubase = uint16_t;
         using uextended = uint32_t;
-        static constexpr size_t width = 16;
+        static constexpr int8_t width = 16;
         static constexpr float f_shift = 65536.0f;
         static constexpr float f_shift_half = 256.0f;
         static constexpr base shift_half = 256;
@@ -32,7 +32,7 @@ namespace dsp
         using uhalf = uint16_t;
         using ubase = uint32_t;
         using uextended = uint64_t;
-        static constexpr size_t width = 32;
+        static constexpr int8_t width = 32;
         static constexpr float f_shift = 4294967296.0f;
         static constexpr float f_shift_half = 65536.0f;
         static constexpr base shift_half = 65536;
@@ -292,6 +292,7 @@ namespace dsp
         static const base m_min = -((base)1 << (width / 2 - 1));
         static const ubase am_max = ((ubase)1 << (width / 2)) - 1;
         static const ubase am_min = 0;
+        static const extended e_one = e_from_f(1.0f);
         static const base m_one = m_from_f(1.0f);
         static const base u_one = u_from_f(1.0f);
         static const float e_epsilon = f_from_e(1);
@@ -860,78 +861,197 @@ namespace dsp
 
         namespace native
         {
-#define __FPM_MULT(_r_type_, _r_, _a_type_, _a_, _b_type_, _b_) \
-    inline constexpr _r_type_ _r_##_mul_##_a_##_b_(_a_type_ _a_##1, _b_type_ _b_##2) { return _r_##_from_e(e_from_##_a_(_a_##1) * e_from_##_b_(_b_##2)); }
 
-            __FPM_MULT(extended, e, extended, e, extended, e)
-            __FPM_MULT(extended, e, extended, e, base, u)
-            __FPM_MULT(extended, e, extended, e, base, m)
-            __FPM_MULT(extended, e, extended, e, base, l)
-            __FPM_MULT(extended, e, base, u, extended, e)
-            __FPM_MULT(extended, e, base, m, extended, e)
-            __FPM_MULT(extended, e, base, l, extended, e)
-            __FPM_MULT(extended, e, base, u, base, u)
-            __FPM_MULT(extended, e, base, u, base, m)
-            __FPM_MULT(extended, e, base, u, base, l)
-            __FPM_MULT(extended, e, base, m, base, u)
-            __FPM_MULT(extended, e, base, m, base, m)
-            __FPM_MULT(extended, e, base, m, base, l)
-            __FPM_MULT(extended, e, base, l, base, u)
-            __FPM_MULT(extended, e, base, l, base, m)
-            __FPM_MULT(extended, e, base, l, base, l)
-            __FPM_MULT(base, u, base, u, base, u)
-            // __FPM_MULT(base, u, base, u, base, m)
-            //__FPM_MULT(base, u, base, u, base, l) //This fails
-            __FPM_MULT(base, u, base, m, base, u)
-            __FPM_MULT(base, u, base, m, base, m)
-            __FPM_MULT(base, u, base, m, base, l)
-            __FPM_MULT(base, u, base, l, base, u)
-            __FPM_MULT(base, u, base, l, base, m)
-            __FPM_MULT(base, u, base, l, base, l)
-            __FPM_MULT(base, m, base, u, base, u)
-            __FPM_MULT(base, m, base, u, base, m)
-            __FPM_MULT(base, m, base, u, base, l)
-            __FPM_MULT(base, m, base, m, base, u)
-            __FPM_MULT(base, m, base, m, base, m)
-            __FPM_MULT(base, m, base, m, base, l)
-            __FPM_MULT(base, m, base, l, base, u)
-            __FPM_MULT(base, m, base, l, base, m)
-            __FPM_MULT(base, m, base, l, base, l)
-            __FPM_MULT(base, l, base, u, base, u)
-            __FPM_MULT(base, l, base, u, base, m)
-            __FPM_MULT(base, l, base, u, base, l)
-            __FPM_MULT(base, l, base, m, base, u)
-            __FPM_MULT(base, l, base, m, base, m)
-            __FPM_MULT(base, l, base, m, base, l)
-            __FPM_MULT(base, l, base, l, base, u)
-            __FPM_MULT(base, l, base, l, base, m)
-            __FPM_MULT(base, l, base, l, base, l)
-            __FPM_MULT(ubase, al, base, l, base, l)
-            // __FPM_MULT(ubase, al, base, m, ubase, al) //This fails
-            // __FPM_MULT(base, u, base, u, ubase, al) //This fails
-            __FPM_MULT(base, u, extended, e, extended, e)
-            __FPM_MULT(base, m, extended, e, extended, e)
-            __FPM_MULT(base, l, extended, e, extended, e)
+            #define __FPM_MULT_TYPE_e extended
+            #define __FPM_MULT_TYPE_ae uextended
+            #define __FPM_MULT_TYPE_u base
+            #define __FPM_MULT_TYPE_au ubase
+            #define __FPM_MULT_TYPE_m base
+            #define __FPM_MULT_TYPE_am ubase
+            #define __FPM_MULT_TYPE_l base
+            #define __FPM_MULT_TYPE_al ubase
 
-            inline constexpr base u_mul_ul(base u1, base l2)
+            // e starts on bit n 0
+            // u starts on bit n w
+            // l starts on bit n 1
+            // al strts on bit n 0
+            // m starts on bit n w/2
+
+            #define __FPM_MULT_STARTBIT_e 0
+            #define __FPM_MULT_STARTBIT_ae 0
+            #define __FPM_MULT_STARTBIT_u width
+            #define __FPM_MULT_STARTBIT_au width
+            #define __FPM_MULT_STARTBIT_m (width/2)
+            #define __FPM_MULT_STARTBIT_am (width/2)
+            #define __FPM_MULT_STARTBIT_l 1
+            #define __FPM_MULT_STARTBIT_al 0
+
+            #define __FPM_MULT_DESTBIT_e width
+            #define __FPM_MULT_DESTBIT_ae width
+            #define __FPM_MULT_DESTBIT_u (width*2)
+            #define __FPM_MULT_DESTBIT_au (width*2)
+            #define __FPM_MULT_DESTBIT_m (width+width/2)
+            #define __FPM_MULT_DESTBIT_am (width+width/2)
+            #define __FPM_MULT_DESTBIT_l (width+1)
+            #define __FPM_MULT_DESTBIT_al width
+
+// disable shift overflow warnings
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wshift-count-overflow"
+            template<int bits>
+            inline constexpr extended __FPM_MULT_SHIFT_IMPL(extended n)
             {
-                return (base)((((extended)u1) * ((ubase)abs(l2) * 2)) >> width);
+                if (bits >= width * 2)
+                    return 0;
+                else if (bits <= -width * 2)
+                    return 0;
+                if (bits > 0)
+                    return (n << bits);
+                else
+                    return (n >> (-bits));
             }
+#pragma GCC diagnostic pop
+            
+            #define __FPM_MULT_SHIFT(n, bits) __FPM_MULT_SHIFT_IMPL<bits>(n)
+            #define __FPM_MULT_COMP(_r_, _a_, _b_) ( \
+                -__FPM_MULT_DESTBIT_##_r_ +__FPM_MULT_STARTBIT_##_a_ +__FPM_MULT_STARTBIT_##_b_ \
+                )
 
-            inline constexpr base u_mul_ual(base u1, ubase al2)
-            {
-                return (base)(((extended)(u1) * al2) >> (width));
-            }
+            #define __FPM_MULT(_r_, _a_, _b_) \
+                inline constexpr __FPM_MULT_TYPE_##_r_ _r_##_mul_##_a_##_b_(__FPM_MULT_TYPE_##_a_ a, __FPM_MULT_TYPE_##_b_ b) \
+                { \
+                    return (__FPM_MULT_TYPE_##_r_) __FPM_MULT_SHIFT((extended)a * b, __FPM_MULT_COMP(_r_, _a_, _b_)); \
+                }
 
-            inline constexpr ubase al_mul_mal(base m1, ubase al2)
-            {
-                return (ubase)(((extended)(m1) * al2) >> (width/2));
-            }
+            __FPM_MULT(e, e, e)
+            __FPM_MULT(e, e, u)
+            __FPM_MULT(e, e, m)
+            __FPM_MULT(e, e, l)
+            __FPM_MULT(e, e, al)
+            __FPM_MULT(e, u, e)
+            __FPM_MULT(e, u, u)
+            __FPM_MULT(e, u, m)
+            __FPM_MULT(e, u, l)
+            __FPM_MULT(e, u, al)
+            __FPM_MULT(e, m, e)
+            __FPM_MULT(e, m, u)
+            __FPM_MULT(e, m, m)
+            __FPM_MULT(e, m, l)
+            __FPM_MULT(e, m, al)
+            __FPM_MULT(e, l, e)
+            __FPM_MULT(e, l, u)
+            __FPM_MULT(e, l, m)
+            __FPM_MULT(e, l, l)
+            __FPM_MULT(e, l, al)
+            __FPM_MULT(e, al, e)
+            __FPM_MULT(e, al, u)
+            __FPM_MULT(e, al, m)
+            __FPM_MULT(e, al, l)
+            __FPM_MULT(e, al, al)
 
-            inline constexpr base u_mul_um(base u1, base m2)
-            {
-                return (base)((((extended)u1 << (width / 2)) * m2) >> width );
-            }
+            __FPM_MULT(u, e, e)
+            __FPM_MULT(u, e, u)
+            __FPM_MULT(u, e, m)
+            __FPM_MULT(u, e, l)
+            __FPM_MULT(u, e, al)
+            __FPM_MULT(u, u, e)
+            __FPM_MULT(u, u, u)
+            __FPM_MULT(u, u, m)
+            __FPM_MULT(u, u, l)
+            __FPM_MULT(u, u, al)
+            __FPM_MULT(u, m, e)
+            __FPM_MULT(u, m, u)
+            __FPM_MULT(u, m, m)
+            __FPM_MULT(u, m, l)
+            __FPM_MULT(u, m, al)
+            __FPM_MULT(u, l, e)
+            __FPM_MULT(u, l, u)
+            __FPM_MULT(u, l, m)
+            __FPM_MULT(u, l, l)
+            __FPM_MULT(u, l, al)
+            __FPM_MULT(u, al, e)
+            __FPM_MULT(u, al, u)
+            __FPM_MULT(u, al, m)
+            __FPM_MULT(u, al, l)
+            __FPM_MULT(u, al, al)
+
+            __FPM_MULT(m, e, e)
+            __FPM_MULT(m, e, u)
+            __FPM_MULT(m, e, m)
+            __FPM_MULT(m, e, l)
+            __FPM_MULT(m, e, al)
+            __FPM_MULT(m, u, e)
+            __FPM_MULT(m, u, u)
+            __FPM_MULT(m, u, m)
+            __FPM_MULT(m, u, l)
+            __FPM_MULT(m, u, al)
+            __FPM_MULT(m, m, e)
+            __FPM_MULT(m, m, u)
+            __FPM_MULT(m, m, m)
+            __FPM_MULT(m, m, l)
+            __FPM_MULT(m, m, al)
+            __FPM_MULT(m, l, e)
+            __FPM_MULT(m, l, u)
+            __FPM_MULT(m, l, m)
+            __FPM_MULT(m, l, l)
+            __FPM_MULT(m, l, al)
+            __FPM_MULT(m, al, e)
+            __FPM_MULT(m, al, u)
+            __FPM_MULT(m, al, m)
+            __FPM_MULT(m, al, l)
+            __FPM_MULT(m, al, al)
+
+            __FPM_MULT(l, e, e)
+            __FPM_MULT(l, e, u)
+            __FPM_MULT(l, e, m)
+            __FPM_MULT(l, e, l)
+            __FPM_MULT(l, e, al)
+            __FPM_MULT(l, u, e)
+            __FPM_MULT(l, u, u)
+            __FPM_MULT(l, u, m)
+            __FPM_MULT(l, u, l)
+            __FPM_MULT(l, u, al)
+            __FPM_MULT(l, m, e)
+            __FPM_MULT(l, m, u)
+            __FPM_MULT(l, m, m)
+            __FPM_MULT(l, m, l)
+            __FPM_MULT(l, m, al)
+            __FPM_MULT(l, l, e)
+            __FPM_MULT(l, l, u)
+            __FPM_MULT(l, l, m)
+            __FPM_MULT(l, l, l)
+            __FPM_MULT(l, l, al)
+            __FPM_MULT(l, al, e)
+            __FPM_MULT(l, al, u)
+            __FPM_MULT(l, al, m)
+            __FPM_MULT(l, al, l)
+            __FPM_MULT(l, al, al)
+
+            __FPM_MULT(al, e, e)
+            __FPM_MULT(al, e, u)
+            __FPM_MULT(al, e, m)
+            __FPM_MULT(al, e, l)
+            __FPM_MULT(al, e, al)
+            __FPM_MULT(al, u, e)
+            __FPM_MULT(al, u, u)
+            __FPM_MULT(al, u, m)
+            __FPM_MULT(al, u, l)
+            __FPM_MULT(al, u, al)
+            __FPM_MULT(al, m, e)
+            __FPM_MULT(al, m, u)
+            __FPM_MULT(al, m, m)
+            __FPM_MULT(al, m, l)
+            __FPM_MULT(al, m, al)
+            __FPM_MULT(al, l, e)
+            __FPM_MULT(al, l, u)
+            __FPM_MULT(al, l, m)
+            __FPM_MULT(al, l, l)
+            __FPM_MULT(al, l, al)
+            __FPM_MULT(al, al, e)
+            __FPM_MULT(al, al, u)
+            __FPM_MULT(al, al, m)
+            __FPM_MULT(al, al, l)
+            __FPM_MULT(al, al, al)
 
         } // namespace native
 

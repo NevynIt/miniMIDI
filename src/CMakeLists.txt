@@ -3,6 +3,18 @@
 add_subdirectory(no-OS-FatFS-SD-SPI-RPi-Pico/FatFs_SPI build)
 add_subdirectory(iir1 iir1_build)
 
+# Define the parameter FPM_WIDTH
+set(FPM_WIDTH 16)
+
+# Generate Table_sinWave.cpp dynamically
+add_custom_command(
+    OUTPUT ${CMAKE_CURRENT_LIST_DIR}/dsp/Table_sinWave.cpp
+    OUTPUT ${CMAKE_CURRENT_LIST_DIR}/dsp/Table_sinWave.h
+    COMMAND ${CMAKE_COMMAND} -E env C:/Users/argio/AppData/Local/Programs/Python/Python312/python.exe ${CMAKE_CURRENT_LIST_DIR}/dsp/genTables.py ${FPM_WIDTH}
+    DEPENDS ${CMAKE_CURRENT_LIST_DIR}/dsp/genTables.py
+)
+
+add_custom_target(generate_tables DEPENDS ${CMAKE_CURRENT_LIST_DIR}/dsp/Table_sinWave.cpp)
 
 add_executable(miniMIDI 
     miniMIDI.cpp
@@ -40,6 +52,8 @@ add_executable(miniMIDI
     # i2s_example.c
 )
 
+add_dependencies(miniMIDI generate_tables)
+
 # Add this line to set the compile option to disable the warning about the parameter passing convention for fp_int
 target_compile_options(miniMIDI PRIVATE -Wno-psabi)
 target_compile_options(iir PRIVATE -Wno-psabi)
@@ -71,7 +85,8 @@ target_compile_definitions(miniMIDI PUBLIC
   PICO_DEFAULT_UART_BAUD_RATE=115200
   PICO_DEFAULT_UART=0
   IIR1_NO_EXCEPTIONS=1
-  )
+  FPM_WIDTH=${FPM_WIDTH}
+)
 
 
 set (_GLIBCXX_USE_C99_COMPLEX 0)

@@ -27,8 +27,14 @@ os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
 import math
 import Table
+import sys
 
-SAMPLE_WIDTH = 16
+# Get SAMPLE_WIDTH from command line arguments
+if len(sys.argv) != 2:
+    print("Usage: genTables.py <SAMPLE_WIDTH>")
+    sys.exit(1)
+
+SAMPLE_WIDTH = int(sys.argv[1])
 BUFFER_SIZE_BITS = 10
 BUFFER_SIZE = 1024
 
