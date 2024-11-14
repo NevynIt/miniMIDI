@@ -8,13 +8,13 @@ set(FPM_WIDTH 16)
 
 # Generate Table_sinWave.cpp dynamically
 add_custom_command(
-    OUTPUT ${CMAKE_CURRENT_LIST_DIR}/dsp/Table_sinWave.cpp
-    OUTPUT ${CMAKE_CURRENT_LIST_DIR}/dsp/Table_sinWave.h
+    OUTPUT ${CMAKE_CURRENT_LIST_DIR}/dsp/Tables_DSP.cpp
+    OUTPUT ${CMAKE_CURRENT_LIST_DIR}/dsp/Tables_DSP.h
     COMMAND ${CMAKE_COMMAND} -E env C:/Users/argio/AppData/Local/Programs/Python/Python312/python.exe ${CMAKE_CURRENT_LIST_DIR}/dsp/genTables.py ${FPM_WIDTH}
     DEPENDS ${CMAKE_CURRENT_LIST_DIR}/dsp/genTables.py
 )
 
-add_custom_target(generate_tables DEPENDS ${CMAKE_CURRENT_LIST_DIR}/dsp/Table_sinWave.cpp)
+add_custom_target(generate_tables DEPENDS ${CMAKE_CURRENT_LIST_DIR}/dsp/Tables_DSP.cpp)
 
 add_executable(miniMIDI 
     miniMIDI.cpp
@@ -41,7 +41,7 @@ add_executable(miniMIDI
     mod_Synth.cpp
 
     # wavetables/WT_BASE.cpp
-    dsp/Table_sinWave.cpp
+    dsp/Tables_DSP.cpp
     midi_const/midi_frequencies.cpp
     ledColors/led_colors.cpp
     # QuadratureDecoder/QuadratureDecoder.cpp

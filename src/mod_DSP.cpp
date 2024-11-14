@@ -1,14 +1,8 @@
 #include "mod_DSP.h"
-#include <cstdlib> // For rand()
-#include <cstring> // For memset()
-#include <cmath>   // For math functions
 #include "hwConfig.h"
 #include "stdio.h"
 #include "App.h"
 #include "midi_frequencies.h"
-// #include "WT_BASE.h"
-// #include "wave.h"
-// #include "fpm/math.hpp"
 #include "dsp/wave.h"
 
 void mod_DSP::Init()

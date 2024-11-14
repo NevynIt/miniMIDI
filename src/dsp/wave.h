@@ -1,7 +1,7 @@
 #pragma once
 #include "fpm.h"
 #include <limits>
-#include "Table_sinWave.h"
+#include "Tables_DSP.h"
 
 namespace dsp
 {
@@ -20,7 +20,7 @@ namespace dsp
     static_assert((BufferSize > 1) && ((BufferSize & (BufferSize - 1)) == 0), "BufferSize must be a power of 2");
 
     // assert that table_sinWave is defined and has the same width as sampleType
-    static_assert(sizeof(table_sinWave[0]) == sizeof(SampleType), "table_sinWave must have the same width as SampleType");
+    static_assert(sizeof(tables::DSP_TYPE) == sizeof(SampleType), "table_sinWave must have the same width as SampleType");
 
     class wave
     {
@@ -148,16 +148,22 @@ namespace dsp
             return fpm::u_mul_ul(s, this->m_level);
         }
 
-    private:
         const SampleType *m_buffer = nullptr;
     };
 
-    class sinWave : public bufferWave<TABLE_SINWAVE_SIZE>
+    class builtinWave : public bufferWave<tables::DSP_SIZE>
     {
     public:
-        sinWave() : bufferWave(table_sinWave) {}
-        sinWave(const float frequency, const SampleType level, const size_t sample_rate = 1) : bufferWave(table_sinWave, frequency, level, sample_rate) {}
+        builtinWave() : bufferWave(tables::sinWave) {}
+        builtinWave(const float frequency, const SampleType level, const size_t sample_rate = 1) : bufferWave(tables::sinWave, frequency, level, sample_rate) {}
+        void select (const size_t i) { if (i<tables::DSP_COUNT) bufferWave::setBuffer(tables::DSP[i]); }
+        void selectSin() { bufferWave::setBuffer(tables::sinWave); }
+        void selectTriangle() { bufferWave::setBuffer(tables::triangleWave); }
+        void selectSawtooth() { bufferWave::setBuffer(tables::sawtoothWave); }
+        void selectSquare() { bufferWave::setBuffer(tables::squareWave); }
     };
+
+    using sinWave = builtinWave;
 
     template <size_t harmonics = 5, typename BaseWave = sinWave>
     class harmonicWave : public BaseWave
@@ -193,8 +199,7 @@ namespace dsp
             return sample;
         }
 
-    public:
-        FracType m_harmonics[harmonics] = {fpm::m_from_f(1), fpm::m_from_f(0.5), fpm::m_from_f(0.25), fpm::m_from_f(0.125), fpm::m_from_f(0.0625)};
+        FracType m_harmonics[harmonics] = {fpm::m_from_f(1.0/1.9), fpm::m_from_f(0.5/1.9), fpm::m_from_f(0.25/1.9), fpm::m_from_f(0.125/1.9), fpm::m_from_f(0.0625/1.9)};
     };
 
     template <size_t harmonics = 5, typename BaseWave = sinWave>
@@ -227,7 +232,6 @@ namespace dsp
             return sample;
         }
 
-    private:
         FracType m_ratios[harmonics] = {fpm::m_from_f(1), fpm::m_from_f(2), fpm::m_from_f(3), fpm::m_from_f(4), fpm::m_from_f(5)};
         FracType m_gains[harmonics] = {fpm::m_from_f(1), fpm::m_from_f(0.5), fpm::m_from_f(0.25), fpm::m_from_f(0.125), fpm::m_from_f(0.0625)};
     };
@@ -246,11 +250,7 @@ namespace dsp
 
         envelope() = default;
 
-        // time in seconds
-        envelope(const FracType attackRate, const FracType decayRate, const FracType sustainLevel, const FracType releaseRate)
-            : m_attackRate(attackRate), m_decayRate(decayRate), m_sustainLevel(sustainLevel), m_releaseRate(releaseRate) {}
-
-        inline void attck() { m_state = State::attack; }
+        inline void attack() { m_state = State::attack;}
         inline void decay() { m_state = State::decay; }
         inline void sustain() { m_state = State::sustain; }
         inline void release() { m_state = State::release; }
@@ -260,7 +260,7 @@ namespace dsp
             m_level = 0;
         }
 
-        void setRates(const FracType attackRate, const FracType decayRate, const FracType releaseRate)
+        void setEnvRates(const FracType attackRate, const FracType decayRate, const FracType releaseRate)
         {
             m_attackRate = attackRate;
             m_decayRate = decayRate;
@@ -273,44 +273,48 @@ namespace dsp
         }
 
         // time in seconds
-        void setTimes(const FracType attackTime, const FracType decayTime, const FracType releaseTime, const size_t sampleRate = 1)
+        void setEnvTimes(const float attackTime, const float decayTime, const float releaseTime, const size_t sampleRate = 1)
         {
-            m_attackRate = fpm::m_one / (attackTime * sampleRate);
-            m_decayRate = fpm::m_one / (decayTime * sampleRate);
-            m_releaseRate = fpm::m_one / (releaseTime * sampleRate);
+            m_attackRate = fpm::ab_max / (attackTime * sampleRate);
+            m_decayRate = fpm::ab_max / (decayTime * sampleRate);
+            m_releaseRate = fpm::ab_max / (releaseTime * sampleRate);
         }
-
-        FracType getAttackRate() const { return m_attackRate; }
-        FracType getDecayRate() const { return m_decayRate; }
-        FracType getSustainLevel() const { return m_sustainLevel; }
-        FracType getReleaseRate() const { return m_releaseRate; }
 
         inline void advance()
         {
             switch (m_state)
             {
             case State::attack:
-                m_level += m_attackRate;
-                if (m_level >= FracType(1))
+                if (fpm::ab_max - m_level < m_attackRate)
                 {
-                    m_level = FracType(1);
+                    m_level = fpm::ab_max;
                     m_state = State::decay;
+                }
+                else
+                {
+                    m_level += m_attackRate;
                 }
                 break;
             case State::decay:
-                m_level -= m_decayRate;
-                if (m_level <= m_sustainLevel)
+                if (m_level < m_sustainLevel + m_decayRate)
                 {
                     m_level = m_sustainLevel;
                     m_state = State::sustain;
                 }
+                else
+                {
+                    m_level -= m_decayRate;
+                }
                 break;
             case State::release:
-                m_level -= m_releaseRate;
-                if (m_level <= FracType(0))
+                if (m_level < m_releaseRate)
                 {
-                    m_level = FracType(0);
+                    m_level = 0;
                     m_state = State::idle;
+                }
+                else
+                {
+                    m_level -= m_releaseRate;
                 }
                 break;
             default:
@@ -318,30 +322,26 @@ namespace dsp
             }
         }
 
-        // between 0 and 1
-        FracType getLevel() const
+        // between 0 and fpm::ab_max
+        fpm::ubase getEnvLevel() const
         {
             return m_level;
         }
 
-        State getState() const
+        State getEnvState() const
         {
             return m_state;
         }
 
-        void setLevel(const FracType level)
-        {
-            m_level = level;
-        }
-
-    private:
-        FracType m_attackRate = fpm::m_from_f(0.25);
-        FracType m_decayRate = fpm::m_from_f(0.25);
-        FracType m_sustainLevel = fpm::m_from_f(0.5);
-        FracType m_releaseRate = fpm::m_from_f(0.25);
-        FracType m_level = fpm::m_from_f(0);
+        fpm::ubase m_attackRate = (fpm::ab_max / 2)/100;
+        fpm::ubase m_decayRate = (fpm::ab_max / 4)/100;
+        fpm::ubase m_sustainLevel = fpm::ab_max / 2;
+        fpm::ubase m_releaseRate = (fpm::ab_max / 4)/100;
+        fpm::ubase m_level = 0;
         State m_state = State::idle;
     };
+
+//next step envelope that takes the level from a buffer
 
     template <typename BaseWave = sinWave, typename EnvelopeType = envelope>
     class signal : public BaseWave, public EnvelopeType
@@ -351,7 +351,7 @@ namespace dsp
 
         inline SampleType getSample() const
         {
-            return fpm::u_mul_um(BaseWave::getSample(), EnvelopeType::getLevel());
+            return fpm::u_mul_ual(BaseWave::getSample(), EnvelopeType::getEnvLevel());
         }
 
         inline void advance()

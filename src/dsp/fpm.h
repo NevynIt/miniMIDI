@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <cmath>
 
 #ifndef FPM_WIDTH
 #define FPM_WIDTH 16
@@ -886,15 +887,6 @@ namespace dsp
             #define __FPM_MULT_STARTBIT_l 1
             #define __FPM_MULT_STARTBIT_al 0
 
-            #define __FPM_MULT_DESTBIT_e width
-            #define __FPM_MULT_DESTBIT_ae width
-            #define __FPM_MULT_DESTBIT_u (width*2)
-            #define __FPM_MULT_DESTBIT_au (width*2)
-            #define __FPM_MULT_DESTBIT_m (width+width/2)
-            #define __FPM_MULT_DESTBIT_am (width+width/2)
-            #define __FPM_MULT_DESTBIT_l (width+1)
-            #define __FPM_MULT_DESTBIT_al width
-
 // disable shift overflow warnings
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wshift-count-overflow"
@@ -914,7 +906,7 @@ namespace dsp
             
             #define __FPM_MULT_SHIFT(n, bits) __FPM_MULT_SHIFT_IMPL<bits>(n)
             #define __FPM_MULT_COMP(_r_, _a_, _b_) ( \
-                -__FPM_MULT_DESTBIT_##_r_ +__FPM_MULT_STARTBIT_##_a_ +__FPM_MULT_STARTBIT_##_b_ \
+                +__FPM_MULT_STARTBIT_##_a_ +__FPM_MULT_STARTBIT_##_b_ -__FPM_MULT_STARTBIT_##_r_ - width\
                 )
 
             #define __FPM_MULT(_r_, _a_, _b_) \

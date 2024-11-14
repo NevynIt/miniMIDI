@@ -2,7 +2,6 @@
 #define HWCONFIG_H
 
 #include "hardware/gpio.h"
-#include "fpm/fixed.hpp"
 
 typedef enum {
     GPIO_Enc0_A = 0,    // 0
@@ -92,11 +91,6 @@ typedef const sample_t* sample_cptr;
 #define AUDIO_BUFFER_SLOTS 32
 #define AUDIO_BUFFER_SLOTS_MASK (AUDIO_BUFFER_SLOTS - 1)
 #define AUDIO_BUFFER_TRACKS 10
-
-
-// Fixed-point math
-typedef fpm::fixed<16,16,true> fp_int;
-#define TWO_PI (fp_int::two_pi())
 
 enum DSP_Tracks {
     DSP_TRACK_USB_IN_LEFT,
