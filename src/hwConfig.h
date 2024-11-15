@@ -63,10 +63,6 @@ typedef enum {
 // Encoder configuration
 #define NUM_ENCODERS 4
 #define GPIO_Enc_Base GPIO_Enc0_A
-// #define ENCODERS_USE_PIO //PIO Iplementation currently broken, Non-PIO implementation is a bit slow but kind of works
-#ifdef ENCODERS_USE_PIO
-#define PIO_ENCODERS pio0
-#endif
 
 // RGB LED configuration
 #define PIO_WS2812B  pio1
@@ -119,7 +115,8 @@ enum DSP_Tracks {
     #define UART_BAUD_RATE 31250
 #endif
 
-#define DEOPTIMIZE __attribute__((optimize("O0"))) 
+#define DEOPTIMIZE __attribute__((optimize("O0")))
+
 //USB configuration mostly defined in mod_USB.cpp
 
 #endif // HWCONFIG_H

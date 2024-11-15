@@ -11,10 +11,10 @@ namespace dsp
 #endif
 
     constexpr size_t BufferSize = WAVE_BUFFER_SIZE;
-    using SampleType = fpm::base; //upper bits
-    using FracType = fpm::base; //middle bits
-    using PhaseType = fpm::ubase; //lower bits
-    constexpr SampleType SampleMax = fpm::b_max;
+    using SampleType = fpm::u_type; //upper bits
+    using FracType = fpm::m_type; //middle bits
+    using PhaseType = fpm::al_type; //lower bits
+    constexpr SampleType SampleMax = fpm::u_max;
 
     // assert that BufferSize is a power of 2
     static_assert((BufferSize > 1) && ((BufferSize & (BufferSize - 1)) == 0), "BufferSize must be a power of 2");
@@ -275,9 +275,9 @@ namespace dsp
         // time in seconds
         void setEnvTimes(const float attackTime, const float decayTime, const float releaseTime, const size_t sampleRate = 1)
         {
-            m_attackRate = fpm::ab_max / (attackTime * sampleRate);
-            m_decayRate = fpm::ab_max / (decayTime * sampleRate);
-            m_releaseRate = fpm::ab_max / (releaseTime * sampleRate);
+            m_attackRate = fpm::au_max / (attackTime * sampleRate);
+            m_decayRate = fpm::au_max / (decayTime * sampleRate);
+            m_releaseRate = fpm::au_max / (releaseTime * sampleRate);
         }
 
         inline void advance()
@@ -285,9 +285,9 @@ namespace dsp
             switch (m_state)
             {
             case State::attack:
-                if (fpm::ab_max - m_level < m_attackRate)
+                if (fpm::au_max - m_level < m_attackRate)
                 {
-                    m_level = fpm::ab_max;
+                    m_level = fpm::au_max;
                     m_state = State::decay;
                 }
                 else
@@ -333,11 +333,11 @@ namespace dsp
             return m_state;
         }
 
-        fpm::ubase m_attackRate = (fpm::ab_max / 2)/100;
-        fpm::ubase m_decayRate = (fpm::ab_max / 4)/100;
-        fpm::ubase m_sustainLevel = fpm::ab_max / 2;
-        fpm::ubase m_releaseRate = (fpm::ab_max / 4)/100;
-        fpm::ubase m_level = 0;
+        fpm::au_type m_attackRate = (fpm::au_max / 2)/100;
+        fpm::au_type m_decayRate = (fpm::au_max / 4)/100;
+        fpm::au_type m_sustainLevel = fpm::au_max / 2;
+        fpm::au_type m_releaseRate = (fpm::au_max / 4)/100;
+        fpm::au_type m_level = 0;
         State m_state = State::idle;
     };
 
