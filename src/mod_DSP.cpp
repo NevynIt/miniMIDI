@@ -111,14 +111,18 @@ void mod_DSP::Test()
 
     float freq(440);
     sample_ptr buffer = new sample_t[AUDIO_BUFFER_SAMPLES * 1000];
+    dsp::PhaseType inc = dsp::inc_from_freq(freq, 48000);
     test_wave(dsp::noiseWave(), "Noise", buffer, 1000, sdtest);
-    test_wave(dsp::squareWave(freq, dsp::SampleMax, 48000), "Square", buffer, 1000, sdtest);
-    test_wave(dsp::sawtoothWave(freq, dsp::SampleMax, 48000), "Sawtooth", buffer, 1000, sdtest);
-    test_wave(dsp::sinWave(freq, dsp::SampleMax, 48000), "Sine", buffer, 1000, sdtest);
-    test_wave(dsp::harmonicWave(freq, dsp::SampleMax/5, 48000), "harmonic", buffer, 1000, sdtest);
-    auto iw = dsp::inharmonicWave(freq, dsp::SampleMax/5, 48000);
+    test_wave(dsp::squareWave(inc), "Square", buffer, 1000, sdtest);
+    test_wave(dsp::sawtoothWave(inc), "Sawtooth", buffer, 1000, sdtest);
+    test_wave(dsp::sinWave(inc), "Sine", buffer, 1000, sdtest);
+    test_wave(dsp::harmonicWave(inc), "harmonic", buffer, 1000, sdtest);
+    auto iw = dsp::inharmonicWave(inc);
     float gains[5] = {1, 0.5, 0.25, 0.125, 0.0625};
     float ratios[5] = {1,2.5,5.4,12,15};
+    dsp::normalize(gains);
+    dsp::normalize(ratios);
+    
     iw.setup(ratios, gains);
     test_wave(iw, "inharmonic", buffer, 1000, sdtest);
     // test_wave(dsp::triangleWave(), "Triangle", buffer, 1000, sdtest);

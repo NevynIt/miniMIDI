@@ -11,15 +11,8 @@ public:
     void Init() override;
     void Tick() override;
 
-    void Toggle();
-
-    void setFreq(float freq);
-
-    float freq = 1;
-    int level = 128;
+    dsp::wave *ledWave = nullptr;
 private:
-    uint32_t lastTickTime = 0;
-    dsp::sinWave ledWave;
     uint slice_num; // PWM slice number
 };
 

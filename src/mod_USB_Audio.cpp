@@ -36,11 +36,11 @@ void mod_USB_Audio::Test()
     INTERVALCHECK(1)
 
     int8_t slot = mMApp.dsp.getSlotRelative(2);
-    // static auto wave_left = dsp::wave();
-    // static auto wave_right = dsp::sinWave();
-    static auto wave_left = dsp::inharmonicWave();
-    static auto wave_right = dsp::harmonicWave();
+
+    static auto wave_left = dsp::gainModWave<dsp::inharmonicWave<5>>();
+    static auto wave_right = dsp::gainModWave<dsp::harmonicWave<5>>();
     float gains[5] = {1, 0.5, 0.25, 0.125, 0.0625};
+    dsp::normalize(gains);
     wave_right.setHarmonics(gains);
 
     float ratios[5] = {1,3,5,10,15};
@@ -63,22 +63,16 @@ void mod_USB_Audio::Test()
     if (ampR < 0) ampR = 0;
     if (ampR > dsp::SampleMax) ampR = dsp::SampleMax;
 
-    // wave_left.setFrequency(12000, SAMPLE_RATE);
-    // wave_right.setFrequency(48, SAMPLE_RATE);
-    wave_left.setFrequency(midi_frequencies[noteL], SAMPLE_RATE);
-    wave_right.setFrequency(midi_frequencies[noteR], SAMPLE_RATE);
+    wave_left.setIncrement(dsp::inc_from_freq(midi_frequencies[noteL], SAMPLE_RATE));
+    wave_right.setIncrement(dsp::inc_from_freq(midi_frequencies[noteR], SAMPLE_RATE));
 
     sample_t s = SAMPLE_MAX / AUDIO_BUFFER_SAMPLES*4;
 
-    // wave_left.setLevel(slot * s);
-    // wave_right.setLevel(slot * s);
     wave_left.setLevel(ampL);
     wave_right.setLevel(ampR);
 
     dsp::fillBuffer(left, wave_left, AUDIO_BUFFER_SAMPLES);
     dsp::fillBuffer(right, wave_right, AUDIO_BUFFER_SAMPLES);
-
-    // slot = (slot + 1) % AUDIO_BUFFER_SLOTS;
 }
 
 void mod_USB_Audio::reset_slot_in()

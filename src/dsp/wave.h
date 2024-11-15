@@ -15,6 +15,7 @@ namespace dsp
     using FracType = fpm::m_type; //middle bits
     using PhaseType = fpm::al_type; //lower bits
     constexpr SampleType SampleMax = fpm::u_max;
+    constexpr SampleType SampleMin = fpm::u_min;
 
     // assert that BufferSize is a power of 2
     static_assert((BufferSize > 1) && ((BufferSize & (BufferSize - 1)) == 0), "BufferSize must be a power of 2");
@@ -22,11 +23,29 @@ namespace dsp
     // assert that table_sinWave is defined and has the same width as sampleType
     static_assert(sizeof(tables::DSP_TYPE) == sizeof(SampleType), "table_sinWave must have the same width as SampleType");
 
+    #define WAVE_OPERATOR_OVERRIDE \
+        inline SampleType operator()() const override { return this->getSample(); } \
+        inline void operator++() override { this->advance(); }
+
+    //TODO: replace operator ++ with something else
+
     class wave
     {
     public:
         wave() = default;
-        wave(const SampleType level) : m_level(level) {}
+
+        virtual SampleType operator()() const { return 0; }
+        virtual void operator++() { }
+
+        inline SampleType getSample() const { return this->operator()(); }
+        inline void advance() { this->operator++(); }
+    };
+
+    class constantWave : public wave
+    {
+    public:
+        WAVE_OPERATOR_OVERRIDE
+        constantWave(const SampleType level = SampleMax) : m_level(level) {}
 
         inline SampleType getSample() const { return m_level; }
         inline void advance() {}
@@ -55,27 +74,38 @@ namespace dsp
     class noiseWave : public wave
     {
     public:
+        WAVE_OPERATOR_OVERRIDE
         noiseWave() = default;
 
-        inline SampleType getSample() const { return fpm::u_mul_ul((SampleType)rand()*2, m_level); }
+        inline SampleType getSample() const { return rand()*2; }
+        inline void advance() {}
     };
+
+    inline PhaseType inc_from_freq(const float frequency, const size_t sample_rate = 1)
+    {
+        return fpm::al_from_f(frequency / sample_rate);
+    }
+
+    inline float freq_from_inc(const PhaseType increment, const size_t sample_rate = 1)
+    {
+        return fpm::f_from_al(increment) * sample_rate;
+    }
 
     class periodicWave : public wave
     {
     public:
+        WAVE_OPERATOR_OVERRIDE
         periodicWave() = default;
-        periodicWave(const float frequency, const SampleType level, const size_t sample_rate = 1) : wave(level) { setFrequency(frequency, sample_rate); }
+        periodicWave(const PhaseType increment) : m_increment(increment) {}
 
-        void setFrequency(const float frequency, const size_t sample_rate = 1) { m_increment = fpm::al_from_f(frequency / sample_rate); }
-        float getFrequency(const size_t sample_rate = 1) { return fpm::f_from_al(m_increment) * sample_rate; }
         void setIncrement(const PhaseType increment) { m_increment = increment; }
         PhaseType getIncrement() { return m_increment; }        
         void setPhase(const float phase) { m_phase = fpm::al_from_f(phase); }
         inline void advance() { m_phase += m_increment; }
-        inline void advance(const float increment, const size_t sample_rate = 1) { m_phase += fpm::l_from_f(increment / sample_rate * 2); }
+        inline void advance(const PhaseType increment) { m_phase += increment; }
         float getPhase() { return fpm::f_from_l(m_phase)/2; }
         inline SampleType getSample() const { return getSample(m_phase); }
-        inline SampleType getSample(const PhaseType phase) const { return m_level; }
+        inline SampleType getSample(const PhaseType phase) const { return SampleMax; }
 
         PhaseType m_increment = PhaseType(0);
         PhaseType m_phase = PhaseType(0);
@@ -84,26 +114,28 @@ namespace dsp
     class squareWave : public periodicWave
     {
     public:
+        WAVE_OPERATOR_OVERRIDE
         squareWave() = default;
-        squareWave(const float frequency, const SampleType level, const size_t sample_rate = 1) : periodicWave(frequency, level, sample_rate) {}
+        squareWave(const PhaseType increment) : periodicWave(increment) {}
 
         inline SampleType getSample() const { return getSample(m_phase); }
         inline SampleType getSample(const PhaseType phase) const
         {
-            return (phase < fpm::al_from_f(0.5f)) ? m_level : -m_level;
+            return (phase < fpm::al_from_f(0.5f)) ? SampleMax : SampleMin;
         }
     };
 
     class sawtoothWave : public periodicWave
     {
     public:
+        WAVE_OPERATOR_OVERRIDE
         sawtoothWave() = default;
-        sawtoothWave(const float frequency, const SampleType level, const size_t sample_rate = 1) : periodicWave(frequency, level, sample_rate) {}
+        sawtoothWave(const PhaseType increment) : periodicWave(increment) {}
 
         inline SampleType getSample() const { return getSample(m_phase); }
         inline SampleType getSample(const PhaseType phase) const
         {
-            return fpm::u_mul_ual(m_level, phase) * 2;
+            return phase;
         }
     };
 
@@ -130,8 +162,9 @@ namespace dsp
         static_assert((count > 1) && ((count & (count - 1)) == 0), "count must be a power of 2");
 
     public:
+        WAVE_OPERATOR_OVERRIDE
         bufferWave(const SampleType *buffer) : m_buffer(buffer) {}
-        bufferWave(const SampleType *buffer, const float frequency, const SampleType level, const size_t sample_rate = 1) : m_buffer(buffer) , periodicWave(frequency, level, sample_rate) {}
+        bufferWave(const SampleType *buffer, const PhaseType increment) : m_buffer(buffer) , periodicWave(increment) {}
 
         void setBuffer(const SampleType *buffer)
         {
@@ -144,8 +177,7 @@ namespace dsp
         {
             constexpr static int count_bits = log2(count);
 
-            const SampleType s = m_buffer[upperBits<uint16_t, PhaseType, count_bits>(phase)];
-            return fpm::u_mul_ul(s, this->m_level);
+            return m_buffer[upperBits<uint16_t, PhaseType, count_bits>(phase)];
         }
 
         const SampleType *m_buffer = nullptr;
@@ -154,8 +186,9 @@ namespace dsp
     class builtinWave : public bufferWave<tables::DSP_SIZE>
     {
     public:
+        WAVE_OPERATOR_OVERRIDE
         builtinWave() : bufferWave(tables::sinWave) {}
-        builtinWave(const float frequency, const SampleType level, const size_t sample_rate = 1) : bufferWave(tables::sinWave, frequency, level, sample_rate) {}
+        builtinWave(const PhaseType increment) : bufferWave(tables::sinWave, increment) {}
         void select (const size_t i) { if (i<tables::DSP_COUNT) bufferWave::setBuffer(tables::DSP[i]); }
         void selectSin() { bufferWave::setBuffer(tables::sinWave); }
         void selectTriangle() { bufferWave::setBuffer(tables::triangleWave); }
@@ -165,14 +198,29 @@ namespace dsp
 
     using sinWave = builtinWave;
 
-    template <size_t harmonics = 5, typename BaseWave = sinWave>
-    class harmonicWave : public BaseWave
+    template <size_t count = 5>
+    void normalize(float values[count])
     {
-        static_assert(std::is_base_of<periodicWave, BaseWave>::value, "BaseWave must be derived from periodicWave");
+        float sum = 0;
+        for (size_t i = 0; i < count; ++i)
+        {
+            sum += values[i];
+        }
+        for (size_t i = 0; i < count; ++i)
+        {
+            values[i] /= sum;
+        }
+    }
+
+    template <size_t harmonics = 5, typename Base = sinWave>
+    class harmonicWave : public Base
+    {
+        static_assert(std::is_base_of<periodicWave, Base>::value, "Base must be derived from periodicWave");
 
     public:
+        WAVE_OPERATOR_OVERRIDE
         harmonicWave() = default;
-        harmonicWave(const float frequency, const SampleType level, const size_t sample_rate = 1) : BaseWave(frequency, level, sample_rate) {}
+        harmonicWave(const PhaseType increment) : Base(increment) {}
 
         void setHarmonics(const float harmonics_f[harmonics])
         {
@@ -194,7 +242,7 @@ namespace dsp
             SampleType sample = 0;
             for (size_t i = 0; i < harmonics; ++i)
             {
-                sample += fpm::u_mul_um(BaseWave::getSample((i+1) * phase), m_harmonics[i]); //samples are already scaled by level
+                sample += fpm::u_mul_um(Base::getSample((i+1) * phase), m_harmonics[i]);
             }
             return sample;
         }
@@ -202,14 +250,15 @@ namespace dsp
         FracType m_harmonics[harmonics] = {fpm::m_from_f(1.0/1.9), fpm::m_from_f(0.5/1.9), fpm::m_from_f(0.25/1.9), fpm::m_from_f(0.125/1.9), fpm::m_from_f(0.0625/1.9)};
     };
 
-    template <size_t harmonics = 5, typename BaseWave = sinWave>
-    class inharmonicWave : public BaseWave
+    template <size_t harmonics = 5, typename Base = sinWave>
+    class inharmonicWave : public Base
     {
-        static_assert(std::is_base_of<periodicWave, BaseWave>::value, "BaseWave must be derived from wave");
+        static_assert(std::is_base_of<periodicWave, Base>::value, "Base must be derived from PeriodicWave");
 
         public:
+        WAVE_OPERATOR_OVERRIDE
         inharmonicWave() = default;
-        inharmonicWave(const float frequency, const SampleType level, const size_t sample_rate = 1) : BaseWave(frequency, level, sample_rate) {}
+        inharmonicWave(const PhaseType increment) : Base(increment) {}
 
         void setup(const float ratios[harmonics], const float gains[harmonics])
         {
@@ -227,7 +276,7 @@ namespace dsp
             SampleType sample = 0;
             for (size_t i = 0; i < harmonics; ++i)
             {
-                sample += fpm::u_mul_um(BaseWave::getSample(fpm::al_mul_mal(m_ratios[i], (i+1) * phase)), m_gains[i]);
+                sample += fpm::u_mul_um(Base::getSample(fpm::al_mul_mal(m_ratios[i], (i+1) * phase)), m_gains[i]);
             }
             return sample;
         }
@@ -236,8 +285,9 @@ namespace dsp
         FracType m_gains[harmonics] = {fpm::m_from_f(1), fpm::m_from_f(0.5), fpm::m_from_f(0.25), fpm::m_from_f(0.125), fpm::m_from_f(0.0625)};
     };
 
-    class envelope
+    class envelope : public wave
     {
+public:
     public:
         enum class State
         {
@@ -250,11 +300,36 @@ namespace dsp
 
         envelope() = default;
 
-        inline void attack() { m_state = State::attack;}
-        inline void decay() { m_state = State::decay; }
-        inline void sustain() { m_state = State::sustain; }
-        inline void release() { m_state = State::release; }
-        inline void stop()
+        virtual inline void attack() { }
+        virtual inline void decay() { }
+        virtual inline void sustain() { }
+        virtual inline void release() { }
+        virtual inline void stop() { }
+        virtual inline State getEnvState() const { return State::idle; }
+
+        SampleType operator()() const override { return this->getEnvLevel(); }
+        void operator++() override { }
+
+        inline void advance() { this->operator++(); }
+
+        fpm::ubase getEnvLevel() const { return 0; }
+    };
+
+    #define ENVELOPE_OPERATOR_OVERRIDE \
+        inline SampleType operator()() const override { return this->getEnvLevel()/2; } \
+        inline void operator++() override { this->advance(); }
+
+    class envelopeBase : public envelope
+    {
+    public:
+        ENVELOPE_OPERATOR_OVERRIDE
+        envelopeBase() = default;
+
+        inline void attack() override { m_state = State::attack;}
+        inline void decay() override { m_state = State::decay; }
+        inline void sustain() override { m_state = State::sustain; }
+        inline void release() override { m_state = State::release; }
+        inline void stop() override 
         {
             m_state = State::idle;
             m_level = 0;
@@ -328,7 +403,7 @@ namespace dsp
             return m_level;
         }
 
-        State getEnvState() const
+        State getEnvState() const override
         {
             return m_state;
         }
@@ -343,30 +418,67 @@ namespace dsp
 
 //next step envelope that takes the level from a buffer
 
-    template <typename BaseWave = sinWave, typename EnvelopeType = envelope>
-    class signal : public BaseWave, public EnvelopeType
+    template <typename Base = sinWave>
+    class gainModWave : public Base
     {
     public:
-        signal() = default;
+        WAVE_OPERATOR_OVERRIDE
+
+        gainModWave(const SampleType level = SampleMax) : m_level(level) {}
+
+        void setLevel(const SampleType level) { m_level = level; }
+        inline SampleType getLevel() { return m_level; }
 
         inline SampleType getSample() const
         {
-            return fpm::u_mul_ual(BaseWave::getSample(), EnvelopeType::getEnvLevel());
+            return fpm::u_mul_ul(Base::getSample(), m_level);
+        }
+        inline void advance() { Base::advance(); }
+
+        SampleType m_level = SampleMax;
+    };
+
+    template <typename Carrier = sinWave, typename Modulator = envelopeBase>
+    class amModWave : public wave
+    {
+    public:
+        WAVE_OPERATOR_OVERRIDE
+        amModWave() = default;
+
+        inline SampleType getSample() const
+        {
+            const SampleType level = m.getSample();
+            return fpm::u_mul_ul(c.getSample(), level);
+        }
+        inline void advance() { c.advance(); m.advance(); }
+
+    public:
+        Carrier c;
+        Modulator m;
+    };
+
+    template <typename Carrier = sinWave, typename Modulator = sinWave>
+    class fmModWave : public wave
+    {
+    public:
+        WAVE_OPERATOR_OVERRIDE
+        fmModWave() = default;
+
+        inline SampleType getSample() const
+        {
+            return c.getSample();
         }
 
         inline void advance()
         {
-            BaseWave::advance();
-            EnvelopeType::advance();
+            SampleType level = m.getSample();
+            m.advance();
+            c.advance(); //Advance by its own phase first
+            c.advance((PhaseType)level); //then apply the phase modulation
         }
 
-        inline void attack() { EnvelopeType::attack(); }
-        inline void decay() { EnvelopeType::decay(); }
-        inline void sustain() { EnvelopeType::sustain(); }
-        inline void release() { EnvelopeType::release(); }
-        inline void stop() { EnvelopeType::stop(); }
-
-    private:
-        SampleType getSample(const PhaseType phase) const;
+    public:
+        Carrier c;
+        Modulator m;
     };
 }

@@ -22,9 +22,6 @@
 #include <memory>
 #include "hardware/timer.h"
 
-        // INTERVALCHECK_stored_time += (interval); \
-        //
-
 #define mMApp (App::GetInstance())
 
 inline bool INTERVALCHECK_IMP(uint32_t interval, uint32_t& INTERVALCHECK_stored_time) {
