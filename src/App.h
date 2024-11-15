@@ -22,8 +22,27 @@
 #include <memory>
 #include "hardware/timer.h"
 
+        // INTERVALCHECK_stored_time += (interval); \
+        //
+
 #define mMApp (App::GetInstance())
-#define INTERVALCHECK(interval) { static uint32_t INTERVALCHECK_stored_time = 0; if (time_us_32()-INTERVALCHECK_stored_time > (interval) * 1000) INTERVALCHECK_stored_time = time_us_32(); else return; }
+
+inline bool INTERVALCHECK_IMP(uint32_t interval, uint32_t& INTERVALCHECK_stored_time) {
+    uint32_t now = time_us_32();
+    if (now-INTERVALCHECK_stored_time > (interval) * 1000) {
+        while (now-INTERVALCHECK_stored_time > (interval) * 1000)
+            INTERVALCHECK_stored_time += (interval) * 1000;
+        return false;
+    }
+    return true;
+}
+
+#define INTERVALCHECK(interval) \
+{\
+    static uint32_t INTERVALCHECK_stored_time = 0; \
+    if (INTERVALCHECK_IMP(interval, INTERVALCHECK_stored_time)) \
+        return;\
+}
 
 class App : public Module {
 public:

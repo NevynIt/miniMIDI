@@ -28,54 +28,57 @@ void mod_USB_Audio::Tick()
     // Periodic tasks for USB Audio
 }
 
+int alt_in = 0;
+int alt_out = 0;
+
 void mod_USB_Audio::Test()
 {
-    static int8_t last_slot = -1;
+    INTERVALCHECK(1)
+
+    int8_t slot = mMApp.dsp.getSlotRelative(2);
+    // static auto wave_left = dsp::wave();
+    // static auto wave_right = dsp::sinWave();
     static auto wave_left = dsp::inharmonicWave();
     static auto wave_right = dsp::harmonicWave();
     float gains[5] = {1, 0.5, 0.25, 0.125, 0.0625};
-    // dsp::FracType gains[5] = {0.5, 0.7, 0.3, 0.2, 0.1};
     wave_right.setHarmonics(gains);
 
     float ratios[5] = {1,3,5,10,15};
     wave_left.setup(ratios, gains);
 
-    if (slot_out < 0)
-    {
-        last_slot = -1;
-        return;
-    }
+    auto left = mMApp.dsp.buffers[track_out[0]][slot];
+    auto right = mMApp.dsp.buffers[track_out[1]][slot];
 
-    if (last_slot != slot_out)
-    {
-        auto left = getOutBuffer(0);
-        int noteL = mMApp.encoders.count[0]/4 + 69;
-        auto ampL = dsp::SampleMax / 100 * (mMApp.encoders.count[1]/4 + 50);
-        int noteR = mMApp.encoders.count[2]/4 + 69;
-        auto ampR = dsp::SampleMax / 100 * (mMApp.encoders.count[3]/4 + 50);
+    int noteL = mMApp.encoders.count[0]/4 + 69;
+    auto ampL = dsp::SampleMax / 100 * (mMApp.encoders.count[1]/4 + 50);
+    int noteR = mMApp.encoders.count[2]/4 + 69;
+    auto ampR = dsp::SampleMax / 100 * (mMApp.encoders.count[3]/4 + 50);
 
-        if (noteL < 0) noteL = 0;
-        if (noteL > 127) noteL = 127;
-        if (noteR < 0) noteR = 0;
-        if (noteR > 127) noteR = 127;
-        if (ampL < 0) ampL = 0;
-        if (ampL > dsp::SampleMax) ampL = dsp::SampleMax;
-        if (ampR < 0) ampR = 0;
-        if (ampR > dsp::SampleMax) ampR = dsp::SampleMax;
+    if (noteL < 0) noteL = 0;
+    if (noteL > 127) noteL = 127;
+    if (noteR < 0) noteR = 0;
+    if (noteR > 127) noteR = 127;
+    if (ampL < 0) ampL = 0;
+    if (ampL > dsp::SampleMax) ampL = dsp::SampleMax;
+    if (ampR < 0) ampR = 0;
+    if (ampR > dsp::SampleMax) ampR = dsp::SampleMax;
 
-        auto right = getOutBuffer(1);
+    // wave_left.setFrequency(12000, SAMPLE_RATE);
+    // wave_right.setFrequency(48, SAMPLE_RATE);
+    wave_left.setFrequency(midi_frequencies[noteL], SAMPLE_RATE);
+    wave_right.setFrequency(midi_frequencies[noteR], SAMPLE_RATE);
 
-        wave_left.setFrequency(midi_frequencies[noteL], SAMPLE_RATE);
-        wave_right.setFrequency(midi_frequencies[noteR], SAMPLE_RATE);
+    sample_t s = SAMPLE_MAX / AUDIO_BUFFER_SAMPLES*4;
 
-        wave_left.setLevel(ampL);
-        wave_right.setLevel(ampR);
+    // wave_left.setLevel(slot * s);
+    // wave_right.setLevel(slot * s);
+    wave_left.setLevel(ampL);
+    wave_right.setLevel(ampR);
 
-        dsp::fillBuffer(left, wave_left, AUDIO_BUFFER_SAMPLES);
-        dsp::fillBuffer(right, wave_right, AUDIO_BUFFER_SAMPLES);
+    dsp::fillBuffer(left, wave_left, AUDIO_BUFFER_SAMPLES);
+    dsp::fillBuffer(right, wave_right, AUDIO_BUFFER_SAMPLES);
 
-        last_slot = slot_out;
-    }
+    // slot = (slot + 1) % AUDIO_BUFFER_SLOTS;
 }
 
 void mod_USB_Audio::reset_slot_in()
@@ -90,26 +93,22 @@ void mod_USB_Audio::reset_slot_out()
 
 void mod_USB_Audio::start_slot_in()
 {
-    slot_in = mMApp.dsp.getSlotRelative(-1, mMApp.usb.SOF_sync_us);
+    slot_in = mMApp.dsp.getSlotRelative(2);
 }
 
 void mod_USB_Audio::start_slot_out()
 {
-    slot_out = mMApp.dsp.getSlotRelative(2, mMApp.usb.SOF_sync_us);
+    slot_out = mMApp.dsp.getSlotRelative(-1);
 }
 
 void mod_USB_Audio::next_slot_in()
 {
-    slot_in++;
-    if (slot_in >= AUDIO_BUFFER_SLOTS)
-        slot_in = 0;
+    slot_in = (slot_in + 1) % AUDIO_BUFFER_SLOTS;
 }
 
 void mod_USB_Audio::next_slot_out()
 {
-    slot_out++;
-    if (slot_out >= AUDIO_BUFFER_SLOTS)
-        slot_out = 0;
+    slot_out = (slot_out + 1) % AUDIO_BUFFER_SLOTS;
 }
 
 inline sample_ptr mod_USB_Audio::getOutBuffer(uint8_t channel) const
@@ -193,9 +192,6 @@ bool tud_audio_get_req_ep_cb(uint8_t rhport, tusb_control_request_t const *p_req
     return false; // Yet not implemented
 }
 
-int alt_in = 0;
-int alt_out = 0;
-
 // Invoked when audio set interface request received
 bool tud_audio_set_itf_cb(uint8_t rhport, tusb_control_request_t const *p_request)
 {
@@ -247,7 +243,10 @@ bool tud_audio_tx_done_pre_load_cb(uint8_t rhport, uint8_t itf, uint8_t ep_in, u
     // printf("tud_audio_tx_done_pre_load_cb\r\n");
 
     if (mMApp.usbAudio.slot_out < 0)
+    {
+        __breakpoint();
         return false;
+    }
 
     if (alt_out == 0)
         return true;
@@ -291,12 +290,12 @@ bool tud_audio_set_itf_close_EP_cb(uint8_t rhport, tusb_control_request_t const 
     if (itf == ITF_NUM_mM_Sound_LineIn)
     {
         // Line In
-        mMApp.usbAudio.reset_slot_in();
+        mMApp.usbAudio.reset_slot_out();
     }
     else if (itf == ITF_NUM_mM_Sound_LineOut)
     {
         // Line Out
-        mMApp.usbAudio.reset_slot_out();
+        mMApp.usbAudio.reset_slot_in();
     }
     return true;
 }
