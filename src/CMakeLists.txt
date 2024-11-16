@@ -1,7 +1,7 @@
 # Add executable. Default name is the project name, version 0.1
 
 add_subdirectory(no-OS-FatFS-SD-SPI-RPi-Pico/FatFs_SPI build)
-add_subdirectory(iir1 iir1_build)
+# add_subdirectory(iir1 iir1_build)
 
 # Define the parameter FPM_WIDTH
 set(FPM_WIDTH 16)
@@ -42,6 +42,7 @@ add_executable(miniMIDI
 
     # wavetables/WT_BASE.cpp
     dsp/Tables_DSP.cpp
+    dsp/iir.cpp
     midi_const/midi_frequencies.cpp
     ledColors/led_colors.cpp
     # QuadratureDecoder/QuadratureDecoder.cpp
@@ -55,8 +56,8 @@ add_executable(miniMIDI
 add_dependencies(miniMIDI generate_tables)
 
 # Add this line to set the compile option to disable the warning about the parameter passing convention for fp_int
-target_compile_options(miniMIDI PRIVATE -Wno-psabi)
-target_compile_options(iir PRIVATE -Wno-psabi)
+# target_compile_options(miniMIDI PRIVATE -Wno-psabi)
+# target_compile_options(iir PRIVATE -Wno-psabi)
 
 # Set the output directories to the root build directory
 set_target_properties(miniMIDI PROPERTIES
@@ -84,28 +85,18 @@ target_compile_definitions(miniMIDI PUBLIC
   PICO_DEFAULT_UART_RX_PIN=17
   PICO_DEFAULT_UART_BAUD_RATE=115200
   PICO_DEFAULT_UART=0
-  IIR1_NO_EXCEPTIONS=1
+  # IIR1_NO_EXCEPTIONS=1
   FPM_WIDTH=${FPM_WIDTH}
 )
 
-
-set (_GLIBCXX_USE_C99_COMPLEX 0)
-target_compile_definitions(iir PUBLIC
-_GLIBCXX_USE_C99_COMPLEX=0
-)
+# set (_GLIBCXX_USE_C99_COMPLEX 0)
+# target_compile_definitions(iir PUBLIC
+# _GLIBCXX_USE_C99_COMPLEX=0
+# )
 
 # Modify the below lines to enable/disable output over UART/USB
 pico_enable_stdio_usb(miniMIDI 0)
 pico_enable_stdio_uart(miniMIDI 1)
-
-# Add the standard library to the build
-target_link_libraries(miniMIDI
-        pico_stdlib
-        stdc++
-        tinyusb_device
-        tinyusb_board
-        iir
-)
 
 # Add the standard include files to the build
 target_include_directories(miniMIDI PRIVATE
@@ -115,9 +106,9 @@ target_include_directories(miniMIDI PRIVATE
   # ${CMAKE_CURRENT_LIST_DIR}/pico-ssd1306
   # ${CMAKE_CURRENT_LIST_DIR}/QuadratureDecoder
   ${CMAKE_CURRENT_LIST_DIR}/ledColors
-  ${CMAKE_CURRENT_LIST_DIR}/wavetables
+  # ${CMAKE_CURRENT_LIST_DIR}/wavetables
   ${CMAKE_CURRENT_LIST_DIR}/midi_const
-  ${CMAKE_CURRENT_LIST_DIR}/fpm/include
+  # ${CMAKE_CURRENT_LIST_DIR}/fpm/include
   ${CMAKE_CURRENT_LIST_DIR}/rp2040_i2s_example
   ${CMAKE_CURRENT_LIST_DIR}/RP2040-pico_synth_ex
   ${CMAKE_CURRENT_LIST_DIR}/RP2040-pico_synth_ex/sound_i2s
@@ -125,14 +116,19 @@ target_include_directories(miniMIDI PRIVATE
 
 # Add any user requested libraries
 target_link_libraries(miniMIDI 
+        stdc++
+        pico_stdlib
+        pico_multicore
         hardware_spi
         hardware_i2c
         hardware_dma
         hardware_adc
         hardware_pio
         hardware_pwm
-        pico_multicore
         FatFs_SPI
+        tinyusb_device
+        tinyusb_board
+        # iir
 )
 
 pico_add_extra_outputs(miniMIDI)

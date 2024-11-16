@@ -7,7 +7,7 @@
 #define FPM_WIDTH 16
 #endif
 
-#define FPM_NATIVE_MULT
+// #define FPM_CUSTOM_MULT
 
 namespace dsp
 {
@@ -52,14 +52,14 @@ namespace dsp
         // math functions are defined for mixed arguments and have the following naming convention:
         //       <output type>_<operator>_<input types>
 
-        using e_type = ext;
-        using ae_type = uext;
-        using u_type = base;
-        using au_type = ubase;
-        using m_type = base;
-        using am_type = ubase;
-        using l_type = base;
-        using al_type = ubase;
+        using e_type = ext;     //double size balanced
+        using ae_type = uext;   //double size balanced unsigned
+        using u_type = base;    //full size integer
+        using au_type = ubase;  //full size unsigned integer
+        using m_type = base;    //full size balanced
+        using am_type = ubase;  //full size balanced unsigned
+        using l_type = base;    //full size fractional
+        using al_type = ubase;  
         static constexpr int8_t e_start_bit = width;
         static constexpr int8_t ae_start_bit = width;
         static constexpr int8_t u_start_bit = (width*2);
@@ -86,37 +86,53 @@ namespace dsp
         static constexpr int8_t al_frac_bits = width;
 
         #ifdef FPM_EXTEXT
-        using ee_type = extext;
-        using aee_type = uextext;
-        using eu_type = ext;
-        using aeu_type = uext;
-        using em_type = ext;
-        using aem_type = uext;
-        using el_type = ext;
-        using ael_type = uext;
+        using ee_type = extext;     //quadruple size balanced
+        using aee_type = uextext;   //quadruple size balanced unsigned
+        using eu_type = ext;        //double size integer
+        using aeu_type = uext;      //double size unsigned integer
+        using emu_type = ext;       //double size integer focused
+        using aemu_type = uext;     //double size unsigned integer focused
+        using em_type = ext;        //double size balanced
+        using aem_type = uext;      //double size balanced unsigned
+        using eml_type = ext;       //double size fractional focused
+        using aeml_type = uext;     //double size unsigned fractional focused
+        using el_type = ext;        //double size fractional
+        using ael_type = uext;      //double size unsigned fractional
         static constexpr int8_t ee_start_bit = 0;
         static constexpr int8_t aee_start_bit = 0;
         static constexpr int8_t eu_start_bit = (width*2);
         static constexpr int8_t aeu_start_bit = (width*2);
+        static constexpr int8_t emu_start_bit = (width + width/2);
+        static constexpr int8_t aemu_start_bit = (width + width/2);
         static constexpr int8_t em_start_bit = (width);
         static constexpr int8_t aem_start_bit = (width);
+        static constexpr int8_t eml_start_bit = (width/2);
+        static constexpr int8_t aeml_start_bit = (width/2);
         static constexpr int8_t el_start_bit = 1;
         static constexpr int8_t ael_start_bit = 0;
         static constexpr int8_t ee_int_bits = (width*2-1);
         static constexpr int8_t aee_int_bits = (width*2);
         static constexpr int8_t eu_int_bits = (width*2-1);
         static constexpr int8_t aeu_int_bits = (width*2);
+        static constexpr int8_t emu_int_bits = (width+width/2-1);
+        static constexpr int8_t aemu_int_bits = (width+width/2);
         static constexpr int8_t em_int_bits = (width-1);
         static constexpr int8_t aem_int_bits = (width);
+        static constexpr int8_t eml_int_bits = (width/2-1);
+        static constexpr int8_t aeml_int_bits = (width/2);
         static constexpr int8_t el_int_bits = 0;
         static constexpr int8_t ael_int_bits = 0;
         static constexpr int8_t ee_frac_bits = (width*2);
         static constexpr int8_t aee_frac_bits = (width*2);
         static constexpr int8_t eu_frac_bits = 0;
         static constexpr int8_t aeu_frac_bits = 0;
+        static constexpr int8_t emu_frac_bits = (width/2);
+        static constexpr int8_t aemu_frac_bits = (width/2);
         static constexpr int8_t em_frac_bits = (width);
         static constexpr int8_t aem_frac_bits = (width);
-        static constexpr int8_t el_frac_bits = (width*2 - 1);
+        static constexpr int8_t eml_frac_bits = (width+width/2);
+        static constexpr int8_t aeml_frac_bits = (width+width/2);
+        static constexpr int8_t el_frac_bits = (width*2-1);
         static constexpr int8_t ael_frac_bits = (width*2);
         #endif
 
@@ -136,10 +152,10 @@ namespace dsp
 #pragma GCC diagnostic pop
             
         // conversion
-        #define __FPM_CONV(_r_, _a_) \
+        #define __FPM_CONV(_r_, _w_, _a_) \
             inline constexpr _r_##_type _r_##_from_##_a_(_a_##_type a) \
             { \
-                return (_r_##_type) shift<_r_##_type, _a_##_start_bit -_r_##_start_bit>(a); \
+                return (_r_##_type) shift<_w_##_type, _a_##_start_bit -_r_##_start_bit>(a); \
             }
 
         #include "fpm_conv.inc"
@@ -176,8 +192,12 @@ namespace dsp
         __FPM_CONV_FLP(ee, aee)
         __FPM_CONV_FLP(e, eu)
         __FPM_CONV_FLP(e, aeu)
+        __FPM_CONV_FLP(e, emu)
+        __FPM_CONV_FLP(e, aemu)
         __FPM_CONV_FLP(e, em)
         __FPM_CONV_FLP(e, aem)
+        __FPM_CONV_FLP(e, eml)
+        __FPM_CONV_FLP(e, aeml)
         __FPM_CONV_FLP(ee, el)
         __FPM_CONV_FLP(ee, ael)
         #endif
@@ -197,12 +217,13 @@ namespace dsp
                     return (_r_##_type) shift<_w_##_type, -_a_##_start_bit +_b_##_start_bit + (width*2) -_r_##_start_bit -8*((int)sizeof(_w_##_type)-(int)sizeof(_a_##_type))>(shift<_w_##_type,8*((int)sizeof(_w_##_type)-(int)sizeof(_a_##_type))>(a)/b); \
                 }
 
-            #include "fpm_mul_div.inc"
+            #include "fpm_mul.inc"
         } // namespace native
 
         #define __FPM_LIMITS(_t_) \
             static const _t_##_type _t_##_max = std::numeric_limits<_t_##_type>::max(); \
-            static const _t_##_type _t_##_min = std::numeric_limits<_t_##_type>::min();
+            static const _t_##_type _t_##_min = std::numeric_limits<_t_##_type>::min(); \
+            static const float _t_##_epsilon = f_from_##_t_(1);
 
         __FPM_LIMITS(e)
         __FPM_LIMITS(ae)
@@ -218,29 +239,25 @@ namespace dsp
         __FPM_LIMITS(aee)
         __FPM_LIMITS(eu)
         __FPM_LIMITS(aeu)
+        __FPM_LIMITS(emu)
+        __FPM_LIMITS(aemu)
         __FPM_LIMITS(em)
         __FPM_LIMITS(aem)
+        __FPM_LIMITS(eml)
+        __FPM_LIMITS(aeml)
         __FPM_LIMITS(el)
         __FPM_LIMITS(ael)
         #endif
 
-        static const float e_epsilon = f_from_e(1);
-        static const float u_epsilon = f_from_u(1);
-        static const float m_epsilon = f_from_m(1);
-        static const float l_epsilon = f_from_l(1);
-        static const float al_epsilon = f_from_al(1);
 
-        namespace custom
-        {
-            #include "fpm_custom.inc"
-// enable narrowing conversion warnings
-#pragma GCC diagnostic pop
-        } // namespace custom
-
-#ifdef FPM_NATIVE_MULT
-    using namespace native;
-#else
+#ifdef FPM_CUSTOM_MULT
+    namespace custom
+    {
+        #include "fpm_custom.inc"
+    } // namespace custom
     using namespace custom;
+#else
+    using namespace native;
 #endif
 
     }

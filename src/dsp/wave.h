@@ -2,6 +2,7 @@
 #include "fpm.h"
 #include <limits>
 #include "Tables_DSP.h"
+#include "iir.h"
 
 namespace dsp
 {
@@ -458,6 +459,33 @@ public:
     };
 
     template <typename Carrier = sinWave, typename Modulator = sinWave>
+    class pmModWave : public wave
+    {
+    public:
+        WAVE_OPERATOR_OVERRIDE
+        pmModWave() = default;
+
+        inline SampleType getSample() const
+        {
+            SampleType level = m.getSample();
+            c.advance((PhaseType)level); //apply the phase modulation temporarily
+            SampleType s = c.getSample();
+            c.advance((PhaseType)-level); //restore the phase
+            return s;
+        }
+
+        inline void advance()
+        {
+            m.advance();
+            c.advance(); //Advance by its own phase
+        }
+
+    public:
+        Carrier c;
+        Modulator m;
+    };
+
+    template <typename Carrier = sinWave, typename Modulator = sinWave>
     class fmModWave : public wave
     {
     public:
@@ -474,11 +502,33 @@ public:
             SampleType level = m.getSample();
             m.advance();
             c.advance(); //Advance by its own phase first
-            c.advance((PhaseType)level); //then apply the phase modulation
+            c.advance((PhaseType)level); //then apply the frequency modulation
         }
-
+    
     public:
         Carrier c;
         Modulator m;
+    };
+
+    template <typename Base = sawtoothWave>
+    class RBJFilterWave : public Base, public iir::RBJ
+    {
+    public:
+        WAVE_OPERATOR_OVERRIDE
+        RBJFilterWave() = default;
+
+        inline SampleType getSample() const
+        {
+            return cache;
+        }
+
+        inline void advance()
+        {
+            cache = RBJ::filter(Base::getSample());
+            Base::advance();
+        }
+
+    public:
+        SampleType cache = 0;
     };
 }

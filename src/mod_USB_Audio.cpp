@@ -37,14 +37,41 @@ void mod_USB_Audio::Test()
 
     int8_t slot = mMApp.dsp.getSlotRelative(2);
 
-    static auto wave_left = dsp::gainModWave<dsp::inharmonicWave<5>>();
-    static auto wave_right = dsp::gainModWave<dsp::harmonicWave<5>>();
-    float gains[5] = {1, 0.5, 0.25, 0.125, 0.0625};
-    dsp::normalize(gains);
-    wave_right.setHarmonics(gains);
+    static auto wave_left = dsp::RBJFilterWave<dsp::amModWave<dsp::gainModWave<dsp::inharmonicWave<5>>, dsp::envelopeBase>>();
+    static auto wave_right = dsp::RBJFilterWave<dsp::amModWave<dsp::gainModWave<dsp::harmonicWave<5>>, dsp::envelopeBase>>();
+    static bool setup_done = false;
+    if (!setup_done)
+    {
+        float gains[5] = {1, 0.5, 0.25, 0.125, 0.0625};
+        dsp::normalize(gains);
+        wave_right.c.setHarmonics(gains);
 
-    float ratios[5] = {1,3,5,10,15};
-    wave_left.setup(ratios, gains);
+        float ratios[5] = {1,3,5,10,15};
+        wave_left.c.setup(ratios, gains);
+
+        wave_left.m.setEnvTimes(0.025, 0.2, 0.1, SAMPLE_RATE);
+        wave_left.m.setSustainLevel(dsp::fpm::au_max / 5);
+        wave_right.m.setEnvTimes(0.025, 0.2, 0.1, SAMPLE_RATE);
+        wave_right.m.setSustainLevel(dsp::fpm::au_max / 5);
+
+        wave_left.lowpass(dsp::iir::normalizeFreq(1000, SAMPLE_RATE), 5);
+        wave_right.highpass(dsp::iir::normalizeFreq(1000, SAMPLE_RATE), 5);
+        setup_done = true;
+    }
+
+    static int ms = 0;
+    if (ms>500)
+    {
+        wave_left.m.release();
+        wave_right.m.release();
+    }
+    if (ms > 800)
+    {
+        wave_left.m.attack();
+        wave_right.m.attack();
+        ms = 0;
+    }
+    ms++;
 
     auto left = mMApp.dsp.buffers[track_out[0]][slot];
     auto right = mMApp.dsp.buffers[track_out[1]][slot];
@@ -63,13 +90,11 @@ void mod_USB_Audio::Test()
     if (ampR < 0) ampR = 0;
     if (ampR > dsp::SampleMax) ampR = dsp::SampleMax;
 
-    wave_left.setIncrement(dsp::inc_from_freq(midi_frequencies[noteL], SAMPLE_RATE));
-    wave_right.setIncrement(dsp::inc_from_freq(midi_frequencies[noteR], SAMPLE_RATE));
+    wave_left.c.setIncrement(dsp::inc_from_freq(midi_frequencies[noteL], SAMPLE_RATE));
+    wave_right.c.setIncrement(dsp::inc_from_freq(midi_frequencies[noteR], SAMPLE_RATE));
 
-    sample_t s = SAMPLE_MAX / AUDIO_BUFFER_SAMPLES*4;
-
-    wave_left.setLevel(ampL);
-    wave_right.setLevel(ampR);
+    wave_left.c.setLevel(ampL);
+    wave_right.c.setLevel(ampR);
 
     dsp::fillBuffer(left, wave_left, AUDIO_BUFFER_SAMPLES);
     dsp::fillBuffer(right, wave_right, AUDIO_BUFFER_SAMPLES);

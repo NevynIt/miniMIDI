@@ -24,20 +24,28 @@
 
 #define mMApp (App::GetInstance())
 
-inline bool INTERVALCHECK_IMP(uint32_t interval, uint32_t& INTERVALCHECK_stored_time) {
-    uint32_t now = time_us_32();
-    if (now-INTERVALCHECK_stored_time > (interval) * 1000) {
-        while (now-INTERVALCHECK_stored_time > (interval) * 1000)
-            INTERVALCHECK_stored_time += (interval) * 1000;
-        return false;
-    }
-    return true;
-}
+class IntervalCheck {
+    public:
+        IntervalCheck(uint32_t interval) : interval(interval) {}
+        bool Check() {
+            uint32_t now = time_us_32();
+            if (now-stored_time > (interval) * 1000) {
+                while (now-stored_time > (interval) * 1000)
+                    stored_time += (interval) * 1000;
+                return true;
+            }
+            return false;
+        }
+
+    public:
+        uint32_t interval;
+        uint32_t stored_time = 0;
+};
 
 #define INTERVALCHECK(interval) \
 {\
-    static uint32_t INTERVALCHECK_stored_time = 0; \
-    if (INTERVALCHECK_IMP(interval, INTERVALCHECK_stored_time)) \
+    static IntervalCheck INTERVALCHECK_instance(interval);\
+    if (!INTERVALCHECK_instance.Check()) \
         return;\
 }
 

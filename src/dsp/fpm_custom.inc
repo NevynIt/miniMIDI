@@ -550,3 +550,6 @@ inline constexpr base l_mul_alal(ubase al1, ubase al2)
 
     return l_mul(a.h0, a.h1, 0, 0, b.h0, b.h1, 0, 0);
 }
+
+// enable narrowing conversion warnings
+#pragma GCC diagnostic pop
