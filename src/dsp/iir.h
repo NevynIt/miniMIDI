@@ -1,5 +1,9 @@
 #include "types.h"
 
+//nice: http://jaggedplanet.com/iir/iir-explorer.asp
+//https://www.earlevel.com/main/2013/10/13/biquad-calculator-v2/
+//https://www.micromodeler.com/dsp/
+
 namespace dsp
 {
     #define ONESQRT2 (1/sqrt(2))

@@ -4,6 +4,7 @@
 #include "iir.h"
 #include "uti.h"
 #include <stdio.h>
+#include <inttypes.h>   // for PRIx32
 
 namespace dsp
 {
@@ -41,7 +42,10 @@ namespace dsp
                 SampleType v = 0;
                 if (p)
                     v = *p;
-                printf("  - %3d (%p) = 0x%08x #%s\n", i, p, v, getParamName(i));
+                if (sizeof(SampleType) == 4)
+                    printf("  - %3d (%p) = 0x%08" PRIx32 " -- %s\n", i, p, (uint32_t)v, getParamName(i));
+                else
+                    printf("  - %3d (%p) = 0x%04" PRIx16 " -- %s\n", i, p, (uint16_t)v, getParamName(i));
             }
         }
     };
@@ -68,7 +72,7 @@ namespace dsp
         }
         virtual const char *getParamName(int index) const
         {
-            if (index==0) return "constantWave::Level";
+            if (index==0) return "constantWave::Level [Min:Max] --> [SampleMin:SampleMax] fixed output";
             return nullptr;
         }
     };
@@ -139,8 +143,8 @@ namespace dsp
         }
         virtual const char *getParamName(int index) const override
         {
-            if (index==0) return "periodicWave::Increment";
-            if (index==1) return "periodicWave::Phase";
+            if (index==0) return "periodicWave::Increment [0:unsigned Max] --> [0:1[ normalized frequency";
+            if (index==1) return "periodicWave::Phase [Min:Max] --> [-pi:pi[ current radians";
             return nullptr;
         }
     };
@@ -308,7 +312,7 @@ namespace dsp
                 return Base::getParamName(index);
             }
             index -= baseCount;
-            if (index < harmonics) return "harmonicWave::Formant_Gain";
+            if (index < harmonics) return "harmonicWave::Formant_Gain [Min:Max] --> [-2^4:2^4[ gain";
             return nullptr;
         }
     };
@@ -371,9 +375,9 @@ namespace dsp
                 return Base::getParamName(index);
             }
             index -= baseCount;
-            if (index < harmonics) return "inharmonicWave::Formant_Gain";	
+            if (index < harmonics) return "inharmonicWave::Formant_Gain [Min:Max] --> [-2^4:2^4[ gain";	
             index -= harmonics;
-            if (index < harmonics) return "inharmonicWave::Formant_Ratio";
+            if (index < harmonics) return "inharmonicWave::Formant_Ratio [Min:Max] --> [-2^4:2^4[ freq ratio";
             return nullptr;
         }
     };
@@ -513,11 +517,11 @@ namespace dsp
         }
         virtual const char *getParamName(int index) const override
         {
-            if (index==0) return "envelopeBase::AttackRate";
-            if (index==1) return "envelopeBase::DecayRate";
-            if (index==2) return "envelopeBase::SustainLevel";
-            if (index==3) return "envelopeBase::ReleaseRate";
-            if (index==4) return "envelopeBase::Level";
+            if (index==0) return "envelopeBase::AttackRate 1/time [0:Max] --> [inf:0] time";
+            if (index==1) return "envelopeBase::DecayRate 1/time [0:Max] --> [inf:0] time";
+            if (index==2) return "envelopeBase::SustainLevel [0:Max] --> [0:SampleMax] target output";
+            if (index==3) return "envelopeBase::ReleaseRate 1/time [0:Max] --> [inf:0] time";
+            if (index==4) return "envelopeBase::Level [0:Max] --> [0:SampleMax] current output";
             return nullptr;
         }
     };
@@ -564,7 +568,7 @@ namespace dsp
                 return Base::getParamName(index);
             }
             index -= baseCount;
-            if (index==0) return "gainModWave::Level";
+            if (index==0) return "gainModWave::Level  [Min:Max] --> [-1:1] gain";
             return nullptr;
         }
     };
@@ -791,8 +795,33 @@ namespace dsp
 
     public:
         SampleType cache = 0;
-    
-    //in order to define parameters, I would have to have the coefficients as a lookup based on SampleType parameters
-    //for type of filter, cutoff/center frequency, Q, gain, etc.
+
+        virtual int getParamCount() const  override { return 6 + Base::getParamCount(); }
+        virtual SampleType* getParam(int index)  override
+        {
+            const int baseCount = Base::getParamCount();
+            if (index<baseCount)
+            {
+                return Base::getParam(index);
+            }
+            index -= baseCount;
+            return nullptr;
+        }
+        virtual const char *getParamName(int index) const override
+        {
+            const int baseCount = Base::getParamCount();
+            if (index<baseCount)
+            {
+                return Base::getParamName(index);
+            }
+            index -= baseCount;
+            if (index==0) return "RBJFilterWave::Type [0:11]";
+            if (index==1) return "RBJFilterWave::Normalized Frequency [0:unsigned Max] --> [0:1[ normalized frequency";
+            if (index==2) return "RBJFilterWave::Q [0:unsigned Max] --> [0:16[ Q factor";
+            if (index==3) return "RBJFilterWave::Gain [Min:Max] --> [-32:32[ db gain";
+            if (index==4) return "RBJFilterWave::Bandwidth [0:unsigned Max] --> [0:8[ octaves";
+            if (index==5) return "RBJFilterWave::Slope [0:unsigned Max] --> [0:1] slope";
+            return nullptr;
+        }
     };
 }

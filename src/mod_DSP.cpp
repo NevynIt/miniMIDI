@@ -94,7 +94,10 @@ void test_wave(WaveType wave, const char *name, sample_ptr buffer, size_t count,
     t1 = time_us_32();
     printf("Time to generate 1ms of samples: %.2f us\n\n", (float)(t1 - t0) / count);
     if (sdtest)
+    {
+        printf("Writing %s to SD card\n", name);
         mMApp.sd.WriteFile(name, buffer, AUDIO_BUFFER_SAMPLES*count*sizeof(sample_t));
+    }
 }
 
 void mod_DSP::Test()
