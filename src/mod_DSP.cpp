@@ -86,13 +86,15 @@ V3 @16 bits - using native 32 bit multiplication and less bit shifting
 template <typename WaveType>
 void test_wave(WaveType wave, const char *name, sample_ptr buffer, size_t count, bool sdtest)
 {
+    printf("Testing %s: ", name);
+    wave.inspect();
     uint32_t t0, t1;
     t0 = time_us_32();
     dsp::fillBuffer(buffer, wave, AUDIO_BUFFER_SAMPLES * count);
     t1 = time_us_32();
-    printf("%s: %.2f us\n", name, (float)(t1 - t0) / count);
+    printf("Time to generate 1ms of samples: %.2f us\n\n", (float)(t1 - t0) / count);
     if (sdtest)
-        mMApp.sd.WriteFile(name, buffer, AUDIO_BUFFER_SAMPLES*1000*sizeof(sample_t));
+        mMApp.sd.WriteFile(name, buffer, AUDIO_BUFFER_SAMPLES*count*sizeof(sample_t));
 }
 
 void mod_DSP::Test()

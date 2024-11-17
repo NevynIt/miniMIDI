@@ -158,6 +158,5 @@ namespace dsp
         StateType m_y2 = 0; // y[n-2]
         StateType m_x1 = 0; // x[n-1]
         StateType m_y1 = 0; // y[n-1]
-    
     };
 }
