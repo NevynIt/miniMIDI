@@ -4,12 +4,14 @@
 #include "iir.h"
 #include "uti.h"
 #include <stdio.h>
-#include <inttypes.h>   // for PRIx32
+#include <inttypes.h>
 
 namespace dsp
 {
+    using namespace uti;
+
     #define WAVE_OPERATOR_OVERRIDE \
-        inline SampleType operator()() const override { return this->getSample(); } \
+        inline SampleType operator()() override { return this->getSample(); } \
         inline void operator++() override { this->advance(); } \
         const char *getSignature() const override { return signature.data(); } \
 
@@ -18,19 +20,19 @@ namespace dsp
     class wave
     {
     public:
-        static constexpr auto signature = uti::to_array("wave");
+        static constexpr auto signature = STR2A("wave");
         wave() = default;
         virtual const char *getSignature() const { return signature.data(); }
 
-        virtual SampleType operator()() const { return 0; }
+        virtual SampleType operator()() { return 0; }
         virtual void operator++() { }
 
-        inline SampleType getSample() const { return this->operator()(); }
+        inline SampleType getSample() { return this->operator()(); }
         inline void advance() { this->operator++(); }
 
         virtual int getParamCount() const { return 0; }
-        virtual SampleType *getParam(int index) { return nullptr; }
-        virtual const char *getParamName(int index) const { return nullptr; }
+        virtual SampleType *getParam(uint16_t index) { return nullptr; }
+        virtual const char *getParamName(uint16_t index) const { return nullptr; }
 
         void inspect()
         {
@@ -41,11 +43,17 @@ namespace dsp
                 SampleType *p = getParam(i);
                 SampleType v = 0;
                 if (p)
+                {
                     v = *p;
-                if (sizeof(SampleType) == 4)
-                    printf("  - %3d (%p) = 0x%08" PRIx32 " -- %s\n", i, p, (uint32_t)v, getParamName(i));
+                    if (sizeof(SampleType) == 4)
+                        printf("  - %3d (%08x) = 0x%08x -- %s\n", i, p, (uint32_t)v, getParamName(i));
+                    else
+                        printf("  - %3d (%08x) = 0x%04x -- %s\n", i, p, (uint16_t)v, getParamName(i));
+                }
                 else
-                    printf("  - %3d (%p) = 0x%04" PRIx16 " -- %s\n", i, p, (uint16_t)v, getParamName(i));
+                {
+                        printf("  - %3d ---------------------- %s\n", i, getParamName(i));
+                }
             }
         }
     };
@@ -53,11 +61,11 @@ namespace dsp
     class constantWave : public wave
     {
     public:
-        static constexpr auto signature = uti::to_array("constantWave");
+        static constexpr auto signature = STR2A("constantWave");
         WAVE_OPERATOR_OVERRIDE
         constantWave(const SampleType level = SampleMax) : m_level(level) {}
 
-        inline SampleType getSample() const { return m_level; }
+        inline SampleType getSample() { return m_level; }
         inline void advance() {}
         void setLevel(const SampleType level) { m_level = level; }
         inline SampleType getLevel() { return m_level; }
@@ -70,12 +78,56 @@ namespace dsp
             if (index==0) return &m_level;
             return nullptr;
         }
-        virtual const char *getParamName(int index) const
+        virtual const char *getParamName(uint16_t index) const
         {
             if (index==0) return "constantWave::Level [Min:Max] --> [SampleMin:SampleMax] fixed output";
             return nullptr;
         }
     };
+
+    #define FNC_WAVE(_name_, _fnc_, _N_params_, _signature_) \
+    class _name_##Wave : public wave \
+    { \
+    public: \
+        static constexpr auto signature = uti::STR2A(_signature_); \
+        static constexpr auto split_signature = uti::split(signature); \
+        WAVE_OPERATOR_OVERRIDE \
+        _name_##Wave() {} \
+        \
+        inline SampleType getSample() { return _fnc_(state); } \
+        inline void advance() {} \
+        \
+        int getParamCount() const override { return _N_params_; } \
+        SampleType* getParam(uint16_t index) override { \
+            if (index < _N_params_) \
+                return state + index; \
+            return nullptr; \
+        } \
+        const char* getParamName(uint16_t index) const override { \
+            if (index < _N_params_) \
+            { \
+                return uti::exectractParamName(index, split_signature); \
+            } \
+            return nullptr; \
+        } \
+        \
+        SampleType state[_N_params_] = {0}; \
+    };
+
+    inline SampleType movingAverage(SampleType params[5])
+    {
+        SampleType acc = 0;
+        for (int i=5-1; i>=0; i--)
+        {
+            acc += params[i];
+            if (i<5-1)
+                params[i] = params[i+1];
+        }
+        return acc;
+    }
+
+    //Example of fncWave
+    FNC_WAVE(movAvg, movingAverage, 5, "movingAverage(input, x[-1], x[-2], x[-3], x[-4]) -> output")
 
     template<typename Target, typename Source, size_t bits = sizeof(Target) * 8>
     inline constexpr Target upperBits(const Source n)
@@ -96,11 +148,11 @@ namespace dsp
     class noiseWave : public wave
     {
     public:
-        static constexpr auto signature = uti::to_array("noiseWave");
+        static constexpr auto signature = STR2A("noiseWave");
         WAVE_OPERATOR_OVERRIDE
         noiseWave() = default;
 
-        inline SampleType getSample() const { return rand()*2; }
+        inline SampleType getSample() { return rand()*2; }
         inline void advance() {}
     };
 
@@ -117,7 +169,7 @@ namespace dsp
     class periodicWave : public wave
     {
     public:
-        static constexpr auto signature = uti::to_array("periodicWave");
+        static constexpr auto signature = STR2A("periodicWave");
         WAVE_OPERATOR_OVERRIDE
         periodicWave() = default;
         periodicWave(const PhaseType increment) : m_increment(increment) {}
@@ -126,22 +178,22 @@ namespace dsp
         PhaseType getIncrement() { return m_increment; }        
         void setPhase(const PhaseType phase) { m_phase = phase; }
         inline void advance() { m_phase += m_increment; }
-        inline void advance(const PhaseType increment) { m_phase += increment; }
+        inline void advance(const PhaseType increment) { m_phase += m_increment + increment; }
         PhaseType getPhase() { return m_phase; }
-        inline SampleType getSample() const { return getSample(m_phase); }
+        inline SampleType getSample() { return getSample(m_phase); }
         inline SampleType getSample(const PhaseType phase) const { return 0; }
 
         PhaseType m_increment = 0;
         PhaseType m_phase = 0;
 
         virtual int getParamCount() const  override { return 2; }
-        virtual SampleType* getParam(int index) override
+        virtual SampleType* getParam(uint16_t index) override
         {
             if (index==0) return (SampleType *)&m_increment;
             if (index==1) return (SampleType *)&m_phase;
             return nullptr;
         }
-        virtual const char *getParamName(int index) const override
+        virtual const char *getParamName(uint16_t index) const override
         {
             if (index==0) return "periodicWave::Increment [0:unsigned Max] --> [0:1[ normalized frequency";
             if (index==1) return "periodicWave::Phase [Min:Max] --> [-pi:pi[ current radians";
@@ -152,30 +204,57 @@ namespace dsp
     class squareWave : public periodicWave
     {
     public:
-        static constexpr auto signature = uti::to_array("squareWave");
+        static constexpr auto signature = STR2A("squareWave");
         WAVE_OPERATOR_OVERRIDE
         squareWave() = default;
         squareWave(const PhaseType increment) : periodicWave(increment) {}
 
-        inline SampleType getSample() const { return getSample(m_phase); }
+        inline SampleType getSample()
+        {
+            return (m_phase < duty) ? SampleMax : SampleMin;
+        }
         inline SampleType getSample(const PhaseType phase) const
         {
-            return (phase < fpm::from_float<PhaseDescr>(0.5f)) ? SampleMax : SampleMin;
+            return ((m_phase + phase) < duty) ? SampleMax : SampleMin;
+        }
+
+        PhaseType duty = fpm::from_float<SampleDescr>(0.5f);
+        virtual int getParamCount() const  override { return 2; }
+        virtual SampleType* getParam(uint16_t index) override
+        {
+            const int baseCount = periodicWave::getParamCount();
+            if (index < baseCount)
+                return periodicWave::getParam(index);
+            index-=baseCount;
+            if (index==0) return (SampleType *)&duty;
+            return nullptr;
+        }
+        virtual const char *getParamName(uint16_t index) const override
+        {
+            const int baseCount = periodicWave::getParamCount();
+            if (index < baseCount)
+                return periodicWave::getParamName(index);
+            index-=baseCount;
+            if (index==0) return "squareWave::DutyCycle [0:unsigned Max] --> [0:1[";
+            return nullptr;
         }
     };
 
     class sawtoothWave : public periodicWave
     {
     public:
-        static constexpr auto signature = uti::to_array("sawtoothWave");
+        static constexpr auto signature = STR2A("sawtoothWave");
         WAVE_OPERATOR_OVERRIDE
         sawtoothWave() = default;
         sawtoothWave(const PhaseType increment) : periodicWave(increment) {}
 
-        inline SampleType getSample() const { return getSample(m_phase); }
+        inline SampleType getSample()
+        {
+            return m_phase;
+        }
         inline SampleType getSample(const PhaseType phase) const
         {
-            return phase;
+            return phase + m_phase;
         }
     };
 
@@ -200,9 +279,9 @@ namespace dsp
     class bufferWave : public periodicWave
     {
         static_assert((count > 1) && ((count & (count - 1)) == 0), "count must be a power of 2");
-
+        constexpr static int count_bits = log2(count);
     public:
-        static constexpr auto signature = uti::concatenate(uti::concatenate(uti::to_array("bufferWave<"), uti::int_to_string<count>()),uti::to_array(">"));
+        static constexpr auto signature = STR2A("bufferWave<") + INT2A<count>() + STR2A(">");
         WAVE_OPERATOR_OVERRIDE
         bufferWave(const SampleType *buffer) : m_buffer(buffer) {}
         bufferWave(const SampleType *buffer, const PhaseType increment) : m_buffer(buffer) , periodicWave(increment) {}
@@ -212,13 +291,14 @@ namespace dsp
             m_buffer = buffer;
         }
 
-        inline SampleType getSample() const { return getSample(this->m_phase); }
+        inline SampleType getSample()
+        {
+            return m_buffer[upperBits<uint16_t, PhaseType, count_bits>(m_phase)];
+        }
 
         inline SampleType getSample(const PhaseType phase) const
         {
-            constexpr static int count_bits = log2(count);
-
-            return m_buffer[upperBits<uint16_t, PhaseType, count_bits>(phase)];
+            return m_buffer[upperBits<uint16_t, PhaseType, count_bits>(m_phase + phase)];
         }
 
         const SampleType *m_buffer = nullptr;
@@ -227,7 +307,7 @@ namespace dsp
     class builtinWave : public bufferWave<tables::DSP_SIZE>
     {
     public:
-        static constexpr auto signature = uti::to_array("builtinWave");
+        static constexpr auto signature = STR2A("builtinWave");
         WAVE_OPERATOR_OVERRIDE
         builtinWave() : bufferWave(tables::sinWave) {}
         builtinWave(const PhaseType increment) : bufferWave(tables::sinWave, increment) {}
@@ -260,7 +340,7 @@ namespace dsp
         static_assert(std::is_base_of<periodicWave, Base>::value, "Base must be derived from periodicWave");
 
     public:
-        static constexpr auto signature = uti::concatenate(uti::concatenate(uti::to_array("harmonicWave<"), Base::signature),uti::to_array(">"));
+        static constexpr auto signature = STR2A("harmonicWave<") + INT2A<harmonics>() + STR2A(", ") + Base::signature + STR2A(">");
         WAVE_OPERATOR_OVERRIDE
         harmonicWave() = default;
         harmonicWave(const PhaseType increment) : Base(increment) {}
@@ -278,14 +358,23 @@ namespace dsp
             return m_harmonics[i];
         }
 
-        inline SampleType getSample() const { return getSample(this->m_phase); }
-
-        inline SampleType getSample(const PhaseType phase) const
+        inline SampleType getSample()
         {
             SampleType sample = 0;
             for (size_t i = 0; i < harmonics; ++i)
             {
-                sample += fpm::mul<SampleDescr,SampleDescr,CoeffDescr>(Base::getSample((i+1) * phase), m_harmonics[i]);
+                sample += fpm::mul<SampleDescr,SampleDescr,CoeffDescr>(Base::getSample((i+1) * this->m_phase), m_harmonics[i]);
+            }
+            return sample;
+        }
+
+        inline SampleType getSample(const PhaseType phase) const
+        {
+            const PhaseType p = phase + this->m_phase;
+            SampleType sample = 0;
+            for (size_t i = 0; i < harmonics; ++i)
+            {
+                sample += fpm::mul<SampleDescr,SampleDescr,CoeffDescr>(Base::getSample((i+1) * p), m_harmonics[i]);
             }
             return sample;
         }
@@ -293,7 +382,7 @@ namespace dsp
         CoeffType m_harmonics[harmonics] = {0};
 
         virtual int getParamCount() const  override { return harmonics + Base::getParamCount(); }
-        virtual SampleType* getParam(int index)  override
+        virtual SampleType* getParam(uint16_t index) override
         {
             const int baseCount = Base::getParamCount();
             if (index<baseCount)
@@ -304,7 +393,7 @@ namespace dsp
             if (index < harmonics) return (SampleType *)&m_harmonics[index];
             return nullptr;
         }
-        virtual const char *getParamName(int index) const override
+        virtual const char *getParamName(uint16_t index) const override
         {
             const int baseCount = Base::getParamCount();
             if (index<baseCount)
@@ -324,7 +413,7 @@ namespace dsp
         static_assert(std::is_base_of<periodicWave, Base>::value, "Base must be derived from PeriodicWave");
 
         public:
-        static constexpr auto signature = uti::concatenate(uti::concatenate(uti::to_array("inharmonicWave<"), Base::signature),uti::to_array(">"));
+        static constexpr auto signature = STR2A("inharmonicWave<") + INT2A<harmonics>() + STR2A(", ") + Base::signature + STR2A(">");
         WAVE_OPERATOR_OVERRIDE
         inharmonicWave() = default;
         inharmonicWave(const PhaseType increment) : Base(increment) {}
@@ -338,14 +427,23 @@ namespace dsp
             }
         }
 
-        inline SampleType getSample() const { return getSample(this->m_phase); }
-
-        inline SampleType getSample(const PhaseType phase) const
+        inline SampleType getSample()
         {
             SampleType sample = 0;
             for (size_t i = 0; i < harmonics; ++i)
             {
-                sample += fpm::mul<SampleDescr,SampleDescr,CoeffDescr>(Base::getSample(fpm::mul<PhaseDescr,CoeffDescr,PhaseDescr>(m_ratios[i], (i+1) * phase)), m_gains[i]);
+                sample += fpm::mul<SampleDescr,SampleDescr,CoeffDescr>(Base::getSample(fpm::mul<PhaseDescr,CoeffDescr,PhaseDescr>(m_ratios[i], (i+1) * this->m_phase)), m_gains[i]);
+            }
+            return sample;
+        }
+
+        inline SampleType getSample(const PhaseType phase) const
+        {
+            const PhaseType p = phase + this->m_phase;
+            SampleType sample = 0;
+            for (size_t i = 0; i < harmonics; ++i)
+            {
+                sample += fpm::mul<SampleDescr,SampleDescr,CoeffDescr>(Base::getSample(fpm::mul<PhaseDescr,CoeffDescr,PhaseDescr>(m_ratios[i], (i+1) * p)), m_gains[i]);
             }
             return sample;
         }
@@ -354,7 +452,7 @@ namespace dsp
         CoeffType m_gains[harmonics] = {0};
 
         virtual int getParamCount() const  override { return 2*harmonics + Base::getParamCount(); }
-        virtual SampleType* getParam(int index)  override
+        virtual SampleType* getParam(uint16_t index) override
         {
             const int baseCount = Base::getParamCount();
             if (index<baseCount)
@@ -367,7 +465,7 @@ namespace dsp
             if (index < harmonics) return (SampleType *)&m_ratios[index];
             return nullptr;
         }
-        virtual const char *getParamName(int index) const override
+        virtual const char *getParamName(uint16_t index) const override
         {
             const int baseCount = Base::getParamCount();
             if (index<baseCount)
@@ -385,7 +483,7 @@ namespace dsp
     class envelope : public wave
     {
     public:
-        static constexpr auto signature = uti::to_array("envelope");
+        static constexpr auto signature = STR2A("envelope");
         WAVE_OPERATOR_OVERRIDE
         enum class State
         {
@@ -406,13 +504,13 @@ namespace dsp
         virtual inline State getEnvState() const { return State::idle; }
 
         inline void advance() { }
-        inline SampleType getSample() const { return SampleMax; }
+        inline SampleType getSample() { return SampleMax; }
     };
 
     class envelopeBase : public envelope
     {
     public:
-        static constexpr auto signature = uti::to_array("envelopeBase");
+        static constexpr auto signature = STR2A("envelopeBase");
         WAVE_OPERATOR_OVERRIDE
         envelopeBase() = default;
 
@@ -488,7 +586,7 @@ namespace dsp
             }
         }
 
-        SampleType getSample() const
+        SampleType getSample()
         {
             return m_level;
         }
@@ -506,7 +604,7 @@ namespace dsp
         State m_state = State::idle;
 
         virtual int getParamCount() const  override { return 5; }
-        virtual SampleType* getParam(int index)  override
+        virtual SampleType* getParam(uint16_t index) override
         {
             if (index==0) return &m_attackRate;
             if (index==1) return &m_decayRate;
@@ -515,7 +613,7 @@ namespace dsp
             if (index==4) return &m_level;
             return nullptr;
         }
-        virtual const char *getParamName(int index) const override
+        virtual const char *getParamName(uint16_t index) const override
         {
             if (index==0) return "envelopeBase::AttackRate 1/time [0:Max] --> [inf:0] time";
             if (index==1) return "envelopeBase::DecayRate 1/time [0:Max] --> [inf:0] time";
@@ -532,7 +630,7 @@ namespace dsp
     class gainModWave : public Base
     {
     public:
-        static constexpr auto signature = uti::concatenate(uti::concatenate(uti::to_array("gainModWave<"), Base::signature),uti::to_array(">"));
+        static constexpr auto signature = STR2A("gainModWave<") + Base::signature + STR2A(">");
         WAVE_OPERATOR_OVERRIDE
 
         gainModWave(const SampleType level = SampleMax) : m_level(level) {}
@@ -540,16 +638,22 @@ namespace dsp
         void setLevel(const SampleType level) { m_level = level; }
         inline SampleType getLevel() { return m_level; }
 
-        inline SampleType getSample() const
+        inline SampleType getSample()
         {
             return fpm::mul<SampleDescr, SampleDescr, LevelDescr>(Base::getSample(), m_level);
         }
+
+        inline SampleType getSample(const PhaseType phase) const
+        {
+            return fpm::mul<SampleDescr, SampleDescr, LevelDescr>(Base::getSample(phase), m_level);
+        }
+
         inline void advance() { Base::advance(); }
 
         SampleType m_level = SampleMax;
 
         virtual int getParamCount() const  override { return 1 + Base::getParamCount(); }
-        virtual SampleType* getParam(int index)  override
+        virtual SampleType* getParam(uint16_t index) override
         {
             const int baseCount = Base::getParamCount();
             if (index<baseCount)
@@ -560,7 +664,7 @@ namespace dsp
             if (index==0) return &m_level;
             return nullptr;
         }
-        virtual const char *getParamName(int index) const override
+        virtual const char *getParamName(uint16_t index) const override
         {
             const int baseCount = Base::getParamCount();
             if (index<baseCount)
@@ -577,15 +681,22 @@ namespace dsp
     class amModWave : public wave
     {
     public:
-        static constexpr auto signature = uti::concatenate(uti::concatenate(uti::to_array("amModWave<"), Carrier::signature),uti::concatenate(uti::to_array(", "),uti::concatenate(Modulator::signature,uti::to_array(">"))));
+        static constexpr auto signature = STR2A("amModWave<") + Carrier::signature + STR2A(", ") + Modulator::signature + STR2A(">");
         WAVE_OPERATOR_OVERRIDE
         amModWave() = default;
 
-        inline SampleType getSample() const
+        inline SampleType getSample()
         {
             const SampleType level = m.getSample();
             return fpm::mul<SampleDescr, SampleDescr, LevelDescr>(c.getSample(), level);
         }
+
+        inline SampleType getSample(const PhaseType phase) const
+        {
+            const SampleType level = m.getSample();
+            return fpm::mul<SampleDescr, SampleDescr, LevelDescr>(c.getSample(phase), level);
+        }
+
         inline void advance() { c.advance(); m.advance(); }
 
     public:
@@ -593,7 +704,7 @@ namespace dsp
         Modulator m;
 
         virtual int getParamCount() const  override { return c.getParamCount() + m.getParamCount() + 2; }
-        virtual SampleType* getParam(int index)  override
+        virtual SampleType* getParam(uint16_t index) override
         {
             if (index==0) return nullptr; //for the "title" parameter
             index -= 1; //for the "title" parameter
@@ -612,7 +723,7 @@ namespace dsp
             }
             return nullptr;
         }
-        virtual const char *getParamName(int index) const override
+        virtual const char *getParamName(uint16_t index) const override
         {
             if (index==0) return "amModWave::Carrier Parameters:"; //for the "title" parameter
             index -= 1; //for the "title" parameter
@@ -640,23 +751,28 @@ namespace dsp
     {
         static_assert(std::is_base_of<periodicWave, Carrier>::value, "Carrier must be derived from periodicWave");
     public:
-        static constexpr auto signature = uti::concatenate(uti::concatenate(uti::to_array("pmModWave<"), Carrier::signature),uti::concatenate(uti::to_array(", "),uti::concatenate(uti::to_array(Modulator::signature),uti::to_array(">"))));
+        static constexpr auto signature = STR2A("pmModWave<") + Carrier::signature + STR2A(", ") + Modulator::signature + STR2A(">");
         WAVE_OPERATOR_OVERRIDE
         pmModWave() = default;
 
-        inline SampleType getSample() const
+        inline SampleType getSample()
         {
             SampleType level = m.getSample();
-            c.advance((PhaseType)level); //apply the phase modulation temporarily
-            SampleType s = c.getSample();
-            c.advance((PhaseType)-level); //restore the phase
+            SampleType s = c.getSample(level);
+            return s;
+        }
+
+        inline SampleType getSample(const PhaseType phase) const
+        {
+            SampleType level = m.getSample();
+            SampleType s = c.getSample(level + phase);
             return s;
         }
 
         inline void advance()
         {
             m.advance();
-            c.advance(); //Advance by its own phase
+            c.advance();
         }
 
     public:
@@ -664,7 +780,7 @@ namespace dsp
         Modulator m;
 
         virtual int getParamCount() const  override { return c.getParamCount() + m.getParamCount() + 3; }
-        virtual SampleType* getParam(int index)  override
+        virtual SampleType* getParam(uint16_t index) override
         {
             if (index==0) return nullptr; //for the "title" parameter
             index -= 1; //for the "title" parameter
@@ -683,7 +799,7 @@ namespace dsp
             }
             return nullptr;
         }
-        virtual const char *getParamName(int index) const override
+        virtual const char *getParamName(uint16_t index) const override
         {
             if (index==0) return "pmModWave::Carrier Parameters:"; //for the "title" parameter
             index -= 1; //for the "title" parameter
@@ -710,21 +826,25 @@ namespace dsp
     class fmModWave : public wave
     {
     public:
-        static constexpr auto signature = uti::concatenate(uti::concatenate(uti::to_array("fmModWave<"), Carrier::signature),uti::concatenate(uti::to_array(", "),uti::concatenate(uti::to_array(Modulator::signature),uti::to_array(">"))));
+        static constexpr auto signature = STR2A("fmModWave<") + Carrier::signature + STR2A(", ") + Modulator::signature + STR2A(">");
         WAVE_OPERATOR_OVERRIDE
         fmModWave() = default;
 
-        inline SampleType getSample() const
+        inline SampleType getSample()
         {
             return c.getSample();
+        }
+
+        inline SampleType getSample(const PhaseType phase) const
+        {
+            return c.getSample(phase);
         }
 
         inline void advance()
         {
             SampleType level = m.getSample();
             m.advance();
-            c.advance(); //Advance by its own phase first
-            c.advance((PhaseType)level); //then apply the frequency modulation
+            c.advance(level);
         }
     
     public:
@@ -732,7 +852,7 @@ namespace dsp
         Modulator m;
 
         virtual int getParamCount() const  override { return c.getParamCount() + m.getParamCount() + 3; }
-        virtual SampleType* getParam(int index)  override
+        virtual SampleType* getParam(uint16_t index) override
         {
             if (index==0) return nullptr; //for the "title" parameter
             index -= 1; //for the "title" parameter
@@ -751,7 +871,7 @@ namespace dsp
             }
             return nullptr;
         }
-        virtual const char *getParamName(int index) const override
+        virtual const char *getParamName(uint16_t index) const override
         {
             if (index==0) return "fmModWave::Carrier Parameters:"; //for the "title" parameter
             index -= 1; //for the "title" parameter
@@ -778,26 +898,35 @@ namespace dsp
     class RBJFilterWave : public Base, public RBJ
     {
     public:
-        static constexpr auto signature = uti::concatenate(uti::concatenate(uti::to_array("RBJFilterWave<"), Base::signature),uti::to_array(">"));
+        static constexpr auto signature = STR2A("RBJFilterWave<") + Base::signature + STR2A(">");
         WAVE_OPERATOR_OVERRIDE
         RBJFilterWave() = default;
 
-        inline SampleType getSample() const
+        inline SampleType getSample()
         {
-            return cache;
+            //assume getSample is called only once and for every sample, as it is done in fillBuffer
+            //the alternative implementation would be wasting a few cycles per sample
+            // if (!cacheValid)
+            // {
+            //     cache = RBJ::filter(Base::getSample());
+            //     cacheValid = true;
+            // }
+            // return cache;
+            return RBJ::filter(Base::getSample());
         }
 
         inline void advance()
         {
-            cache = RBJ::filter(Base::getSample());
+            // cacheValid = false;
             Base::advance();
         }
 
     public:
-        SampleType cache = 0;
+        // SampleType cache = 0;
+        // bool cacheValid = false;
 
         virtual int getParamCount() const  override { return 6 + Base::getParamCount(); }
-        virtual SampleType* getParam(int index)  override
+        virtual SampleType* getParam(uint16_t index) override
         {
             const int baseCount = Base::getParamCount();
             if (index<baseCount)
@@ -807,7 +936,7 @@ namespace dsp
             index -= baseCount;
             return nullptr;
         }
-        virtual const char *getParamName(int index) const override
+        virtual const char *getParamName(uint16_t index) const override
         {
             const int baseCount = Base::getParamCount();
             if (index<baseCount)
