@@ -1,12 +1,8 @@
-#include "fpm.h"
+#include "types.h"
 
-namespace dsp::iir
+namespace dsp
 {
     #define ONESQRT2 (1/sqrt(2))
-    using flp_t = float;
-    using CoeffType = fpm::eml_type;
-    using StateType = fpm::emu_type;
-    using SampleType = fpm::u_type;
 
     inline constexpr flp_t normalizeFreq(flp_t freq, flp_t sampleRate)
     {
@@ -20,25 +16,23 @@ namespace dsp::iir
 
         inline SampleType filter(const SampleType x)
         {
-            using ee = fpm::ee_type;
-            const StateType in = fpm::emu_from_u(x);
+            using tmpDescr = ::fpm::mul_result_struct<StateDescr, CoeffDescr>;
+            using ee = tmpDescr::t;
+            const StateType in = ::fpm::conv<StateDescr, SampleDescr>(x);
             
-            //taking the formula from fpm::emu_mul_emueml, but with a single shift operation
-            //inline constexpr emu_type emu_mul_emueml(emu_type a, eml_type b) { return (emu_type) shift<ee_type, emu_start_bit +eml_start_bit -emu_start_bit - width*2>((ee_type)a * b); }
             ee tmp = (ee)m_b0*in 
                    + (ee)m_b1*m_x1 
                    + (ee)m_b2*m_x2 
                    - (ee)m_a1*m_y1 
                    - (ee)m_a2*m_y2;
-            tmp >>= fpm::width*2 - fpm::eml_start_bit;
         
-            const StateType out = tmp;
+            const StateType out = ::fpm::conv<StateDescr, tmpDescr>(tmp);
             m_x2 = m_x1;
             m_y2 = m_y1;
             m_x1 = in;
             m_y1 = out;
             
-            return fpm::u_from_emu(out);
+            return ::fpm::conv<SampleDescr, StateDescr>(out);
         }
 
         /**

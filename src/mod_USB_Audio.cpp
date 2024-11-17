@@ -50,12 +50,12 @@ void mod_USB_Audio::Test()
         wave_left.c.setup(ratios, gains);
 
         wave_left.m.setEnvTimes(0.025, 0.2, 0.1, SAMPLE_RATE);
-        wave_left.m.setSustainLevel(dsp::fpm::au_max / 5);
+        wave_left.m.setSustainLevel(dsp::SampleMax / 5);
         wave_right.m.setEnvTimes(0.025, 0.2, 0.1, SAMPLE_RATE);
-        wave_right.m.setSustainLevel(dsp::fpm::au_max / 5);
+        wave_right.m.setSustainLevel(dsp::SampleMax / 5);
 
-        wave_left.lowpass(dsp::iir::normalizeFreq(1000, SAMPLE_RATE), 5);
-        wave_right.highpass(dsp::iir::normalizeFreq(1000, SAMPLE_RATE), 5);
+        wave_left.lowpass(dsp::normalizeFreq(1000, SAMPLE_RATE), 5);
+        wave_right.highpass(dsp::normalizeFreq(1000, SAMPLE_RATE), 5);
         setup_done = true;
     }
 

@@ -128,10 +128,10 @@ void mod_DSP::Test()
     
     auto w2 = dsp::RBJFilterWave<dsp::amModWave<dsp::gainModWave<dsp::squareWave>, dsp::envelopeBase>>();
     w2.m.setEnvTimes(0.025,0.2,0.1,48000);
-    w2.m.setSustainLevel(dsp::fpm::au_max/5);
+    w2.m.setSustainLevel(dsp::SampleMax/5);
     w2.c.setIncrement(dsp::inc_from_freq(freq, 48000));
     w2.c.setLevel(dsp::SampleMax/4 * 3);
-    w2.highpass(dsp::iir::normalizeFreq(1000, 48000), 5);
+    w2.highpass(dsp::normalizeFreq(1000, 48000), 5);
     w2.m.attack();
     test_wave(w2, "complex", buffer, 1000, sdtest);
 

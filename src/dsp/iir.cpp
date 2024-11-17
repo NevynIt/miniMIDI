@@ -1,7 +1,7 @@
 #include "iir.h"
 #include <math.h>
 
-namespace dsp::iir
+namespace dsp
 {
     const flp_t flp_tPi	   = 3.1415926535897932384626433832795028841971;
     const flp_t flp_tPi_2  = 1.5707963267948966192313216916397514420986;
@@ -26,12 +26,29 @@ namespace dsp::iir
 		if (is_nan (b1)) throw_invalid_argument("b1 is NaN");
 		if (is_nan (b2)) throw_invalid_argument("b2 is NaN");
 
-		m_a0 = fpm::eml_from_f(a0);
-		m_a1 = fpm::eml_from_f(a1/a0);
-		m_a2 = fpm::eml_from_f(a2/a0);
-		m_b0 = fpm::eml_from_f(b0/a0);
-		m_b1 = fpm::eml_from_f(b1/a0);
-		m_b2 = fpm::eml_from_f(b2/a0);
+		//check statically if fpl_t is float
+		if (sizeof(flp_t) == sizeof(float))
+		{
+			m_a0 = fpm::from_float<CoeffDescr>(a0);
+			m_a1 = fpm::from_float<CoeffDescr>(a1/a0);
+			m_a2 = fpm::from_float<CoeffDescr>(a2/a0);
+			m_b0 = fpm::from_float<CoeffDescr>(b0/a0);
+			m_b1 = fpm::from_float<CoeffDescr>(b1/a0);
+			m_b2 = fpm::from_float<CoeffDescr>(b2/a0);
+		}
+		else if (sizeof(flp_t) == sizeof(double))
+		{
+			m_a0 = fpm::from_double<CoeffDescr>(a0);
+			m_a1 = fpm::from_double<CoeffDescr>(a1/a0);
+			m_a2 = fpm::from_double<CoeffDescr>(a2/a0);
+			m_b0 = fpm::from_double<CoeffDescr>(b0/a0);
+			m_b1 = fpm::from_double<CoeffDescr>(b1/a0);
+			m_b2 = fpm::from_double<CoeffDescr>(b2/a0);
+		}
+		else
+		{
+			throw_invalid_argument("flp_t is not float or double");
+		}
 	}
 
     void RBJ::identity ()

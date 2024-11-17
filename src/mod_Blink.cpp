@@ -32,6 +32,6 @@ void mod_Blink::Tick() {
         ledWave->operator++();
     }
     // Update PWM duty cycle based on wave sample
-    uint16_t duty = dsp::fpm::u_mul_ul(128, (*ledWave)())+128;
+    uint16_t duty = fpm::mul<fpm::int8_descr,fpm::int8_descr, dsp::LevelDescr>(128, (*ledWave)())+128;
     pwm_set_gpio_level(GPIO_Board_Led, duty);
 }
