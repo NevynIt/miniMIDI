@@ -20,7 +20,7 @@ namespace dsp
     class wave
     {
     public:
-        static constexpr auto signature = STR2A("wave");
+        static constexpr auto signature = STR2A(" ");
         wave() = default;
         virtual const char *getSignature() const { return signature.data(); }
 
