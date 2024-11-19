@@ -69,24 +69,6 @@ namespace uti
         return std::size_t(-1);
     }
 
-    template <std::size_t N1, std::size_t N2>
-    constexpr auto operator+(const std::array<char, N1> &str1, const std::array<char, N2> &str2)
-    {
-        std::array<char, N1 + N2 + 1> result = {};
-        std::size_t i = 0, j = 0;
-        while (i < N1 && str1[i] != '\0')
-        {
-            result[i] = str1[i];
-            ++i;
-        } 
-        for (j = 0; j < N2 && str2[j] != '\0'; ++j)
-        {
-            result[i + j] = str2[j];
-        }
-        result[i+j] = '\0';
-        return result;
-    }
-
     template <std::size_t N>
     const char *exectractParamName(uint16_t index, const std::array<char, N> &split_signature) {
         uint16_t cur = 0;
@@ -120,4 +102,22 @@ namespace uti
         }
         return result;
     }
+}
+
+template <std::size_t N1, std::size_t N2>
+constexpr auto operator+(const std::array<char, N1> &str1, const std::array<char, N2> &str2)
+{
+    std::array<char, N1 + N2 + 1> result = {};
+    std::size_t i = 0, j = 0;
+    while (i < N1 && str1[i] != '\0')
+    {
+        result[i] = str1[i];
+        ++i;
+    } 
+    for (j = 0; j < N2 && str2[j] != '\0'; ++j)
+    {
+        result[i + j] = str2[j];
+    }
+    result[i+j] = '\0';
+    return result;
 }

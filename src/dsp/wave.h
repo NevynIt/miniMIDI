@@ -8,8 +8,6 @@
 
 namespace dsp
 {
-    using namespace uti;
-
     #define WAVE_OPERATOR_OVERRIDE \
         inline SampleType operator()() override { return this->getSample(); } \
         inline void operator++() override { this->advance(); } \
@@ -20,7 +18,7 @@ namespace dsp
     class wave
     {
     public:
-        static constexpr auto signature = STR2A(" ");
+        static constexpr auto signature = uti::STR2A(" ");
         wave() = default;
         virtual const char *getSignature() const { return signature.data(); }
 
@@ -61,7 +59,7 @@ namespace dsp
     class constantWave : public wave
     {
     public:
-        static constexpr auto signature = STR2A("constantWave");
+        static constexpr auto signature = uti::STR2A("constantWave");
         WAVE_OPERATOR_OVERRIDE
         constantWave(const SampleType level = SampleMax) : m_level(level) {}
 
@@ -148,7 +146,7 @@ namespace dsp
     class noiseWave : public wave
     {
     public:
-        static constexpr auto signature = STR2A("noiseWave");
+        static constexpr auto signature = uti::STR2A("noiseWave");
         WAVE_OPERATOR_OVERRIDE
         noiseWave() = default;
 
@@ -169,7 +167,7 @@ namespace dsp
     class periodicWave : public wave
     {
     public:
-        static constexpr auto signature = STR2A("periodicWave");
+        static constexpr auto signature = uti::STR2A("periodicWave");
         WAVE_OPERATOR_OVERRIDE
         periodicWave() = default;
         periodicWave(const PhaseType increment) : m_increment(increment) {}
@@ -204,7 +202,7 @@ namespace dsp
     class squareWave : public periodicWave
     {
     public:
-        static constexpr auto signature = STR2A("squareWave");
+        static constexpr auto signature = uti::STR2A("squareWave");
         WAVE_OPERATOR_OVERRIDE
         squareWave() = default;
         squareWave(const PhaseType increment) : periodicWave(increment) {}
@@ -243,7 +241,7 @@ namespace dsp
     class sawtoothWave : public periodicWave
     {
     public:
-        static constexpr auto signature = STR2A("sawtoothWave");
+        static constexpr auto signature = uti::STR2A("sawtoothWave");
         WAVE_OPERATOR_OVERRIDE
         sawtoothWave() = default;
         sawtoothWave(const PhaseType increment) : periodicWave(increment) {}
@@ -281,7 +279,7 @@ namespace dsp
         static_assert((count > 1) && ((count & (count - 1)) == 0), "count must be a power of 2");
         constexpr static int count_bits = log2(count);
     public:
-        static constexpr auto signature = STR2A("bufferWave<") + INT2A<count>() + STR2A(">");
+        static constexpr auto signature = uti::STR2A("bufferWave<") + uti::INT2A<count>() + uti::STR2A(">");
         WAVE_OPERATOR_OVERRIDE
         bufferWave(const SampleType *buffer) : m_buffer(buffer) {}
         bufferWave(const SampleType *buffer, const PhaseType increment) : m_buffer(buffer) , periodicWave(increment) {}
@@ -307,7 +305,7 @@ namespace dsp
     class builtinWave : public bufferWave<tables::DSP_SIZE>
     {
     public:
-        static constexpr auto signature = STR2A("builtinWave");
+        static constexpr auto signature = uti::STR2A("builtinWave");
         WAVE_OPERATOR_OVERRIDE
         builtinWave() : bufferWave(tables::sinWave) {}
         builtinWave(const PhaseType increment) : bufferWave(tables::sinWave, increment) {}
@@ -340,7 +338,7 @@ namespace dsp
         static_assert(std::is_base_of<periodicWave, Base>::value, "Base must be derived from periodicWave");
 
     public:
-        static constexpr auto signature = STR2A("harmonicWave<") + INT2A<harmonics>() + STR2A(", ") + Base::signature + STR2A(">");
+        static constexpr auto signature = uti::STR2A("harmonicWave<") + uti::INT2A<harmonics>() + uti::STR2A(", ") + Base::signature + uti::STR2A(">");
         WAVE_OPERATOR_OVERRIDE
         harmonicWave() = default;
         harmonicWave(const PhaseType increment) : Base(increment) {}
@@ -413,7 +411,7 @@ namespace dsp
         static_assert(std::is_base_of<periodicWave, Base>::value, "Base must be derived from PeriodicWave");
 
         public:
-        static constexpr auto signature = STR2A("inharmonicWave<") + INT2A<harmonics>() + STR2A(", ") + Base::signature + STR2A(">");
+        static constexpr auto signature = uti::STR2A("inharmonicWave<") + uti::INT2A<harmonics>() + uti::STR2A(", ") + Base::signature + uti::STR2A(">");
         WAVE_OPERATOR_OVERRIDE
         inharmonicWave() = default;
         inharmonicWave(const PhaseType increment) : Base(increment) {}
@@ -483,7 +481,7 @@ namespace dsp
     class envelope : public wave
     {
     public:
-        static constexpr auto signature = STR2A("envelope");
+        static constexpr auto signature = uti::STR2A("envelope");
         WAVE_OPERATOR_OVERRIDE
         enum class State
         {
@@ -510,7 +508,7 @@ namespace dsp
     class envelopeBase : public envelope
     {
     public:
-        static constexpr auto signature = STR2A("envelopeBase");
+        static constexpr auto signature = uti::STR2A("envelopeBase");
         WAVE_OPERATOR_OVERRIDE
         envelopeBase() = default;
 
@@ -630,7 +628,7 @@ namespace dsp
     class gainModWave : public Base
     {
     public:
-        static constexpr auto signature = STR2A("gainModWave<") + Base::signature + STR2A(">");
+        static constexpr auto signature = uti::STR2A("gainModWave<") + Base::signature + uti::STR2A(">");
         WAVE_OPERATOR_OVERRIDE
 
         gainModWave(const SampleType level = SampleMax) : m_level(level) {}
@@ -681,7 +679,7 @@ namespace dsp
     class amModWave : public wave
     {
     public:
-        static constexpr auto signature = STR2A("amModWave<") + Carrier::signature + STR2A(", ") + Modulator::signature + STR2A(">");
+        static constexpr auto signature = uti::STR2A("amModWave<") + Carrier::signature + uti::STR2A(", ") + Modulator::signature + uti::STR2A(">");
         WAVE_OPERATOR_OVERRIDE
         amModWave() = default;
 
@@ -751,7 +749,7 @@ namespace dsp
     {
         static_assert(std::is_base_of<periodicWave, Carrier>::value, "Carrier must be derived from periodicWave");
     public:
-        static constexpr auto signature = STR2A("pmModWave<") + Carrier::signature + STR2A(", ") + Modulator::signature + STR2A(">");
+        static constexpr auto signature = uti::STR2A("pmModWave<") + Carrier::signature + uti::STR2A(", ") + Modulator::signature + uti::STR2A(">");
         WAVE_OPERATOR_OVERRIDE
         pmModWave() = default;
 
@@ -826,7 +824,7 @@ namespace dsp
     class fmModWave : public wave
     {
     public:
-        static constexpr auto signature = STR2A("fmModWave<") + Carrier::signature + STR2A(", ") + Modulator::signature + STR2A(">");
+        static constexpr auto signature = uti::STR2A("fmModWave<") + Carrier::signature + uti::STR2A(", ") + Modulator::signature + uti::STR2A(">");
         WAVE_OPERATOR_OVERRIDE
         fmModWave() = default;
 
@@ -898,7 +896,7 @@ namespace dsp
     class RBJFilterWave : public Base, public RBJ
     {
     public:
-        static constexpr auto signature = STR2A("RBJFilterWave<") + Base::signature + STR2A(">");
+        static constexpr auto signature = uti::STR2A("RBJFilterWave<") + Base::signature + uti::STR2A(">");
         WAVE_OPERATOR_OVERRIDE
         RBJFilterWave() = default;
 
