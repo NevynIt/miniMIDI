@@ -30,6 +30,53 @@ namespace dsp
     constexpr SampleType SampleMax = SampleDescr::max;
     constexpr SampleType SampleMin = SampleDescr::min;
 
+    inline PhaseType inc_from_freq(const float frequency, const size_t sample_rate = 1)
+    {
+        return fpm::from_float<PhaseDescr>(frequency / sample_rate);
+    }
+
+    inline float freq_from_inc(const PhaseType increment, const size_t sample_rate = 1)
+    {
+        return fpm::to_float<PhaseDescr>(increment) * sample_rate;
+    }
+
+    constexpr int log2(const int n, const int p = 0)
+    {
+        return (n <= 1) ? p : log2(n >> 1, p + 1);
+    }
+
+    constexpr int frac_bits(const int n)
+    {
+        if (n <= 8)
+            return 8 - n;
+        if (n <= 16)
+            return 16 - n;
+        if (n <= 32)
+            return 32 - n;
+        if (n <= 64)
+            return 64 - n;
+    }
+
+    template <size_t count = 5>
+    void normalize(float values[count])
+    {
+        float sum = 0;
+        for (size_t i = 0; i < count; ++i)
+        {
+            sum += values[i];
+        }
+        for (size_t i = 0; i < count; ++i)
+        {
+            values[i] /= sum;
+        }
+    }
+
+    template<typename Target, typename Source, size_t bits = sizeof(Target) * 8>
+    inline constexpr Target upperBits(const Source n)
+    {
+        return (Target)(n >> ((sizeof(Source)*8) - bits));
+    }
+
     // assert that BufferSize is a power of 2
     static_assert((BufferSize > 1) && ((BufferSize & (BufferSize - 1)) == 0), "BufferSize must be a power of 2");
 

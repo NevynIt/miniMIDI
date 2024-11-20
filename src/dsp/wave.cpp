@@ -1,4 +1,4 @@
-#include "opModWave.h"
+#include "wave.h"
 
 namespace dsp
 {
