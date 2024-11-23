@@ -1,6 +1,9 @@
 #include "mod_SD.h"
 #include "App.h"
 #include <cstring>
+#include <cstdarg>
+#include <sys/stat.h> 
+#include "ff.h"
 
 void mod_SD::Init()
 {
@@ -174,3 +177,116 @@ spi_t *spi_get_by_num(size_t num)
         return NULL;
     }
 }
+
+extern "C" {
+
+// Simple file descriptor management
+static FIL open_files[10]; // Support up to 10 open files
+
+int _open(const char *pathname, int flags, ...) {
+    for (int i = 0; i < 10; ++i) {
+        if (open_files[i].obj.fs == nullptr) { // Changed from open_files[i].fs_type
+            va_list args;
+            va_start(args, flags);
+            FRESULT res = f_open(&open_files[i], pathname, flags);
+            va_end(args);
+            if (res == FR_OK) {
+                return i + 3;
+            }
+            return -1;
+        }
+    }
+    return -1; // No available file descriptors
+}
+
+ssize_t _read(int fd, void *buffer, size_t count) {
+    fd -= 3;
+    if (fd < 0 || fd >= 10 || open_files[fd].obj.fs == nullptr) { // Changed
+        return -1;
+    }
+    UINT bytesRead;
+    FRESULT res = f_read(&open_files[fd], buffer, count, &bytesRead);
+    return (res == FR_OK) ? bytesRead : -1;
+}
+
+ssize_t _write(int fd, const void *buffer, size_t count) {
+    fd -= 3;
+    if (fd < 0 || fd >= 10 || open_files[fd].obj.fs == nullptr) { // Changed
+        return -1;
+    }
+    UINT bytesWritten;
+    FRESULT res = f_write(&open_files[fd], buffer, count, &bytesWritten);
+    return (res == FR_OK) ? bytesWritten : -1;
+}
+
+int _close(int fd) {
+    fd -= 3;
+    if (fd < 0 || fd >= 10 || open_files[fd].obj.fs == nullptr) { // Changed
+        return -1;
+    }
+    FRESULT res = f_close(&open_files[fd]);
+    if (res == FR_OK) {
+        // Clear the file object
+        memset(&open_files[fd], 0, sizeof(FIL));
+        return 0;
+    }
+    return -1;
+}
+
+int _lseek(int fd, off_t offset, int whence) {
+    fd -= 3;
+    if (fd < 0 || fd >= 10 || open_files[fd].obj.fs == nullptr) { 
+        return -1;
+    }
+    FSIZE_t new_pos;
+    switch (whence) {
+        case SEEK_SET:
+            new_pos = offset;
+            break;
+        case SEEK_CUR:
+            new_pos = open_files[fd].fptr + offset;
+            break;
+        case SEEK_END:
+            new_pos = open_files[fd].obj.objsize + offset;
+            break;
+        default:
+            return -1;
+    }
+    FRESULT res = f_lseek(&open_files[fd], new_pos);
+    return (res == FR_OK) ? 0 : -1;
+}
+
+int _fstat(int fd, struct stat *st) {
+    fd -= 3;
+    if (fd < 0 || fd >= 10 || open_files[fd].obj.fs == nullptr) { 
+        return -1;
+    }
+
+    st->st_size = open_files[fd].obj.objsize;
+    
+    // Set file type based on attributes
+    if (open_files[fd].obj.attr & AM_DIR) {
+        st->st_mode = S_IFDIR;
+    } else {
+        st->st_mode = S_IFREG;
+    }
+
+    // Set permissions based on read-only attribute
+    if (open_files[fd].obj.attr & AM_RDO) {
+        st->st_mode |= S_IRUSR | S_IRGRP | S_IROTH;
+    } else {
+        st->st_mode |= S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH;
+    }
+
+    // Set additional stat fields with default or available values
+    st->st_nlink = 1;           // Number of hard links
+    st->st_uid = 0;              // User ID of owner (not available)
+    st->st_gid = 0;              // Group ID of owner (not available)
+    st->st_atime = 0;            // Time of last access (not available)
+    st->st_mtime = 0;            // Time of last modification (not available)
+    st->st_ctime = 0;            // Time of last status change (not available)
+
+    return 0;
+}
+
+} // extern "C"

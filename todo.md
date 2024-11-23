@@ -1,11 +1,13 @@
 todo:
-- check current code to compile
-- import and add lua, connect to cli and to serial
+- multibyte opcodes, pc points to the next instruction, remove all parameters to op_XX methods
+  - adv and gather can update the mask, based on the next word, and can be immediate or not, these are independent
+- chaining wave generators by filling buffers in sequence. use a ptr to the buffer of the previous wave, within the dsp buffers, but it has to wrap
+  - instead, make ret a pointer, and fill updates the ret pointer as it goes
+- implement custom stdio driver that somehow knows which channel is active at the moment
+  - make the hw uart and usb uart go on the same core, so that a ptr can be changed when using the cli from them, so that answers go in the same place the request came from
+  - better, check which core you are! core 0 prints, core 1 queues, core 0 prints all the queue in the preferred debug line once every cycle - requires defining a preferred line
 - add file ops functions between stdlib and sd fatfs lib
-- multibyte opcodes
+- test lua, connect to cli and to serial
 - rbj filter, params and refresh filter every x samples
-- deep inspect of impl and scriptable
-- rename mod_logic mod_wave and prog_wave
 - add a wrapper decorator for wrapping any wave and add asm support
-- add custom functions from asm to wave_logic directly, doing anything they like
 - wave specific buffers ?
