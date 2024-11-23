@@ -43,6 +43,7 @@ add_executable(miniMIDI
     # wavetables/WT_BASE.cpp
     dsp/Tables_DSP.cpp
     dsp/iir.cpp
+    dsp/wave.cpp
     midi_const/midi_frequencies.cpp
     ledColors/led_colors.cpp
     # QuadratureDecoder/QuadratureDecoder.cpp
