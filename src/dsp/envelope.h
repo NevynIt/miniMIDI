@@ -1,6 +1,6 @@
 #pragma once
 
-#include "wave_5.h"
+#include "wave_root.h"
 
 namespace dsp
 {

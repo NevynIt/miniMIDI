@@ -1,13 +1,8 @@
 #pragma once
-#include "wave_4.h"
+#include "wave_root.h"
 
 namespace dsp
 {
-    #define WAVE_OPERATOR_OVERRIDE \
-        inline SampleType operator()() override { return this->getSample(); } \
-        inline void operator++() override { this->advance(); } \
-        const char *getSignature() const override { return signature.data(); } \
-
     class constantWave : public wave
     {
     public:

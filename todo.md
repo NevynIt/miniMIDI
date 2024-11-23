@@ -1,0 +1,11 @@
+todo:
+- check current code to compile
+- import and add lua, connect to cli and to serial
+- add file ops functions between stdlib and sd fatfs lib
+- multibyte opcodes
+- rbj filter, params and refresh filter every x samples
+- deep inspect of impl and scriptable
+- rename mod_logic mod_wave and prog_wave
+- add a wrapper decorator for wrapping any wave and add asm support
+- add custom functions from asm to wave_logic directly, doing anything they like
+- wave specific buffers ?

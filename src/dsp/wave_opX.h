@@ -1,5 +1,5 @@
 #pragma once
-#include "wave_0.h"
+#include "wave_root.h"
 
 namespace dsp
 {
@@ -11,6 +11,9 @@ namespace dsp
         static constexpr uint8_t op_count = 0;
         static constexpr auto signature = uti::STR2A("<>");
         wave* get_wave(uint8_t index) { return nullptr; }
+
+        template<int N>
+        inline auto& get() { static_assert(false, "Invalid operator index"); return *this; }
     };
 
     template <typename Base1 = wave>
@@ -21,6 +24,9 @@ namespace dsp
         Base1 o1;
         static constexpr auto signature = uti::STR2A("<") + Base1::signature + uti::STR2A(">");
         wave* get_wave(uint8_t index) { return index == 0 ? &o1 : nullptr; }
+
+        template<int N>
+        inline auto& get() { static_assert(N == 0, "Invalid operator index"); return o1; }
     };
 
     template <typename Base1 = wave, typename Base2 = wave>
@@ -32,6 +38,9 @@ namespace dsp
         Base2 o2;
         static constexpr auto signature = uti::STR2A("<") + Base1::signature + uti::STR2A(", ") + Base2::signature + uti::STR2A(">");
         wave* get_wave(uint8_t index) { return index == 0 ? &o1 : (index == 1 ? &o2 : nullptr); }
+
+        template<int N>
+        inline auto& get() { if constexpr (N == 0) return o1; else if constexpr (N == 1) return o2; else static_assert(false, "Invalid operator index"); }
     };
 
     template <typename Base1 = wave, typename Base2 = wave, typename Base3 = wave>
@@ -44,6 +53,9 @@ namespace dsp
         Base3 o3;
         static constexpr auto signature = uti::STR2A("<") + Base1::signature + uti::STR2A(", ") + Base2::signature + uti::STR2A(", ") + Base3::signature + uti::STR2A(">");
         wave* get_wave(uint8_t index) { return index == 0 ? &o1 : (index == 1 ? &o2 : (index == 2 ? &o3 : nullptr)); }
+
+        template<int N>
+        inline auto& get() { if constexpr (N == 0) return o1; else if constexpr (N == 1) return o2; else if constexpr (N == 2) return o3; else static_assert(false, "Invalid operator index"); }
     };
 
     template <typename Base1 = wave, typename Base2 = wave, typename Base3 = wave, typename Base4 = wave>
@@ -57,6 +69,9 @@ namespace dsp
         Base4 o4;
         static constexpr auto signature = uti::STR2A("<") + Base1::signature + uti::STR2A(", ") + Base2::signature + uti::STR2A(", ") + Base3::signature + uti::STR2A(", ") + Base4::signature + uti::STR2A(">");
         wave* get_wave(uint8_t index) { return index == 0 ? &o1 : (index == 1 ? &o2 : (index == 2 ? &o3 : (index == 3 ? &o4 : nullptr))); }
+
+        template<int N>
+        inline auto& get() { if constexpr (N == 0) return o1; else if constexpr (N == 1) return o2; else if constexpr (N == 2) return o3; else if constexpr (N == 3) return o4; else static_assert(false, "Invalid operator index"); }
     };
 
     template <typename Base1 = wave, typename Base2 = wave, typename Base3 = wave, typename Base4 = wave, typename Base5 = wave>
@@ -71,6 +86,9 @@ namespace dsp
         Base5 o5;
         static constexpr auto signature = uti::STR2A("<") + Base1::signature + uti::STR2A(", ") + Base2::signature + uti::STR2A(", ") + Base3::signature + uti::STR2A(", ") + Base4::signature + uti::STR2A(", ") + Base5::signature + uti::STR2A(">");
         wave* get_wave(uint8_t index) { return index == 0 ? &o1 : (index == 1 ? &o2 : (index == 2 ? &o3 : (index == 3 ? &o4 : (index == 4 ? &o5 : nullptr)))); }
+
+        template<int N>
+        inline auto& get() { if constexpr (N == 0) return o1; else if constexpr (N == 1) return o2; else if constexpr (N == 2) return o3; else if constexpr (N == 3) return o4; else if constexpr (N == 4) return o5; else static_assert(false, "Invalid operator index"); }
     };
 
     template <typename Base1 = wave, typename Base2 = wave, typename Base3 = wave, typename Base4 = wave, typename Base5 = wave, typename Base6 = wave>
@@ -86,6 +104,9 @@ namespace dsp
         Base6 o6;
         static constexpr auto signature = uti::STR2A("<") + Base1::signature + uti::STR2A(", ") + Base2::signature + uti::STR2A(", ") + Base3::signature + uti::STR2A(", ") + Base4::signature + uti::STR2A(", ") + Base5::signature + uti::STR2A(", ") + Base6::signature + uti::STR2A(">");
         wave* get_wave(uint8_t index) { return index == 0 ? &o1 : (index == 1 ? &o2 : (index == 2 ? &o3 : (index == 3 ? &o4 : (index == 4 ? &o5 : (index == 5 ? &o6 : nullptr))))); }
+
+        template<int N>
+        inline auto& get() { if constexpr (N == 0) return o1; else if constexpr (N == 1) return o2; else if constexpr (N == 2) return o3; else if constexpr (N == 3) return o4; else if constexpr (N == 4) return o5; else if constexpr (N == 5) return o6; else static_assert(false, "Invalid operator index"); }
     };
 
     template <typename Base1 = wave, typename Base2 = wave, typename Base3 = wave, typename Base4 = wave, typename Base5 = wave, typename Base6 = wave, typename Base7 = wave>
@@ -102,6 +123,9 @@ namespace dsp
         Base7 o7;
         static constexpr auto signature = uti::STR2A("<") + Base1::signature + uti::STR2A(", ") + Base2::signature + uti::STR2A(", ") + Base3::signature + uti::STR2A(", ") + Base4::signature + uti::STR2A(", ") + Base5::signature + uti::STR2A(", ") + Base6::signature + uti::STR2A(", ") + Base7::signature + uti::STR2A(">");
         wave* get_wave(uint8_t index) { return index == 0 ? &o1 : (index == 1 ? &o2 : (index == 2 ? &o3 : (index == 3 ? &o4 : (index == 4 ? &o5 : (index == 5 ? &o6 : (index == 6 ? &o7 : nullptr)))))); }
+
+        template<int N>
+        inline auto& get() { if constexpr (N == 0) return o1; else if constexpr (N == 1) return o2; else if constexpr (N == 2) return o3; else if constexpr (N == 3) return o4; else if constexpr (N == 4) return o5; else if constexpr (N == 5) return o6; else if constexpr (N == 6) return o7; else static_assert(false, "Invalid operator index"); }
     };
 
     template <typename Base1 = wave, typename Base2 = wave, typename Base3 = wave, typename Base4 = wave, typename Base5 = wave, typename Base6 = wave, typename Base7 = wave, typename Base8 = wave>
@@ -119,6 +143,9 @@ namespace dsp
         Base8 o8;
         static constexpr auto signature = uti::STR2A("<") + Base1::signature + uti::STR2A(", ") + Base2::signature + uti::STR2A(", ") + Base3::signature + uti::STR2A(", ") + Base4::signature + uti::STR2A(", ") + Base5::signature + uti::STR2A(", ") + Base6::signature + uti::STR2A(", ") + Base7::signature + uti::STR2A(", ") + Base8::signature + uti::STR2A(">");
         wave* get_wave(uint8_t index) { return index == 0 ? &o1 : (index == 1 ? &o2 : (index == 2 ? &o3 : (index == 3 ? &o4 : (index == 4 ? &o5 : (index == 5 ? &o6 : (index == 6 ? &o7 : (index == 7 ? &o8 : nullptr))))))); }
+
+        template<int N>
+        inline auto& get() { if constexpr (N == 0) return o1; else if constexpr (N == 1) return o2; else if constexpr (N == 2) return o3; else if constexpr (N == 3) return o4; else if constexpr (N == 4) return o5; else if constexpr (N == 5) return o6; else if constexpr (N == 6) return o7; else if constexpr (N == 7) return o8; else static_assert(false, "Invalid operator index"); }
     };
 
     template <typename Base1 = wave, typename Base2 = wave, typename Base3 = wave, typename Base4 = wave, typename Base5 = wave, typename Base6 = wave, typename Base7 = wave, typename Base8 = wave, typename Base9 = wave>
@@ -137,6 +164,9 @@ namespace dsp
         Base9 o9;
         static constexpr auto signature = uti::STR2A("<") + Base1::signature + uti::STR2A(", ") + Base2::signature + uti::STR2A(", ") + Base3::signature + uti::STR2A(", ") + Base4::signature + uti::STR2A(", ") + Base5::signature + uti::STR2A(", ") + Base6::signature + uti::STR2A(", ") + Base7::signature + uti::STR2A(", ") + Base8::signature + uti::STR2A(", ") + Base9::signature + uti::STR2A(">");
         wave* get_wave(uint8_t index) { return index == 0 ? &o1 : (index == 1 ? &o2 : (index == 2 ? &o3 : (index == 3 ? &o4 : (index == 4 ? &o5 : (index == 5 ? &o6 : (index == 6 ? &o7 : (index == 7 ? &o8 : (index == 8 ? &o9 : nullptr)))))))); }
+
+        template<int N>
+        inline auto& get() { if constexpr (N == 0) return o1; else if constexpr (N == 1) return o2; else if constexpr (N == 2) return o3; else if constexpr (N == 3) return o4; else if constexpr (N == 4) return o5; else if constexpr (N == 5) return o6; else if constexpr (N == 6) return o7; else if constexpr (N == 7) return o8; else if constexpr (N == 8) return o9; else static_assert(false, "Invalid operator index"); }
     };
 
     template <typename Base1 = wave, typename Base2 = wave, typename Base3 = wave, typename Base4 = wave, typename Base5 = wave, typename Base6 = wave, typename Base7 = wave, typename Base8 = wave, typename Base9 = wave, typename Base10 = wave>
@@ -156,6 +186,9 @@ namespace dsp
         Base10 o10;
         static constexpr auto signature = uti::STR2A("<") + Base1::signature + uti::STR2A(", ") + Base2::signature + uti::STR2A(", ") + Base3::signature + uti::STR2A(", ") + Base4::signature + uti::STR2A(", ") + Base5::signature + uti::STR2A(", ") + Base6::signature + uti::STR2A(", ") + Base7::signature + uti::STR2A(", ") + Base8::signature + uti::STR2A(", ") + Base9::signature + uti::STR2A(", ") + Base10::signature + uti::STR2A(">");
         wave* get_wave(uint8_t index) { return index == 0 ? &o1 : (index == 1 ? &o2 : (index == 2 ? &o3 : (index == 3 ? &o4 : (index == 4 ? &o5 : (index == 5 ? &o6 : (index == 6 ? &o7 : (index == 7 ? &o8 : (index == 8 ? &o9 : (index == 9 ? &o10 : nullptr))))))))); }
+
+        template<int N>
+        inline auto& get() { if constexpr (N == 0) return o1; else if constexpr (N == 1) return o2; else if constexpr (N == 2) return o3; else if constexpr (N == 3) return o4; else if constexpr (N == 4) return o5; else if constexpr (N == 5) return o6; else if constexpr (N == 6) return o7; else if constexpr (N == 7) return o8; else if constexpr (N == 8) return o9; else if constexpr (N == 9) return o10; else static_assert(false, "Invalid operator index"); }
     };
 
     template <typename Base1 = wave, typename Base2 = wave, typename Base3 = wave, typename Base4 = wave, typename Base5 = wave, typename Base6 = wave, typename Base7 = wave, typename Base8 = wave, typename Base9 = wave, typename Base10 = wave, typename Base11 = wave>
@@ -176,6 +209,9 @@ namespace dsp
         Base11 o11;
         static constexpr auto signature = uti::STR2A("<") + Base1::signature + uti::STR2A(", ") + Base2::signature + uti::STR2A(", ") + Base3::signature + uti::STR2A(", ") + Base4::signature + uti::STR2A(", ") + Base5::signature + uti::STR2A(", ") + Base6::signature + uti::STR2A(", ") + Base7::signature + uti::STR2A(", ") + Base8::signature + uti::STR2A(", ") + Base9::signature + uti::STR2A(", ") + Base10::signature + uti::STR2A(", ") + Base11::signature + uti::STR2A(">");
         wave* get_wave(uint8_t index) { return index == 0 ? &o1 : (index == 1 ? &o2 : (index == 2 ? &o3 : (index == 3 ? &o4 : (index == 4 ? &o5 : (index == 5 ? &o6 : (index == 6 ? &o7 : (index == 7 ? &o8 : (index == 8 ? &o9 : (index == 9 ? &o10 : (index == 10 ? &o11 : nullptr)))))))))); }
+
+        template<int N>
+        inline auto& get() { if constexpr (N == 0) return o1; else if constexpr (N == 1) return o2; else if constexpr (N == 2) return o3; else if constexpr (N == 3) return o4; else if constexpr (N == 4) return o5; else if constexpr (N == 5) return o6; else if constexpr (N == 6) return o7; else if constexpr (N == 7) return o8; else if constexpr (N == 8) return o9; else if constexpr (N == 9) return o10; else if constexpr (N == 10) return o11; else static_assert(false, "Invalid operator index"); }
     };
 
     template <typename Base1 = wave, typename Base2 = wave, typename Base3 = wave, typename Base4 = wave, typename Base5 = wave, typename Base6 = wave, typename Base7 = wave, typename Base8 = wave, typename Base9 = wave, typename Base10 = wave, typename Base11 = wave, typename Base12 = wave>
@@ -197,6 +233,9 @@ namespace dsp
         Base12 o12;
         static constexpr auto signature = uti::STR2A("<") + Base1::signature + uti::STR2A(", ") + Base2::signature + uti::STR2A(", ") + Base3::signature + uti::STR2A(", ") + Base4::signature + uti::STR2A(", ") + Base5::signature + uti::STR2A(", ") + Base6::signature + uti::STR2A(", ") + Base7::signature + uti::STR2A(", ") + Base8::signature + uti::STR2A(", ") + Base9::signature + uti::STR2A(", ") + Base10::signature + uti::STR2A(", ") + Base11::signature + uti::STR2A(", ") + Base12::signature + uti::STR2A(">");
         wave* get_wave(uint8_t index) { return index == 0 ? &o1 : (index == 1 ? &o2 : (index == 2 ? &o3 : (index == 3 ? &o4 : (index == 4 ? &o5 : (index == 5 ? &o6 : (index == 6 ? &o7 : (index == 7 ? &o8 : (index == 8 ? &o9 : (index == 9 ? &o10 : (index == 10 ? &o11 : (index == 11 ? &o12 : nullptr))))))))))); }
+
+        template<int N>
+        inline auto& get() { if constexpr (N == 0) return o1; else if constexpr (N == 1) return o2; else if constexpr (N == 2) return o3; else if constexpr (N == 3) return o4; else if constexpr (N == 4) return o5; else if constexpr (N == 5) return o6; else if constexpr (N == 6) return o7; else if constexpr (N == 7) return o8; else if constexpr (N == 8) return o9; else if constexpr (N == 9) return o10; else if constexpr (N == 10) return o11; else if constexpr (N == 11) return o12; else static_assert(false, "Invalid operator index"); }
     };
 
     template <typename Base1 = wave, typename Base2 = wave, typename Base3 = wave, typename Base4 = wave, typename Base5 = wave, typename Base6 = wave, typename Base7 = wave, typename Base8 = wave, typename Base9 = wave, typename Base10 = wave, typename Base11 = wave, typename Base12 = wave, typename Base13 = wave>
@@ -219,6 +258,9 @@ namespace dsp
         Base13 o13;
         static constexpr auto signature = uti::STR2A("<") + Base1::signature + uti::STR2A(", ") + Base2::signature + uti::STR2A(", ") + Base3::signature + uti::STR2A(", ") + Base4::signature + uti::STR2A(", ") + Base5::signature + uti::STR2A(", ") + Base6::signature + uti::STR2A(", ") + Base7::signature + uti::STR2A(", ") + Base8::signature + uti::STR2A(", ") + Base9::signature + uti::STR2A(", ") + Base10::signature + uti::STR2A(", ") + Base11::signature + uti::STR2A(", ") + Base12::signature + uti::STR2A(", ") + Base13::signature + uti::STR2A(">");
         wave* get_wave(uint8_t index) { return index == 0 ? &o1 : (index == 1 ? &o2 : (index == 2 ? &o3 : (index == 3 ? &o4 : (index == 4 ? &o5 : (index == 5 ? &o6 : (index == 6 ? &o7 : (index == 7 ? &o8 : (index == 8 ? &o9 : (index == 9 ? &o10 : (index == 10 ? &o11 : (index == 11 ? &o12 : (index == 12 ? &o13 : nullptr)))))))))))); }
+
+        template<int N>
+        inline auto& get() { if constexpr (N == 0) return o1; else if constexpr (N == 1) return o2; else if constexpr (N == 2) return o3; else if constexpr (N == 3) return o4; else if constexpr (N == 4) return o5; else if constexpr (N == 5) return o6; else if constexpr (N == 6) return o7; else if constexpr (N == 7) return o8; else if constexpr (N == 8) return o9; else if constexpr (N == 9) return o10; else if constexpr (N == 10) return o11; else if constexpr (N == 11) return o12; else if constexpr (N == 12) return o13; else static_assert(false, "Invalid operator index"); }
     };
 
     template <typename Base1 = wave, typename Base2 = wave, typename Base3 = wave, typename Base4 = wave, typename Base5 = wave, typename Base6 = wave, typename Base7 = wave, typename Base8 = wave, typename Base9 = wave, typename Base10 = wave, typename Base11 = wave, typename Base12 = wave, typename Base13 = wave, typename Base14 = wave>
@@ -242,6 +284,9 @@ namespace dsp
         Base14 o14;
         static constexpr auto signature = uti::STR2A("<") + Base1::signature + uti::STR2A(", ") + Base2::signature + uti::STR2A(", ") + Base3::signature + uti::STR2A(", ") + Base4::signature + uti::STR2A(", ") + Base5::signature + uti::STR2A(", ") + Base6::signature + uti::STR2A(", ") + Base7::signature + uti::STR2A(", ") + Base8::signature + uti::STR2A(", ") + Base9::signature + uti::STR2A(", ") + Base10::signature + uti::STR2A(", ") + Base11::signature + uti::STR2A(", ") + Base12::signature + uti::STR2A(", ") + Base13::signature + uti::STR2A(", ") + Base14::signature + uti::STR2A(">");
         wave* get_wave(uint8_t index) { return index == 0 ? &o1 : (index == 1 ? &o2 : (index == 2 ? &o3 : (index == 3 ? &o4 : (index == 4 ? &o5 : (index == 5 ? &o6 : (index == 6 ? &o7 : (index == 7 ? &o8 : (index == 8 ? &o9 : (index == 9 ? &o10 : (index == 10 ? &o11 : (index == 11 ? &o12 : (index == 12 ? &o13 : (index == 13 ? &o14 : nullptr))))))))))))); }
+
+        template<int N>
+        inline auto& get() { if constexpr (N == 0) return o1; else if constexpr (N == 1) return o2; else if constexpr (N == 2) return o3; else if constexpr (N == 3) return o4; else if constexpr (N == 4) return o5; else if constexpr (N == 5) return o6; else if constexpr (N == 6) return o7; else if constexpr (N == 7) return o8; else if constexpr (N == 8) return o9; else if constexpr (N == 9) return o10; else if constexpr (N == 10) return o11; else if constexpr (N == 11) return o12; else if constexpr (N == 12) return o13; else if constexpr (N == 13) return o14; else static_assert(false, "Invalid operator index"); }
     };
 
     template <typename Base1 = wave, typename Base2 = wave, typename Base3 = wave, typename Base4 = wave, typename Base5 = wave, typename Base6 = wave, typename Base7 = wave, typename Base8 = wave, typename Base9 = wave, typename Base10 = wave, typename Base11 = wave, typename Base12 = wave, typename Base13 = wave, typename Base14 = wave, typename Base15 = wave>
@@ -266,6 +311,9 @@ namespace dsp
         Base15 o15;
         static constexpr auto signature = uti::STR2A("<") + Base1::signature + uti::STR2A(", ") + Base2::signature + uti::STR2A(", ") + Base3::signature + uti::STR2A(", ") + Base4::signature + uti::STR2A(", ") + Base5::signature + uti::STR2A(", ") + Base6::signature + uti::STR2A(", ") + Base7::signature + uti::STR2A(", ") + Base8::signature + uti::STR2A(", ") + Base9::signature + uti::STR2A(", ") + Base10::signature + uti::STR2A(", ") + Base11::signature + uti::STR2A(", ") + Base12::signature + uti::STR2A(", ") + Base13::signature + uti::STR2A(", ") + Base14::signature + uti::STR2A(", ") + Base15::signature + uti::STR2A(">");
         wave* get_wave(uint8_t index) { return index == 0 ? &o1 : (index == 1 ? &o2 : (index == 2 ? &o3 : (index == 3 ? &o4 : (index == 4 ? &o5 : (index == 5 ? &o6 : (index == 6 ? &o7 : (index == 7 ? &o8 : (index == 8 ? &o9 : (index == 9 ? &o10 : (index == 10 ? &o11 : (index == 11 ? &o12 : (index == 12 ? &o13 : (index == 13 ? &o14 : (index == 14 ? &o15 : nullptr)))))))))))))); }
+
+        template<int N>
+        inline auto& get() { if constexpr (N == 0) return o1; else if constexpr (N == 1) return o2; else if constexpr (N == 2) return o3; else if constexpr (N == 3) return o4; else if constexpr (N == 4) return o5; else if constexpr (N == 5) return o6; else if constexpr (N == 6) return o7; else if constexpr (N == 7) return o8; else if constexpr (N == 8) return o9; else if constexpr (N == 9) return o10; else if constexpr (N == 10) return o11; else if constexpr (N == 11) return o12; else if constexpr (N == 12) return o13; else if constexpr (N == 13) return o14; else if constexpr (N == 14) return o15; else static_assert(false, "Invalid operator index"); }
     };
 
     template <typename Base1 = wave, typename Base2 = wave, typename Base3 = wave, typename Base4 = wave, typename Base5 = wave, typename Base6 = wave, typename Base7 = wave, typename Base8 = wave, typename Base9 = wave, typename Base10 = wave, typename Base11 = wave, typename Base12 = wave, typename Base13 = wave, typename Base14 = wave, typename Base15 = wave, typename Base16 = wave>
@@ -291,5 +339,26 @@ namespace dsp
         Base16 o16;
         static constexpr auto signature = uti::STR2A("<") + Base1::signature + uti::STR2A(", ") + Base2::signature + uti::STR2A(", ") + Base3::signature + uti::STR2A(", ") + Base4::signature + uti::STR2A(", ") + Base5::signature + uti::STR2A(", ") + Base6::signature + uti::STR2A(", ") + Base7::signature + uti::STR2A(", ") + Base8::signature + uti::STR2A(", ") + Base9::signature + uti::STR2A(", ") + Base10::signature + uti::STR2A(", ") + Base11::signature + uti::STR2A(", ") + Base12::signature + uti::STR2A(", ") + Base13::signature + uti::STR2A(", ") + Base14::signature + uti::STR2A(", ") + Base15::signature + uti::STR2A(", ") + Base16::signature + uti::STR2A(">");
         wave* get_wave(uint8_t index) { return index == 0 ? &o1 : (index == 1 ? &o2 : (index == 2 ? &o3 : (index == 3 ? &o4 : (index == 4 ? &o5 : (index == 5 ? &o6 : (index == 6 ? &o7 : (index == 7 ? &o8 : (index == 8 ? &o9 : (index == 9 ? &o10 : (index == 10 ? &o11 : (index == 11 ? &o12 : (index == 12 ? &o13 : (index == 13 ? &o14 : (index == 14 ? &o15 : (index == 15 ? &o16 : nullptr))))))))))))))); }
+
+        template<int N>
+        inline auto& get() { 
+            if constexpr (N == 0) return o1; 
+            else if constexpr (N == 1) return o2; 
+            else if constexpr (N == 2) return o3; 
+            else if constexpr (N == 3) return o4; 
+            else if constexpr (N == 4) return o5; 
+            else if constexpr (N == 5) return o6; 
+            else if constexpr (N == 6) return o7; 
+            else if constexpr (N == 7) return o8; 
+            else if constexpr (N == 8) return o9; 
+            else if constexpr (N == 9) return o10; 
+            else if constexpr (N == 10) return o11; 
+            else if constexpr (N == 11) return o12; 
+            else if constexpr (N == 12) return o13; 
+            else if constexpr (N == 13) return o14; 
+            else if constexpr (N == 14) return o15; 
+            else if constexpr (N == 15) return o16; 
+            else static_assert(false, "Invalid operator index"); 
+        }
     };
 }

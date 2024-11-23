@@ -1,6 +1,6 @@
 #pragma once
 
-#include "wave_7.h"
+#include "wave_builtin.h"
 #include "iir.h"
 
 namespace dsp

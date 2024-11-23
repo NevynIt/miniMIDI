@@ -7,13 +7,16 @@
 #define FPM_WIDTH 16
 #endif
 
-#ifndef WAVE_BUFFER_SIZE
-#define WAVE_BUFFER_SIZE 1024
+#ifndef WAVE_BUFFER_BITS
+#define WAVE_BUFFER_BITS 10
 #endif
+
+#define WAVE_BUFFER_SIZE (1 << WAVE_BUFFER_BITS)
 
 namespace dsp
 {
     constexpr size_t BufferSize = WAVE_BUFFER_SIZE;
+    constexpr size_t BufferBits = WAVE_BUFFER_BITS;
     using SampleDescr = ::fpm::descr<FPM_WIDTH, 0, true>;
     using SampleType = SampleDescr::t;
     using PhaseDescr = ::fpm::descr<FPM_WIDTH, -FPM_WIDTH, false>;

@@ -1,6 +1,7 @@
 #pragma once
 
-#include "wave_1.h"
+#include "wave_opX.h"
+#include "wave_opCodes.h"
 
 namespace dsp
 {
@@ -28,11 +29,12 @@ namespace dsp
     };
 
     template<typename opX = op0>
-    class wave_impl
+    class logic_base
     {
     public:
-        wave_impl() = default;
-        static constexpr auto signature = uti::STR2A("wave_impl<") + opX::signature + uti::STR2A(">");
+        logic_base() = default;
+        static constexpr auto signature = uti::STR2A("impl_logic<") + opX::signature + uti::STR2A(">");
+        static constexpr auto op_count = opX::op_count;
 
         inline void setup() // metaprogramming virtual function - "overload" in implementation
         {
@@ -54,7 +56,19 @@ namespace dsp
         {
         }
 
-        inline postAdvance() // metaprogramming virtual function - "overload" in implementation
+        inline void postAdvance() // metaprogramming virtual function - "overload" in implementation
+        {
+        }
+
+        inline void op_Usr1(const OpCode& instr) // metaprogramming virtual function - "overload" in implementation
+        {
+        }
+
+        inline void op_Usr2(const OpCode& instr) // metaprogramming virtual function - "overload" in implementation
+        {
+        }
+
+        inline void op_Usr3(const OpCode& instr) // metaprogramming virtual function - "overload" in implementation
         {
         }
 
@@ -62,8 +76,8 @@ namespace dsp
 
         opX ops;
         SampleType output[opX::op_count];
-        uint16_t advance_mask = 0;
-        uint16_t gather_mask = 0;
+        uint16_t advance_mask = 0xFF;
+        uint16_t gather_mask = 0xFF;
 
         struct // scratchpad  // metaprogramming virtual - "overload" in implementation
         { // only SampleType variables here

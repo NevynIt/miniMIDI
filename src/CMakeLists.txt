@@ -55,6 +55,50 @@ add_executable(miniMIDI
 
 add_dependencies(miniMIDI generate_tables)
 
+# Add lua static library
+add_library(lua STATIC
+    lua/lapi.c
+    lua/lauxlib.c
+    lua/lbaselib.c
+    lua/lcode.c
+    lua/lcorolib.c
+    lua/lctype.c
+    lua/ldblib.c
+    lua/ldebug.c
+    lua/ldo.c
+    lua/ldump.c
+    lua/lfunc.c
+    lua/lgc.c
+    lua/linit.c
+    lua/liolib.c
+    lua/llex.c
+    lua/lmathlib.c
+    lua/lmem.c
+    lua/loadlib.c
+    lua/lobject.c
+    lua/lopcodes.c
+    lua/loslib.c
+    lua/lparser.c
+    lua/lstate.c
+    lua/lstring.c
+    lua/lstrlib.c
+    lua/ltable.c
+    lua/ltablib.c
+    lua/ltm.c
+    lua/lua.c
+    lua/luac.c
+    lua/lundump.c
+    lua/lutf8lib.c
+    lua/lvm.c
+    lua/lzio.c
+)
+
+# Add include directory for lua
+target_include_directories(lua PUBLIC ${CMAKE_CURRENT_LIST_DIR}/lua)
+
+# Link lua static library to miniMIDI
+target_link_libraries(miniMIDI lua)
+
 # Add this line to set the compile option to disable the warning about the parameter passing convention for fp_int
 # target_compile_options(miniMIDI PRIVATE -Wno-psabi)
 # target_compile_options(iir PRIVATE -Wno-psabi)
@@ -128,6 +172,7 @@ target_link_libraries(miniMIDI
         FatFs_SPI
         tinyusb_device
         tinyusb_board
+        lua
         # iir
 )
 

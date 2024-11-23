@@ -1,6 +1,7 @@
 #pragma once
 
-#include "wave_6.h"
+#include "wave_builtin.h"
+#include "envelope.h"
 
 namespace dsp
 {

@@ -17,6 +17,8 @@ namespace dsp
         return &lookupBuffers[id][upperBits<uint16_t, uint16_t, log2(BufferSize)>(index)];
     }
 
+    static constexpr auto indent_str = "|  ";
+
     class wave
     {
     public:
@@ -37,9 +39,11 @@ namespace dsp
         virtual SampleType *getParam(uint16_t index) { return nullptr; }
         virtual const char *getParamName(uint16_t index) const { return nullptr; }
 
-        virtual void inspect()
+        virtual void inspect(int indent = 0)
         {
+            for (int i = 0; i < indent; ++i) printf(indent_str);
             printf("%s\n", getSignature());
+            for (int i = 0; i < indent; ++i) printf(indent_str);
             printf("  Params (%d):\n", getParamCount());
             for (int i = 0; i < getParamCount(); i++)
             {
@@ -48,6 +52,7 @@ namespace dsp
                 if (p)
                 {
                     v = *p;
+                    for (int j = 0; j < indent; ++j) printf(indent_str);
                     if (sizeof(SampleType) == 4)
                         printf("  - %3d (%08x) = 0x%08x -- %s\n", i, p, (uint32_t)v, getParamName(i));
                     else
@@ -55,7 +60,8 @@ namespace dsp
                 }
                 else
                 {
-                        printf("  - %3d ---------------------- %s\n", i, getParamName(i));
+                    for (int j = 0; j < indent; ++j) printf(indent_str);
+                    printf("  - %3d ---------------------- %s\n", i, getParamName(i));
                 }
             }
         }
@@ -70,4 +76,10 @@ namespace dsp
             src.advance();
         }
     }
+
+    #define WAVE_OPERATOR_OVERRIDE \
+        inline SampleType operator()() override { return this->getSample(); } \
+        inline void operator++() override { this->advance(); } \
+        const char *getSignature() const override { return signature.data(); } \
+
 }
