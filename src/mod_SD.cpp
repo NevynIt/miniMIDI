@@ -3,6 +3,7 @@
 #include <cstring>
 #include <cstdarg>
 #include <sys/stat.h> 
+#include "App.h"
 
 static FATFS fs; // File system object
 
@@ -200,6 +201,10 @@ extern "C" {
 static FIL open_files[10]; // Support up to 10 open files
 
 int _open(const char *pathname, int flags, ...) {
+    if (mMApp.sd.mounted == false) {
+        return -1;
+    }
+
     for (int i = 0; i < 10; ++i) {
         if (open_files[i].obj.fs == nullptr) { // Changed from open_files[i].fs_type
             va_list args;
@@ -217,7 +222,7 @@ int _open(const char *pathname, int flags, ...) {
 
 ssize_t _read(int fd, void *buffer, size_t count) {
     fd -= 3;
-    if (fd < 0 || fd >= 10 || open_files[fd].obj.fs == nullptr) { // Changed
+    if (fd < 0 || fd >= 10 || open_files[fd].obj.fs == nullptr) {
         return -1;
     }
     UINT bytesRead;
@@ -226,8 +231,14 @@ ssize_t _read(int fd, void *buffer, size_t count) {
 }
 
 ssize_t _write(int fd, const void *buffer, size_t count) {
+    if (fd == 1 || fd == 2) {
+        // Redirect stdout and stderr to UART
+        mMApp.uart.out(buffer, count);
+        return count;
+    }
+
     fd -= 3;
-    if (fd < 0 || fd >= 10 || open_files[fd].obj.fs == nullptr) { // Changed
+    if (fd < 0 || fd >= 10 || open_files[fd].obj.fs == nullptr) {
         return -1;
     }
     UINT bytesWritten;
@@ -237,7 +248,7 @@ ssize_t _write(int fd, const void *buffer, size_t count) {
 
 int _close(int fd) {
     fd -= 3;
-    if (fd < 0 || fd >= 10 || open_files[fd].obj.fs == nullptr) { // Changed
+    if (fd < 0 || fd >= 10 || open_files[fd].obj.fs == nullptr) {
         return -1;
     }
     FRESULT res = f_close(&open_files[fd]);

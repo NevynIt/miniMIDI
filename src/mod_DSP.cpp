@@ -128,6 +128,8 @@ void test_wave(WaveType wave, const char *name, sample_ptr buffer, size_t count,
 
 void mod_DSP::Test()
 {
+    return; 
+    
     bool sdtest = false; 
     sdtest = mMApp.sd.mounted; //Uncomment to write test files to SD card if present
     static bool test_done = false;

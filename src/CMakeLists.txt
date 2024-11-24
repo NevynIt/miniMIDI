@@ -39,6 +39,7 @@ add_executable(miniMIDI
     mod_DSP.cpp
     mod_Blink.cpp
     mod_Synth.cpp
+    embedded-cli/lib/src/embedded_cli.c
 
     # wavetables/WT_BASE.cpp
     dsp/Tables_DSP.cpp
@@ -133,6 +134,7 @@ target_compile_definitions(miniMIDI PUBLIC
   # IIR1_NO_EXCEPTIONS=1
   FPM_WIDTH=${FPM_WIDTH}
   PICO_ENTER_USB_BOOT_ON_EXIT=1
+  LUA_32BITS=1
 )
 
 # set (_GLIBCXX_USE_C99_COMPLEX 0)
@@ -158,6 +160,7 @@ target_include_directories(miniMIDI PRIVATE
   ${CMAKE_CURRENT_LIST_DIR}/rp2040_i2s_example
   ${CMAKE_CURRENT_LIST_DIR}/RP2040-pico_synth_ex
   ${CMAKE_CURRENT_LIST_DIR}/RP2040-pico_synth_ex/sound_i2s
+  ${CMAKE_CURRENT_LIST_DIR}/embedded-cli/lib/include
 )
 
 # Add any user requested libraries

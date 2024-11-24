@@ -11,3 +11,4 @@ todo:
 - rbj filter, params and refresh filter every x samples
 - add a wrapper decorator for wrapping any wave and add asm support
 - wave specific buffers ?
+- test division in fpm.h
