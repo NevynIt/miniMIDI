@@ -102,8 +102,8 @@ v4 @16 bits scriptable variant
 template <typename WaveType>
 void test_wave(WaveType wave, const char *name, sample_ptr buffer, size_t count, bool sdtest)
 {
-    // printf("Testing %s: ", name);
-    // wave.inspect();
+    printf("Testing %s: ", name);
+    wave.inspect();
     const int rep = 30;
     uint32_t t = 0;
     uint32_t t0, t1;
@@ -116,9 +116,9 @@ void test_wave(WaveType wave, const char *name, sample_ptr buffer, size_t count,
         restore_interrupts(irq_state);
         t += (t1 - t0);
     }
-    // printf("Time to generate 1ms of samples\n");
+    printf("Time to generate 1ms of samples\n");
     printf("    %s: %.2f us\n", name, ((float)t/ (count*rep)));
-    // printf("\n");
+    printf("\n");
     if (sdtest)
     {
         printf("Writing %s to SD card\n", name);
@@ -176,29 +176,6 @@ void mod_DSP::Test()
     formant.logic.I.ratios = ratiosCoeff;
     formant.logic.S.count = 5;
     test_wave(formant, "formant", buffer, 1000, sdtest);
-    
-    // test_wave(dsp::noiseWave(), "Noise", buffer, 1000, sdtest);
-    // test_wave(dsp::squareWave(inc), "Square", buffer, 1000, sdtest);
-    // test_wave(dsp::sawtoothWave(inc), "Sawtooth", buffer, 1000, sdtest);
-    // test_wave(dsp::sinWave(inc), "Sine", buffer, 1000, sdtest);
-    // test_wave(dsp::harmonicWave(inc), "harmonic", buffer, 1000, sdtest);
-
-    // auto iw = dsp::inharmonicWave(inc);
-    // float gains[5] = {1, 0.5, 0.25, 0.125, 0.0625};
-    // float ratios[5] = {1,2.5,5.4,12,15};
-    // dsp::normalize(gains);
-    // dsp::normalize(ratios);
-    // iw.setup(ratios, gains);
-    // test_wave(iw, "inharmonic", buffer, 1000, sdtest);
-    
-    // auto w2 = dsp::RBJFilterWave<dsp::amModWave<dsp::gainModWave<dsp::squareWave>, dsp::envelopeBase>>();
-    // w2.m.setEnvTimes(0.025,0.2,0.1,48000);
-    // w2.m.setSustainLevel(dsp::SampleMax/5);
-    // w2.c.setIncrement(dsp::inc_from_freq(freq, 48000));
-    // w2.c.setLevel(dsp::SampleMax/4 * 3);
-    // w2.highpass(dsp::normalizeFreq(1000, 48000), 5);
-    // w2.m.attack();
-    // test_wave(w2, "complex", buffer, 1000, sdtest);
 
     delete[] buffer;
 

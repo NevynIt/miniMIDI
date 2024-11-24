@@ -3,7 +3,8 @@
 #include <cstring>
 #include <cstdarg>
 #include <sys/stat.h> 
-#include "ff.h"
+
+static FATFS fs; // File system object
 
 void mod_SD::Init()
 {
@@ -28,14 +29,14 @@ void mod_SD::Tick()
 
 void mod_SD::Test()
 {
-    static bool test_done = false;
-    if (test_done)
-        return;
+    // static bool test_done = false;
+    // if (test_done)
+    //     return;
 
-    test_done = true;
+    // test_done = true;
 
-    if (!mounted)
-        return;
+    // if (!mounted)
+    //     return;
 }
 
 bool mod_SD::Mount()
@@ -54,9 +55,6 @@ bool mod_SD::Unmount()
 
 bool mod_SD::WriteFile(const std::string &path, const void *data, unsigned int size)
 {
-    if (!mounted)
-        return false;
-
     FIL file;
     FRESULT res = f_open(&file, path.c_str(), FA_WRITE | FA_CREATE_ALWAYS);
     if (res != FR_OK)
@@ -71,9 +69,6 @@ bool mod_SD::WriteFile(const std::string &path, const void *data, unsigned int s
 
 bool mod_SD::ReadFile(const std::string &path, std::string &data)
 {
-    if (!mounted)
-        return false;
-
     FIL file;
     FRESULT res = f_open(&file, path.c_str(), FA_READ);
     if (res != FR_OK)
@@ -92,6 +87,27 @@ bool mod_SD::ReadFile(const std::string &path, std::string &data)
     return (res == FR_OK);
 }
 
+FF_FILE *mod_SD::fopen(const char *pcFile, const char *pcMode) { return ff_fopen(pcFile, pcMode); }
+int mod_SD::fclose(FF_FILE *pxStream) { return ff_fclose(pxStream); }
+int mod_SD::stat(const char *pcFileName, FF_Stat_t *pxStatBuffer) { return ff_stat(pcFileName, pxStatBuffer); }
+size_t mod_SD::fwrite(const void *pvBuffer, size_t xSize, size_t xItems, FF_FILE *pxStream) { return ff_fwrite(pvBuffer, xSize, xItems, pxStream); }
+size_t mod_SD::fread(void *pvBuffer, size_t xSize, size_t xItems, FF_FILE *pxStream) { return ff_fread(pvBuffer, xSize, xItems, pxStream); }
+int mod_SD::chdir(const char *pcDirectoryName) { return ff_chdir(pcDirectoryName); }
+char *mod_SD::getcwd(char *pcBuffer, size_t xBufferLength) { return ff_getcwd(pcBuffer, xBufferLength); }
+int mod_SD::mkdir(const char *pcPath) { return ff_mkdir(pcPath); }
+int mod_SD::fputc(int iChar, FF_FILE *pxStream) { return ff_fputc(iChar, pxStream); }
+int mod_SD::fgetc(FF_FILE *pxStream) { return ff_fgetc(pxStream); }
+int mod_SD::rmdir(const char *pcDirectory) { return ff_rmdir(pcDirectory); }
+int mod_SD::remove(const char *pcPath) { return ff_remove(pcPath); }
+long mod_SD::ftell(FF_FILE *pxStream) { return ff_ftell(pxStream); }
+int mod_SD::fseek(FF_FILE *pxStream, int iOffset, int iWhence) { return ff_fseek(pxStream, iOffset, iWhence); }
+int mod_SD::findfirst(const char *pcDirectory, FF_FindData_t *pxFindData) { return ff_findfirst(pcDirectory, pxFindData); }
+int mod_SD::findnext(FF_FindData_t *pxFindData) { return ff_findnext(pxFindData); }
+FF_FILE *mod_SD::truncate(const char *pcFileName, long lTruncateSize) { return ff_truncate(pcFileName, lTruncateSize); }
+int mod_SD::seteof(FF_FILE *pxStream) { return ff_seteof(pxStream); }
+int mod_SD::rename(const char *pcOldName, const char *pcNewName, int bDeleteIfExists) { return ff_rename(pcOldName, pcNewName, bDeleteIfExists); }
+char *mod_SD::fgets(char *pcBuffer, size_t xCount, FF_FILE *pxStream) { return ff_fgets(pcBuffer, xCount, pxStream); }
+
 #include <assert.h>
 #include <string.h>
 //
@@ -99,7 +115,7 @@ bool mod_SD::ReadFile(const std::string &path, std::string &data)
 //
 #include "hw_config.h" //from SD library
 //
-#include "ff.h" /* Obtains integer types */
+// #include "ff.h" /* Obtains integer types */
 //
 #include "diskio.h" /* Declarations of disk functions */
 

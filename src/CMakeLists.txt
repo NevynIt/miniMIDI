@@ -10,7 +10,7 @@ set(FPM_WIDTH 16)
 add_custom_command(
     OUTPUT ${CMAKE_CURRENT_LIST_DIR}/dsp/Tables_DSP.cpp
     OUTPUT ${CMAKE_CURRENT_LIST_DIR}/dsp/Tables_DSP.h
-    COMMAND ${CMAKE_COMMAND} -E env C:/Users/argio/AppData/Local/Programs/Python/Python312/python.exe ${CMAKE_CURRENT_LIST_DIR}/dsp/genTables.py ${FPM_WIDTH}
+    COMMAND ${CMAKE_COMMAND} -E env python ${CMAKE_CURRENT_LIST_DIR}/dsp/genTables.py ${FPM_WIDTH}
     DEPENDS ${CMAKE_CURRENT_LIST_DIR}/dsp/genTables.py
 )
 

@@ -9,7 +9,7 @@ class mod_DSP : public Module {
 public:
     void Init() override;
     void Tick() override;
-    void Test() override;
+    __attribute__((optimize("O3"))) void Test() override;
 
     constexpr inline uint8_t getSlot(int delta = 0, uint64_t reference = 0) const {
         return (reference / AUDIO_BUFFER_US + delta) & AUDIO_BUFFER_SLOTS_MASK;

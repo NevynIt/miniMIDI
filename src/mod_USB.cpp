@@ -9,6 +9,8 @@ extern volatile uint32_t e15_last_sof;
 void mod_USB::Init()
 {
   tusb_init();
+  tud_disconnect(); // Required for windows driver to work properly
+  tud_connect();
   tud_sof_cb_enable(true);
 
   mMApp.display.println("USB initialized");
