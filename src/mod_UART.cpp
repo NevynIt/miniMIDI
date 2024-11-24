@@ -110,9 +110,4 @@ void mod_UART::Tick() {
         embeddedCliReceiveChar(cli, c);
     }
     embeddedCliProcess(cli);
-//     lua_getglobal(L, "tick");
-//     if (lua_pcall(L, 0, 0, 0) != LUA_OK) {
-//         printf("Error running Lua tick: %s\n", lua_tostring(L, -1));
-//         lua_pop(L, 1);
-//     }
 }

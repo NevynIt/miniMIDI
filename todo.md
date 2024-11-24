@@ -1,4 +1,5 @@
 todo:
+- rimettere lo switch nel exec degli opcode, lasciare l'ottimizzazione al compilatore!
 - multibyte opcodes, pc points to the next instruction, remove all parameters to op_XX methods
   - adv and gather can update the mask, based on the next word, and can be immediate or not, these are independent
 - chaining wave generators by filling buffers in sequence. use a ptr to the buffer of the previous wave, within the dsp buffers, but it has to wrap
