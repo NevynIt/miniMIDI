@@ -45,6 +45,7 @@ add_executable(miniMIDI
     dsp/Tables_DSP.cpp
     dsp/iir.cpp
     dsp/wave.cpp
+    dsp/exec_asm.cpp
     midi_const/midi_frequencies.cpp
     ledColors/led_colors.cpp
     # QuadratureDecoder/QuadratureDecoder.cpp

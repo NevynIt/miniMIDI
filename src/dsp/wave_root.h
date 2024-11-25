@@ -10,7 +10,7 @@ namespace dsp
     extern SampleType sample_dump; //pointers will point here if undefined
     extern SampleType *lookupBuffers[256];
 
-    inline SampleType *globalLookup(uint8_t id, SampleType index)
+    inline SampleType *globalLookup(uint8_t id, SampleType index) //some of the buffers should move with the current slot position every frame (1 ms)
     {
         if (lookupBuffers[id] == nullptr)
             return nullptr;

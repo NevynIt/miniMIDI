@@ -1,4 +1,5 @@
-#include "wave_script_wave.h"
+// #include "wave_script_wave.h"
+#include "wave_logic_wave.h"
 
 namespace dsp
 {
@@ -9,16 +10,16 @@ namespace dsp
         _name_##_wave() = default; \
     };
 
-#define DECL_SCRIPTABLE_WAVE(_name_) \
-    class _name_##_wave_s : public script_wave<_name_##_logic> \
-    { \
-    public: \
-        _name_##_wave_s() = default; \
-    };
+// #define DECL_SCRIPTABLE_WAVE(_name_) \
+//     class _name_##_wave_s : public script_wave<_name_##_logic> \
+//     { \
+//     public: \
+//         _name_##_wave_s() = default; \
+//     };
 
 #define DECL_WAVE(_name_) \
-    DECL_LOGIC_WAVE(_name_) \
-    DECL_SCRIPTABLE_WAVE(_name_)
+    DECL_LOGIC_WAVE(_name_) //\
+    // DECL_SCRIPTABLE_WAVE(_name_)
 
 #define DECL_LOGIC_WAVE_T(_name_, _templ_param_) \
     class _name_##_wave : public logic_wave<_name_##_logic<_templ_param_>> \
@@ -27,16 +28,16 @@ namespace dsp
         _name_##_wave() = default; \
     };
 
-#define DECL_SCRIPTABLE_WAVE_T(_name_, _templ_param_) \
-    class _name_##_wave_s : public script_wave<_name_##_logic<_templ_param_>> \
-    { \
-    public: \
-        _name_##_wave_s() = default; \
-    };
+// #define DECL_SCRIPTABLE_WAVE_T(_name_, _templ_param_) \
+//     class _name_##_wave_s : public script_wave<_name_##_logic<_templ_param_>> \
+//     { \
+//     public: \
+//         _name_##_wave_s() = default; \
+//     };
 
 #define DECL_WAVE_T(_name_, _templ_param_) \
-    DECL_LOGIC_WAVE_T(_name_, _templ_param_) \
-    DECL_SCRIPTABLE_WAVE_T(_name_, _templ_param_)
+    DECL_LOGIC_WAVE_T(_name_, _templ_param_) //\
+    // DECL_SCRIPTABLE_WAVE_T(_name_, _templ_param_)
 
     class noise_logic : public logic_base<op0>
     {
@@ -54,7 +55,7 @@ namespace dsp
     {
     public:
         static constexpr auto signature = uti::STR2A("Constant");
-        inline SampleType postSampling()
+        inline SampleType getSample()
         {
             return S.level;
         }
@@ -72,12 +73,12 @@ namespace dsp
     {
     public:
         static constexpr auto signature = uti::STR2A("Square");
-        inline SampleType postSampling()
+        inline SampleType getSample()
         {
             return (S.phase < S.duty) ? SampleMax : SampleMin;
         }
 
-        inline void postAdvance() // metaprogramming virtual function - "overload" in implementation
+        inline void advance() // metaprogramming virtual function - "overload" in implementation
         {
             S.phase += S.increment;
         }
@@ -102,12 +103,12 @@ namespace dsp
     {
     public:
         static constexpr auto signature = uti::STR2A("Sawtooth");
-        inline SampleType postSampling()
+        inline SampleType getSample()
         {
             return S.phase;
         }
 
-        inline void postAdvance() // metaprogramming virtual function - "overload" in implementation
+        inline void advance() // metaprogramming virtual function - "overload" in implementation
         {
             S.phase += S.increment;
             if (S.phase >= SampleMax)
@@ -132,12 +133,12 @@ namespace dsp
     {
     public:
         static constexpr auto signature = uti::STR2A("Buffer");
-        inline SampleType postSampling()
+        inline SampleType getSample()
         {
             return I.buffer[upperBits<uint16_t, PhaseType, BufferBits>(S.phase)];
         }
 
-        inline void postAdvance() // metaprogramming virtual function - "overload" in implementation
+        inline void advance() // metaprogramming virtual function - "overload" in implementation
         {
             S.phase += S.increment;
         }
@@ -171,13 +172,8 @@ namespace dsp
     {
     public:
         static constexpr auto signature = uti::STR2A("Formant") + op1<Base>::signature;
-        inline void setup() // metaprogramming virtual function - "overload" in implementation
-        {
-            this->gather_mask = 0;
-            this->advance_mask = 0;
-        }
 
-        inline SampleType postSampling()
+        inline SampleType getSample()
         {
             SampleType sample = 0;
             for (SampleType i = 0; i < S.count; ++i)
@@ -188,7 +184,7 @@ namespace dsp
             return sample;
         }
 
-        inline void postAdvance() // metaprogramming virtual function - "overload" in implementation
+        inline void advance() // metaprogramming virtual function - "overload" in implementation
         {
             S.phase += S.increment;
         }
@@ -219,6 +215,6 @@ namespace dsp
     template <typename Base = buffer_wave>
     DECL_LOGIC_WAVE_T(formant, Base)
 
-    template <typename Base= buffer_wave>
-    DECL_SCRIPTABLE_WAVE_T(formant, Base)
+    // template <typename Base= buffer_wave>
+    // DECL_SCRIPTABLE_WAVE_T(formant, Base)
 }

@@ -1,5 +1,9 @@
 #include "exec_asm.h"
 
+namespace dsp
+{
+}
+
 namespace dsp::exec
 {
     using namespace ::dsp;
@@ -9,12 +13,31 @@ namespace dsp::exec
         return in_reg;
     }
 
-    SampleType context::operator ()(const SampleType in_reg = 0, const newOpCode *code = nullptr)
+    static const newOpCode default_codebase[] = {
+        {newcmd::sample, 0, 0, 0}, //getSample from wave 0
+        {newcmd::ext, 0, 0, 0}, //return
+        {newcmd::advance, 0, 0, 0}, //advance from wave 0
+        {newcmd::ext, 0, 0, 0}, //return
+        {newcmd::ext, 1, 0, 0}, //attack from wave 0
+        {newcmd::ext, 0, 0, 0}, //return
+        {newcmd::ext, 2, 0, 0}, //release from wave 0
+        {newcmd::ext, 0, 0, 0}, //return
+        {newcmd::ext, 3, 0, 0}, //stop from wave 0
+        {newcmd::ext, 0, 0, 0}, //return
+    };
+    static const uint16_t default_targets[] = {
+        0, //getSample
+        2, //advance
+        4, //attack
+        6, //release
+        8, //stop
+        9, //setup (empty)
+    };
+
+    SampleType context::run(const newOpCode *code = nullptr, const SampleType in_reg = 0)
     {   /* new opcode idea and opcode set
         * we have local variables as immediate registers, some of type SampleType, some of type SampleType *, and some more
         * the opcode, which is 16 bits may be followed by more 16 bits of immediate data, depending on the opcode 
-        * the opcodes we need are:
-        * 
         */
         if (code == nullptr)
             code = this->pc;
@@ -64,18 +87,51 @@ namespace dsp::exec
             case newcmd::sel:
             {
                 const op_sel_param param = {.raw = (code+1)->raw};
-                switch (code->src & 1)
-                {
-                case 0: //wave parameter
-                    I[code->tgt] = ops[param.id].getParam(param.index);
-                    break;
-                case 1: //global buffer
-                    if (code->flag)
-                        I[code->tgt] = globalLookup(param.id, param.index + (SampleType)(code+2)->raw);
-                    else
-                        I[code->tgt] = globalLookup(param.id, param.index);
-                    break;
+                if (code->src == 0)
+                { //wave parameter
+                    I[code->tgt] = ops[param.id]->getParam(param.index);
                 }
+                else
+                {
+                    int16_t idx;
+                    if (code->flag)
+                        idx = (SampleType)(code+2)->raw;
+                    else
+                        idx = 0;
+                    if (param.flag)
+                    {
+                        SampleType v = (SampleType)code->src;
+                        if (v & 0x10)
+                            v |= 0xFFE0;
+                        idx += v;
+                    }
+                    else switch (param.src)
+                    {
+                        case 0:
+                            idx += out;
+                            break;
+                        case 1:
+                            idx += x;
+                            break;
+                        case 2:
+                            idx += y;
+                            break;
+                        default:
+                        {
+                            if (param.src < 19)
+                                idx += S[param.src - 3];
+                            else
+                                idx += *I[param.src - 19];
+                        }
+                            break;
+                    }
+
+                    if (code->src == 1) //global buffer
+                        I[code->tgt] = globalLookup(param.id, idx);
+                    else if (code->src == 2) //relative index
+                        I[code->tgt] = I[param.id] + idx;
+                }
+
                 if (code->flag)
                     code+=3;
                 else
@@ -138,12 +194,6 @@ namespace dsp::exec
                 }
                 code++;
             }
-                break;
-
-            case newcmd::ret:
-                if (call_stack_ptr == 0) //return from main
-                    return out;
-                code = call_stack[--call_stack_ptr]; //return from function call
                 break;
             
             case newcmd::inc:
@@ -517,7 +567,7 @@ namespace dsp::exec
                 }
 
                 if (v == 0)
-                    jmp((uint8_t)code->tgt);
+                    code = jmp_tgt[code->tgt];
                 else
                     code++;
             }
@@ -557,9 +607,36 @@ namespace dsp::exec
                 }
 
                 if (v == 0)
-                    call((uint8_t)code->tgt);
+                {
+                    call_stack[call_stack_ptr++] = code + 1;
+                    code = jmp_tgt[code->tgt];
+                }
                 else
                     code++;
+            }
+                break;
+
+            case newcmd::ext:
+            {
+                switch (code->tgt)
+                {
+                case 0: //return
+                    if (call_stack_ptr == 0) //return from main
+                        return out;
+                    code = call_stack[--call_stack_ptr]; //return from function call
+                    break;
+                case 1:
+                    ops[code->src]->attack();
+                    break;
+                case 2:
+                    ops[code->src]->release();
+                    break;
+                case 3:
+                    ops[code->src]->stop();
+                    break;
+                default:
+                    break;
+                }
             }
                 break;
 
@@ -1037,7 +1114,7 @@ namespace dsp::exec
 
             case newcmd::advance:
             {
-                wave *w = &ops[(uint8_t)code->src];
+                wave *w = ops[(uint8_t)code->src];
                 if (code->flag)
                 {
                     for (int i = 0; i < (uint8_t)code->tgt; i++)
@@ -1051,7 +1128,7 @@ namespace dsp::exec
             
             case newcmd::sample:
             {
-                wave *w = &ops[(uint8_t)code->src];
+                wave *w = ops[(uint8_t)code->src];
 
                 switch (code->tgt)
                 {
@@ -1085,6 +1162,8 @@ namespace dsp::exec
                 if (code->flag)
                 {
                     v = (SampleType)code->src;
+                    if (v & 0x10)
+                        v |= 0xFFE0;
                 }
                 else
                 {
@@ -1110,6 +1189,7 @@ namespace dsp::exec
                     }
                 }
 
+                pc = code;
                 switch (code->tgt)
                 {
                 case 0:
@@ -1130,6 +1210,7 @@ namespace dsp::exec
                 }
                     break;
                 }
+                code = pc;
             }
                 break;
             
@@ -1139,6 +1220,8 @@ namespace dsp::exec
                 if (code->flag)
                 {
                     v = (SampleType)code->src;
+                    if (v & 0x10)
+                        v |= 0xFFE0;
                 }
                 else
                 {
@@ -1164,6 +1247,7 @@ namespace dsp::exec
                     }
                 }
 
+                pc = code;
                 switch (code->tgt)
                 {
                 case 0:
@@ -1184,6 +1268,7 @@ namespace dsp::exec
                 }
                     break;
                 }
+                code = pc;
             }
                 break;
 
@@ -1193,6 +1278,8 @@ namespace dsp::exec
                 if (code->flag)
                 {
                     v = (SampleType)code->src;
+                    if (v & 0x10)
+                        v |= 0xFFE0;
                 }
                 else
                 {
@@ -1218,6 +1305,7 @@ namespace dsp::exec
                     }
                 }
 
+                pc = code;
                 switch (code->tgt)
                 {
                 case 0:
@@ -1238,6 +1326,7 @@ namespace dsp::exec
                 }
                     break;
                 }
+                code = pc;
             }
                 break;
 
@@ -1247,6 +1336,8 @@ namespace dsp::exec
                 if (code->flag)
                 {
                     v = (SampleType)code->src;
+                    if (v & 0x10)
+                        v |= 0xFFE0;
                 }
                 else
                 {
@@ -1272,6 +1363,7 @@ namespace dsp::exec
                     }
                 }
 
+                pc = code;
                 switch (code->tgt)
                 {
                 case 0:
@@ -1292,10 +1384,13 @@ namespace dsp::exec
                 }
                     break;
                 }
+                code = pc;
             }
                 break;
 
             default:
+                
+                code++;
                 break;
             }
         }

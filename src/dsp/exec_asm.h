@@ -14,15 +14,15 @@ namespace dsp::exec
     //1 bit for a flag
 
     //source/target id, for all except sel, lookup and store, mean:
-    // 0 output or input register
+    // 0 output register
     // 1-2 immediate registers x, y
     // 3-18 scratchpad registers S[0-15]
     // 19-31 indirect registers I[0-12]
 
     typedef union 
-    { // todo redefine as packed union with bitfields
+    {
         struct 
-        { //mov
+        {
             uint16_t cmd : 5, tgt : 5, src : 5, flag : 1;
         };
         uint16_t raw;
@@ -31,9 +31,14 @@ namespace dsp::exec
     typedef union
     {
         struct
-        {
+        { //wave parameter
             uint16_t id : 8, index : 8;
         };
+        struct
+        { //global or relative index
+            uint16_t /* id */: 8, : 2, src : 5, flag : 1;
+        };
+        
         uint16_t raw;
     } op_sel_param;
 
@@ -49,16 +54,15 @@ namespace dsp::exec
                 //src opcodes are consumed by the load command
         sel, //sets the pointer of one of the indirect registers
                 //tgt selects the indirect register, (0 to 31)
-                //src selects between wave parameter or global buffer (0 to 1)
+                //src selects between wave parameter (0), global buffer (1), and relative index (2)
                 //flag tells if an optional index is included, which then consumes one more opcode
-                //for wave, opcode + 1 is 8 bit for the wave id, and 8 bit for the parameter id
-                //for global buffer, opcode + 1 is 8 bit for the buffer id, and 8 bit for the index offset
+                //for wave, opcode + 1 is 8 bit for the wave id, and 8 bit for the parameter id (index)
+                //for global buffer, opcode + 1 is 8 bit for the buffer id, and 8 bit for the base index offset (the extra index is added to this)
+                //for relative index, opcode + 1 is 8 bit for the indirect register (5 used), src&flag gets the base index offset from a register, see below, (the extra index is added to this)
         mov, //moves the content of the source register to the target register
                 //tgt selects the target register
                 //src selects the source register
                 //if flag is set, the value is the 5 bits of src, interpreted as signed 5 bit value (2's complement)
-        ret, //returns the content of the output register
-                //all other fields are ignored
         inc, //increments the immediate register
                 //tgt selects the register
                 //src is ignored
@@ -95,6 +99,12 @@ namespace dsp::exec
                 //tgt is the label id
                 //src is ignored
                 //flag is ignored
+        ext, //extended commands
+                //tgt defines the extended command:
+                    //0 is ret
+                    //1 is attack //src is the wave id
+                    //2 is release //src is the wave id
+                    //3 is stop //src is the wave id
 
         // special DSP commands
         biquad, //applies a biquad filter, the output register stores the result
@@ -162,6 +172,9 @@ namespace dsp::exec
         usr1, //custom command 1, get the call parameter from src (flag means literal), store the result in tgt, the command must advance the code pointer
         usr2, //custom command 2, get the call parameter from src (flag means literal), store the result in tgt, the command must advance the code pointer
         usr3, //custom command 3, get the call parameter from src (flag means literal), store the result in tgt, the command must advance the code pointer
+        //possible extra operators: boolean operators, bitwise operators, comparison operators
+        //I can remove the _64 and 4096 versions, getting 4 more opcodes
+        //need to add attack, release and so on, I could add flags to ret, which has 11 bits unused, to do sub-opcodes
         opcode_count
     };
 
@@ -170,6 +183,8 @@ namespace dsp::exec
     typedef SampleType (*usr_fnc_t)(context &ctx, const SampleType in_reg);
 
     SampleType noop(context &ctx, const SampleType in_reg);
+    static const newOpCode default_codebase[];
+    static const uint16_t default_targets[];
 
     class context
     {
@@ -181,10 +196,26 @@ namespace dsp::exec
         const newOpCode *call_stack[16] = {nullptr};
         uint8_t call_stack_ptr = 0;
         usr_fnc_t usr_fnc[4] = {nullptr};
-        wave *ops = nullptr;
+        wave **ops = nullptr;
 
-        context(SampleType *S, SampleType **I, wave *ops, const newOpCode **jmp_tgt, const newOpCode *pc)
-            : S(S), I(I), ops(ops), jmp_tgt(jmp_tgt), pc(pc)
+        //TODO get as parameter and add debug checks
+        uint8_t S_size = 0; 
+        uint8_t I_size = 0;
+        uint8_t ops_size = 0;
+        uint8_t jmp_tgt_size = 0;
+        
+        enum default_targets
+        {
+            getSample,
+            advance,
+            attack,
+            release,
+            stop,
+            setup,
+            user, //user defined targets from here
+        };
+
+        context()
         {
             usr_fnc[0] = noop;
             usr_fnc[1] = noop;
@@ -192,38 +223,54 @@ namespace dsp::exec
             usr_fnc[3] = noop;
         }
 
-        inline void jmp_abs(const newOpCode *tgt)
+        ~context()
         {
-            pc = tgt;
+            delete[] ops;
+            delete[] jmp_tgt;
         }
 
-        inline void jmp(const uint8_t label_id)
+        void setState(SampleType *S, SampleType **I, uint8_t S_size, uint8_t I_size)
         {
-            pc = jmp_tgt[label_id];
+            this->S = S;
+            this->I = I;
+            this->S_size = S_size;
+            this->I_size = I_size;
         }
 
-        inline void call(const uint8_t label_id)
+        void initState(SampleType *S, SampleType **I)
         {
-            call_stack[call_stack_ptr++] = pc;
-            pc = jmp_tgt[label_id];
+            for (int i = 0; i < S_size; i++)
+                this->S[i] = S[i];
+            for (int i = 0; i < I_size; i++)
+                this->I[i] = I[i];
         }
 
-        inline void call_abs(const newOpCode *tgt)
+        void setOps(wave **ops, const uint8_t len)
         {
-            call_stack[call_stack_ptr++] = pc;
-            pc = tgt;
+            this->ops = new wave *[len];
+            for (int i = 0; i < len; i++)
+                this->ops[i] = ops[i];
+            ops_size = len;
         }
 
-        inline void ret()
+        void setCode(const newOpCode *codebase, const uint16_t *targets, const uint8_t len)
         {
-            if (debug && call_stack_ptr == 0)
-            {
-                printf("Error: return without call in dsp asm\n");
-                __breakpoint();
-            }
-            pc = call_stack[--call_stack_ptr];
+            jmp_tgt = new const newOpCode *[len];
+            for (int i = 0; i < len; i++)
+                jmp_tgt[i] = codebase + targets[i];
+            jmp_tgt_size = len;
+            pc = codebase;
         }
-        
-        SampleType operator ()(const SampleType in_reg = 0, const newOpCode *code = nullptr);
+
+        void setFnc(const uint8_t id, usr_fnc_t fnc)
+        {
+            usr_fnc[id] = fnc;
+        }
+
+        void inspect(int indent = 0)
+        {
+        }
+
+        SampleType run(const newOpCode *code = nullptr, const SampleType in_reg = 0);
     };
 }
