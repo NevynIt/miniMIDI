@@ -13,28 +13,46 @@ namespace dsp::exec
         return in_reg;
     }
 
-    static const newOpCode default_codebase[] = {
+    const newOpCode default_codebase[] = {
         {newcmd::sample, 0, 0, 0}, //getSample from wave 0
         {newcmd::ext, 0, 0, 0}, //return
-        {newcmd::advance, 0, 0, 0}, //advance from wave 0
+        {newcmd::adv, 0, 0, 0}, //advance wave 0
         {newcmd::ext, 0, 0, 0}, //return
-        {newcmd::ext, 1, 0, 0}, //attack from wave 0
+        {newcmd::ext, 1, 0, 0}, //attack wave 0
         {newcmd::ext, 0, 0, 0}, //return
-        {newcmd::ext, 2, 0, 0}, //release from wave 0
+        {newcmd::ext, 2, 0, 0}, //release wave 0
         {newcmd::ext, 0, 0, 0}, //return
-        {newcmd::ext, 3, 0, 0}, //stop from wave 0
+        {newcmd::ext, 3, 0, 0}, //stop wave 0
         {newcmd::ext, 0, 0, 0}, //return
+        {newcmd::ext, 4, 0, 0}, //setup wave 0
+        {newcmd::ext, 0, 0, 0}, //return
+        
     };
-    static const uint16_t default_targets[] = {
+    const uint16_t default_targets[] = {
         0, //getSample
         2, //advance
         4, //attack
         6, //release
         8, //stop
-        9, //setup (empty)
+        10, //setup
     };
 
-    SampleType context::run(const newOpCode *code = nullptr, const SampleType in_reg = 0)
+    const newOpCode *get_default_codebase()
+    {
+        return default_codebase;
+    }
+
+    const uint16_t *get_default_targets()
+    {
+        return default_targets;
+    }
+
+    const uint8_t get_default_targets_size()
+    {
+        return sizeof(default_targets) / sizeof(uint16_t);
+    }
+
+    SampleType context::run(const newOpCode *code, const SampleType in_reg)
     {   /* new opcode idea and opcode set
         * we have local variables as immediate registers, some of type SampleType, some of type SampleType *, and some more
         * the opcode, which is 16 bits may be followed by more 16 bits of immediate data, depending on the opcode 
@@ -1112,7 +1130,7 @@ namespace dsp::exec
             }
                 break;
 
-            case newcmd::advance:
+            case newcmd::adv:
             {
                 wave *w = ops[(uint8_t)code->src];
                 if (code->flag)

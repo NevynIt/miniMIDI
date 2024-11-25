@@ -105,6 +105,7 @@ namespace dsp::exec
                     //1 is attack //src is the wave id
                     //2 is release //src is the wave id
                     //3 is stop //src is the wave id
+                    //4 is setup //src is the wave id
 
         // special DSP commands
         biquad, //applies a biquad filter, the output register stores the result
@@ -158,7 +159,7 @@ namespace dsp::exec
                 //src selects the index in the buffer, if flag is set, the index is the 5 bits of src, interpreted as unsigned 5 bit value
                 //the first 12 bits of the index are used to select the value, the next 4 bits are used to interpolate
                 //the lookup table is stored as 0: value 0 -- 1: delta to value 1 (signed 16 bit) -- 2: value 1 -- 3: delta to value 2 (signed 16 bit)
-        advance,//advances the wave operator
+        adv,//advances the wave operator
                 //tgt is ignored if flag is 0
                 //src is the wave id (0 to 31)
                 //if flag is 1 then the wave is advanced a number of times equal to the 5 bits of tgt, interpreted as unsigned 5 bit value
@@ -183,8 +184,20 @@ namespace dsp::exec
     typedef SampleType (*usr_fnc_t)(context &ctx, const SampleType in_reg);
 
     SampleType noop(context &ctx, const SampleType in_reg);
-    static const newOpCode default_codebase[];
-    static const uint16_t default_targets[];
+    const newOpCode *get_default_codebase();
+    const uint16_t *get_default_targets();
+    const uint8_t get_default_targets_size();
+
+    enum target_ids : uint8_t
+    {
+        getSample,
+        advance,
+        attack,
+        release,
+        stop,
+        setup,
+        user, //user defined targets from here
+    };
 
     class context
     {
@@ -203,17 +216,6 @@ namespace dsp::exec
         uint8_t I_size = 0;
         uint8_t ops_size = 0;
         uint8_t jmp_tgt_size = 0;
-        
-        enum default_targets
-        {
-            getSample,
-            advance,
-            attack,
-            release,
-            stop,
-            setup,
-            user, //user defined targets from here
-        };
 
         context()
         {

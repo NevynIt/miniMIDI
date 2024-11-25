@@ -20,16 +20,29 @@ namespace dsp
 
         inline SampleType getSample() // metaprogramming virtual function - "overload" in implementation
         {
+            return 0;
         }
 
         inline void advance() // metaprogramming virtual function - "overload" in implementation
         {
         }
 
-        static SampleType op_usr0(context &ctx, const SampleType in_reg) { return in_reg; } // metaprogramming virtual function - "overload" in implementation
-        static SampleType op_usr1(context &ctx, const SampleType in_reg) { return in_reg; } // metaprogramming virtual function - "overload" in implementation
-        static SampleType op_usr2(context &ctx, const SampleType in_reg) { return in_reg; } // metaprogramming virtual function - "overload" in implementation
-        static SampleType op_usr3(context &ctx, const SampleType in_reg) { return in_reg; } // metaprogramming virtual function - "overload" in implementation
+        inline void attack() // metaprogramming virtual function - "overload" in implementation
+        {
+        }
+
+        inline void release() // metaprogramming virtual function - "overload" in implementation
+        {
+        }
+
+        inline void stop() // metaprogramming virtual function - "overload" in implementation
+        {
+        }
+
+        static SampleType op_usr0(exec::context &ctx, const SampleType in_reg) { return in_reg; } // metaprogramming virtual function - "overload" in implementation
+        static SampleType op_usr1(exec::context &ctx, const SampleType in_reg) { return in_reg; } // metaprogramming virtual function - "overload" in implementation
+        static SampleType op_usr2(exec::context &ctx, const SampleType in_reg) { return in_reg; } // metaprogramming virtual function - "overload" in implementation
+        static SampleType op_usr3(exec::context &ctx, const SampleType in_reg) { return in_reg; } // metaprogramming virtual function - "overload" in implementation
 
         //DATA
         opX ops;

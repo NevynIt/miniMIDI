@@ -22,7 +22,7 @@ namespace dsp
             ctx.setOps(ops, Logic::op_count + 1);
 
             //start with some default code that just calls the logic implementation
-            ctx.setCode(exec::default_codebase, exec::default_targets, sizeof(exec::default_targets) / sizeof(uint16_t));
+            ctx.setCode(exec::get_default_codebase(), exec::get_default_targets(), exec::get_default_targets_size());
 
             ctx.setFnc(0, Logic::op_usr0);
             ctx.setFnc(1, Logic::op_usr1);
@@ -38,27 +38,27 @@ namespace dsp
 
         inline SampleType getSample()
         {
-            return ctx.run(ctx.jmp_tgt[exec::default_targets::getSample]);
+            return ctx.run(ctx.jmp_tgt[exec::target_ids::getSample]);
         }
 
         inline void advance()
         {
-            ctx.run(ctx.jmp_tgt[exec::default_targets::advance]);
+            ctx.run(ctx.jmp_tgt[exec::target_ids::advance]);
         }
 
         virtual inline void attack() override
         {
-            ctx.run(ctx.jmp_tgt[exec::default_targets::attack]);
+            ctx.run(ctx.jmp_tgt[exec::target_ids::attack]);
         }
 
         virtual inline void release() override
         {
-            ctx.run(ctx.jmp_tgt[exec::default_targets::release]);
+            ctx.run(ctx.jmp_tgt[exec::target_ids::release]);
         }
 
         virtual inline void stop() override
         {
-            ctx.run(ctx.jmp_tgt[exec::default_targets::stop]);
+            ctx.run(ctx.jmp_tgt[exec::target_ids::stop]);
         }
 
         // deep inspection

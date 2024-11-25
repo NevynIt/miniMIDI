@@ -10,16 +10,16 @@ namespace dsp
         _name_##_wave() = default; \
     };
 
-// #define DECL_SCRIPTABLE_WAVE(_name_) \
-//     class _name_##_wave_s : public script_wave<_name_##_logic> \
-//     { \
-//     public: \
-//         _name_##_wave_s() = default; \
-//     };
+#define DECL_SCRIPTABLE_WAVE(_name_) \
+    class _name_##_wave_s : public script_wave<_name_##_logic> \
+    { \
+    public: \
+        _name_##_wave_s() = default; \
+    };
 
 #define DECL_WAVE(_name_) \
-    DECL_LOGIC_WAVE(_name_) //\
-    // DECL_SCRIPTABLE_WAVE(_name_)
+    DECL_LOGIC_WAVE(_name_) \
+    DECL_SCRIPTABLE_WAVE(_name_)
 
 #define DECL_LOGIC_WAVE_T(_name_, _templ_param_) \
     class _name_##_wave : public logic_wave<_name_##_logic<_templ_param_>> \
@@ -28,16 +28,16 @@ namespace dsp
         _name_##_wave() = default; \
     };
 
-// #define DECL_SCRIPTABLE_WAVE_T(_name_, _templ_param_) \
-//     class _name_##_wave_s : public script_wave<_name_##_logic<_templ_param_>> \
-//     { \
-//     public: \
-//         _name_##_wave_s() = default; \
-//     };
+#define DECL_SCRIPTABLE_WAVE_T(_name_, _templ_param_) \
+    class _name_##_wave_s : public script_wave<_name_##_logic<_templ_param_>> \
+    { \
+    public: \
+        _name_##_wave_s() = default; \
+    };
 
-#define DECL_WAVE_T(_name_, _templ_param_) \
-    DECL_LOGIC_WAVE_T(_name_, _templ_param_) //\
-    // DECL_SCRIPTABLE_WAVE_T(_name_, _templ_param_)
+// #define DECL_WAVE_T(_name_, _templ_param_) \
+//     DECL_LOGIC_WAVE_T(_name_, _templ_param_) //\
+//     // DECL_SCRIPTABLE_WAVE_T(_name_, _templ_param_)
 
     class noise_logic : public logic_base<op0>
     {
@@ -215,6 +215,6 @@ namespace dsp
     template <typename Base = buffer_wave>
     DECL_LOGIC_WAVE_T(formant, Base)
 
-    // template <typename Base= buffer_wave>
-    // DECL_SCRIPTABLE_WAVE_T(formant, Base)
+    template <typename Base= buffer_wave>
+    DECL_SCRIPTABLE_WAVE_T(formant, Base)
 }
