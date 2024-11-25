@@ -84,7 +84,9 @@ namespace fpm
         static_assert(std::is_base_of<descr<R::width, R::start_bit, R::is_signed>, R>::value, "R must be an instantiation of descr");
         static_assert(std::is_base_of<descr<S::width, S::start_bit, S::is_signed>, S>::value, "S must be an instantiation of descr");
 
-        if (R::width >= S::width)
+        if (R::width == S::width && R::start_bit == S::start_bit && R::is_signed == S::is_signed)
+            return s;
+        else if (R::width >= S::width)
             return shift<typename R::t, S::start_bit - R::start_bit>(s);
         else
             return shift<typename S::t, S::start_bit - R::start_bit>(s);
