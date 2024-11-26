@@ -42,7 +42,6 @@ typedef enum {
 #define BLINK_REFRESH_HZ 24
 
 // Flash Configuration
-#define FLASH_SIZE 16*1024*1024 //16MB on the current motherboard
 #define FLASH_RESERVED 4*1024*1024 //4MB reserved for code, the rest for data
 
 // SD card configuration

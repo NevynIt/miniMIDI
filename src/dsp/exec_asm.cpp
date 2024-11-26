@@ -52,21 +52,19 @@ namespace dsp::exec
         return sizeof(default_targets) / sizeof(uint16_t);
     }
 
-    SampleType context::run(const newOpCode *code, const SampleType in_reg)
+    SampleType context::run(const newOpCode *code)
     {   /* new opcode idea and opcode set
         * we have local variables as immediate registers, some of type SampleType, some of type SampleType *, and some more
         * the opcode, which is 16 bits may be followed by more 16 bits of immediate data, depending on the opcode 
-        */
-        if (code == nullptr)
-            code = this->pc;
-        
-        SampleType out = in_reg;
-        SampleType x = 0, y = 0;
+        */       
+        SampleType out;
+        SampleType x, y;
 
-        uint8_t cmd;
-        while (1) //crazy infinite loop, the code should be statically checked to avoid infinite loops
+        int max_run = 2000;
+
+        while (max_run--)
         {
-            switch (cmd)
+            switch (code->cmd)
             {
             case newcmd::load:
             {
@@ -116,38 +114,49 @@ namespace dsp::exec
                         idx = (SampleType)(code+2)->raw;
                     else
                         idx = 0;
-                    if (param.flag)
-                    {
-                        SampleType v = (SampleType)code->src;
-                        if (v & 0x10)
-                            v |= 0xFFE0;
-                        idx += v;
-                    }
-                    else switch (param.src)
-                    {
-                        case 0:
-                            idx += out;
-                            break;
-                        case 1:
-                            idx += x;
-                            break;
-                        case 2:
-                            idx += y;
-                            break;
-                        default:
-                        {
-                            if (param.src < 19)
-                                idx += S[param.src - 3];
-                            else
-                                idx += *I[param.src - 19];
-                        }
-                            break;
-                    }
 
-                    if (code->src == 1) //global buffer
-                        I[code->tgt] = globalLookup(param.id, idx);
-                    else if (code->src == 2) //relative index
-                        I[code->tgt] = I[param.id] + idx;
+                    if (code->src > 1)
+                    {
+                        if (param.flag)
+                        {
+                            SampleType v = param.src;
+                            if (v & 0x10)
+                                v |= 0xFFE0;
+                            idx += v;
+                        }
+                        else switch (param.src)
+                        {
+                            case 0:
+                                idx += out;
+                                break;
+                            case 1:
+                                idx += x;
+                                break;
+                            case 2:
+                                idx += y;
+                                break;
+                            default:
+                            {
+                                if (param.src < 19)
+                                    idx += S[param.src - 3];
+                                else
+                                    idx += *I[param.src - 19];
+                            }
+                                break;
+                        }
+                    }
+                    switch(code->src)
+                    {
+                        case 1: //global buffer
+                            I[code->tgt] = globalBuffer(param.raw, code->src >> 2) + idx;
+                            break;
+                        case 2: //global buffer with index
+                            I[code->tgt] = globalBuffer(param.raw, code->src >> 2) + idx;
+                            break;
+                        case 3: //relative index
+                            I[code->tgt] = I[param.id] + idx;
+                            break;
+                    }
                 }
 
                 if (code->flag)
@@ -662,7 +671,7 @@ namespace dsp::exec
             {
                 using tmpDescr = ::fpm::mul_result_struct<StateDescr, CoeffDescr>;
                 using ee = tmpDescr::t;
-                const StateType in = ::fpm::conv<StateDescr, SampleDescr>(code->flag ? out : in_reg);
+                const StateType in = ::fpm::conv<StateDescr, SampleDescr>(out);
                 StateType *state = (StateType *)I[code->tgt];
                 const CoeffType *coeff = (CoeffType *)I[code->src];
                 //coefficients are saved as b0, b1, b2, a1, a2

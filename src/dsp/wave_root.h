@@ -10,11 +10,22 @@ namespace dsp
     extern SampleType sample_dump; //pointers will point here if undefined
     extern SampleType *lookupBuffers[256];
 
-    inline SampleType *globalLookup(uint8_t id, SampleType index) //some of the buffers should move with the current slot position every frame (1 ms)
+    inline SampleType *globalLookup(uint16_t id, SampleType index, uint8_t page = 0) //some of the buffers should move with the current slot position every frame (1 ms)
     {
+        if (id >= 256)
+            return nullptr;
         if (lookupBuffers[id] == nullptr)
             return nullptr;
         return &lookupBuffers[id][upperBits<uint16_t, uint16_t, log2(BufferSize)>(index)];
+    }
+
+    inline SampleType *globalBuffer(uint16_t id, uint8_t page)
+    {
+        if (id >= 256)
+            return nullptr;
+        if (lookupBuffers[id] == nullptr)
+            return nullptr;
+        return lookupBuffers[id];
     }
 
     static constexpr auto indent_str = "|  ";

@@ -54,10 +54,11 @@ namespace dsp::exec
                 //src opcodes are consumed by the load command
         sel, //sets the pointer of one of the indirect registers
                 //tgt selects the indirect register, (0 to 31)
-                //src selects between wave parameter (0), global buffer (1), and relative index (2)
+                //src selects between wave parameter (0), global buffer 0-65535 with no index (1), global buffer 0-255 with index from a register (2), and relative to another indirect register, with index taken from a parameter (3)
                 //flag tells if an optional index is included, which then consumes one more opcode
                 //for wave, opcode + 1 is 8 bit for the wave id, and 8 bit for the parameter id (index)
-                //for global buffer, opcode + 1 is 8 bit for the buffer id, and 8 bit for the base index offset (the extra index is added to this)
+                //for global buffer, src>>2 is lookup page, opcode + 1 is 16 bit for the buffer id (the extra index is added to 0)
+                //for global buffer with index, src>>2 is lookup page, opcode + 1 is 8 bit for the buffer id, src and flag are used to fetch the index (the extra index is added to this)
                 //for relative index, opcode + 1 is 8 bit for the indirect register (5 used), src&flag gets the base index offset from a register, see below, (the extra index is added to this)
         mov, //moves the content of the source register to the target register
                 //tgt selects the target register
@@ -111,7 +112,7 @@ namespace dsp::exec
         biquad, //applies a biquad filter, the output register stores the result
                 //tgt is the pointer to the state variables (4 registers), must be an indirect register
                 //src is the pointer to the coefficients (5 registers), must be an indirect register
-                //if flag is 0, the input parameter is used as input, if flag is 1, the output register is used as input
+                //flag is ignored, the output register is used as input
                 //coefficients are saved as b0, b1, b2, a1, a2
                 //state variables are saved as x1, x2, y1, y2
         scale,  //scales the content of the target register with the source register
@@ -273,6 +274,6 @@ namespace dsp::exec
         {
         }
 
-        SampleType run(const newOpCode *code = nullptr, const SampleType in_reg = 0);
+        SampleType run(const newOpCode *code = nullptr);
     };
 }

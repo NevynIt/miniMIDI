@@ -127,6 +127,7 @@ set (PICO_DEFAULT_UART_TX_PIN 16)
 set (PICO_DEFAULT_UART_RX_PIN 17)
 set (PICO_DEFAULT_UART_BAUD_RATE 115200)
 set (PICO_DEFAULT_UART 0)
+set(PICO_FLASH_SIZE_BYTES 16777216)
 target_compile_definitions(miniMIDI PUBLIC
   PICO_DEFAULT_UART_TX_PIN=16
   PICO_DEFAULT_UART_RX_PIN=17
@@ -175,6 +176,7 @@ target_link_libraries(miniMIDI
         hardware_adc
         hardware_pio
         hardware_pwm
+        hardware_flash
         FatFs_SPI
         tinyusb_device
         tinyusb_board

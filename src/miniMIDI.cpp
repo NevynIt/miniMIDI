@@ -6,6 +6,7 @@
 
 void core1_entry()
 {
+    multicore_lockout_victim_init();
     mMApp.Init_c1();
 
     while (true)
@@ -17,7 +18,7 @@ void core1_entry()
 int main()
 {
     set_sys_clock_khz(CPU_KHZ, true);
-
+    multicore_lockout_victim_init();
     // Initialise the modules on core 0 first
     mMApp.Init_c0();
 
