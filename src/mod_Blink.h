@@ -12,6 +12,8 @@ public:
     void Tick() override;
 
     dsp::wave *ledWave = nullptr;
+
+    void Toggle();
 private:
     uint slice_num; // PWM slice number
 };

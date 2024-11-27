@@ -39,6 +39,7 @@ add_executable(miniMIDI
     mod_DSP.cpp
     mod_Blink.cpp
     mod_Synth.cpp
+    mod_Stdio.cpp
     embedded-cli/lib/src/embedded_cli.c
 
     # wavetables/WT_BASE.cpp

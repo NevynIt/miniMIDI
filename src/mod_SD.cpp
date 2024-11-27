@@ -88,6 +88,20 @@ bool mod_SD::ReadFile(const std::string &path, std::string &data)
     return (res == FR_OK);
 }
 
+bool mod_SD::AppendFile(const std::string &path, const void *data, unsigned int size)
+{
+    FIL file;
+    FRESULT res = f_open(&file, path.c_str(), FA_WRITE | FA_OPEN_APPEND);
+    if (res != FR_OK)
+        return false;
+
+    UINT written;
+    res = f_write(&file, data, size, &written);
+    f_close(&file);
+
+    return (res == FR_OK && written == size);
+}
+
 FF_FILE *mod_SD::fopen(const char *pcFile, const char *pcMode) { return ff_fopen(pcFile, pcMode); }
 int mod_SD::fclose(FF_FILE *pxStream) { return ff_fclose(pxStream); }
 int mod_SD::stat(const char *pcFileName, FF_Stat_t *pxStatBuffer) { return ff_stat(pcFileName, pxStatBuffer); }
@@ -200,17 +214,18 @@ extern "C" {
 // Simple file descriptor management
 static FIL open_files[10]; // Support up to 10 open files
 
-int _open(const char *pathname, int flags, ...) {
+DEOPTIMIZE
+int _open(const char *pathname, int flags, int mode) {
     if (mMApp.sd.mounted == false) {
         return -1;
     }
 
     for (int i = 0; i < 10; ++i) {
         if (open_files[i].obj.fs == nullptr) { // Changed from open_files[i].fs_type
-            va_list args;
-            va_start(args, flags);
-            FRESULT res = f_open(&open_files[i], pathname, flags);
-            va_end(args);
+            // va_list args;
+            // va_start(args, flags);
+            FRESULT res = f_open(&open_files[i], pathname, flags | FA_READ | FA_WRITE);
+            // va_end(args);
             if (res == FR_OK) {
                 return i + 3;
             }

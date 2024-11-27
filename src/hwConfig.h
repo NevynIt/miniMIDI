@@ -2,6 +2,91 @@
 #define HWCONFIG_H
 
 #include "hardware/gpio.h"
+#include <stdint.h>
+
+#define DEOPTIMIZE __attribute__((optimize("O0")))
+
+//slowly update all modules to use this instead of the defines
+struct hw_cfg
+{
+public:
+    //system configuration
+    uint32_t cpu_khz = 12*12*1000;
+    static constexpr uint32_t flash_reserved = 4*1024*1024; //keep hardcoded
+
+    //display configuration
+    static constexpr uint8_t display_addr = 0x3C; //keep hardcoded
+    static constexpr uint8_t display_width = 128; //keep hardcoded
+    static constexpr uint8_t display_height = 64; //keep hardcoded
+    static constexpr uint16_t display_bufsize = display_width*display_height/8; //keep hardcoded
+    uint8_t i2c_display = 1;
+    uint8_t display_refresh_ms = 100;
+    
+    //onboard led configuration
+    uint16_t blink_refresh_ms = 1000/24;
+
+    //joystick configuration
+    uint8_t adc_joys_x = 2;
+    uint8_t adc_joys_y = 3;
+
+    //encoder configuration
+    uint8_t encoder_count = 4;
+
+    //SD configuration
+    uint8_t spi_sd = 1;
+    uint32_t spi_sd_speed = 1000000;
+
+    //uart configuration
+    uint32_t uart_baudrate = 115200;
+
+    //rgb led configuration
+    uint16_t ledstrip_count = 23;
+    uint16_t ledstrip_refresh_ms = 1000/25;
+    uint8_t ledstrip_pio = 1;
+
+    //audio dsp configuration
+    static constexpr uint16_t dsp_sample_rate = 48000; //keep hardcoded
+    static constexpr uint8_t dsp_sample_width = 16; //keep hardcoded
+    static constexpr uint8_t dsp_buffer_ms = 1; //keep hardcoded
+    static constexpr uint8_t dsp_buffer_samples = dsp_sample_rate / 1000 * dsp_buffer_ms; //keep hardcoded
+    static constexpr uint16_t dsp_buffer_size = dsp_buffer_samples * (dsp_sample_width / 8); //keep hardcoded
+    uint8_t dsp_buffer_slots = 8;
+    uint8_t dsp_buffer_tracks = 10;
+
+    //i2s configuration
+    uint8_t i2s_pio = 1;
+    static constexpr uint8_t i2s_bits_per_channel = 32; //keep hardcoded
+    static constexpr uint8_t i2s_channels = 2; //keep hardcoded
+    static constexpr uint16_t i2s_buffer_size = dsp_buffer_samples * i2s_bits_per_channel / 8 * i2s_channels; //keep hardcoded
+    
+    //analog audio configuration
+    //TODO: add pwm and adc based audio interfaces
+
+    //gpio pins
+    uint8_t gpio_encoder_base = 0;
+    uint8_t gpio_sd_rx = 12;
+    uint8_t gpio_sd_cs = 13;
+    uint8_t gpio_sd_ck = 14;
+    uint8_t gpio_sd_tx = 15;
+    uint8_t gpio_uart_tx = 16;
+    uint8_t gpio_uart_rx = 17;
+    uint8_t gpio_audio_ck = 18;
+    uint8_t gpio_audio_ws = 19;
+    uint8_t gpio_audio_do = 20;
+    uint8_t gpio_audio_di = 21;
+    uint8_t gpio_ledstrip = 22;
+    uint8_t gpio_joys_btn = 23;
+    uint8_t gpio_blink_led = 25;
+    uint8_t gpio_display_sda = 26;
+    uint8_t gpio_display_scl = 27;
+    uint8_t gpio_joys_x = 28;
+    uint8_t gpio_joys_y = 29;
+
+    //board specific pins
+    uint8_t gpio_board_btn = 24;
+    uint8_t gpio_board_led = 25;
+    uint8_t gpio_board_rgb = 23;
+};
 
 typedef enum {
     GPIO_Enc0_A = 0,    // 0
@@ -113,8 +198,6 @@ enum DSP_Tracks {
 #else
     #define UART_BAUD_RATE 31250
 #endif
-
-#define DEOPTIMIZE __attribute__((optimize("O0")))
 
 //USB configuration mostly defined in mod_USB.cpp
 

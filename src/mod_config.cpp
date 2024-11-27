@@ -5,6 +5,8 @@
 #include "pico/multicore.h"
 #include "hwConfig.h"
 #include <cstring>
+#include "App.h"
+#include "mod_Stdio.h"
 
 #define FLASH_JEDEC_ID_CMD 0x9f
 #define FLASH_JEDEC_ID_TOTAL_BYTES 8
@@ -91,28 +93,32 @@ void mod_config::format(int blks)
 }
 
 void mod_config::Init() {
-    // Initialize configuration settings if needed
-    //block0 points to the 1MB mark of the flash memory
     cfg_start = (const block *)(FLASH_BASE_ADDR + FLASH_RESERVED);
     cfg_end = (const block *)(FLASH_BASE_ADDR + flash_size);
 
     if (FLASH_RESERVED > flash_size)
     {
-        printf("Error: The reserved space is larger than the flash memory size, no configuration available.\n");
+        LOG_ERROR("Error: The reserved space is larger than the flash memory size, no configuration available.\n");
     }
     else if (cfg_start < (void *)&__flash_binary_end)
     {
-        printf("Error: The code size exceeded the reserved space, the configuration buffer is now corrupted.\n");
+        LOG_ERROR("Error: The code size exceeded the reserved space, the configuration buffer is now corrupted.\n");
     }
     else
     {
-        printf("Flash memory size: %d\n", flash_size);
-        printf("Reserved space for code: %d\n", FLASH_RESERVED);
+        LOG_INFO("Flash memory size: %d\n", flash_size);
+        LOG_INFO("Reserved space for code: %d\n", FLASH_RESERVED);
         //walk the configuration blocks to gather statistics: how many blocks, how many bytes used, how many bytes free, how many bytes ready to be recycled, how many bytes wasted
         int used = 0, recycle = 0, wasted = 0, count_used = 0, count = 0;
         const block *b = cfg_start;
         while (b < cfg_end)
         {
+            if (b->block_size == 0) //cfg is corrupted badly, disable
+            {
+                LOG_ERROR("Error: The configuration buffer is corrupted, disabling the configuration module.\n");
+                valid = false;
+                return;
+            }
             if (b->block_size == 0xFFFF) //end of the configuration data
             {
                 break;
@@ -132,8 +138,8 @@ void mod_config::Init() {
         }
         cfg_free = b;
         int free = (uint32_t)cfg_end - (uint32_t)b;
-        printf("%d blocks in use (%d bytes)\n%d blocks ready to be recycled (%d bytes)\n", count_used, used, count-count_used, recycle);
-        printf("%d bytes wasted\n%d bytes free\n", wasted, free);
+        LOG_INFO("%d blocks in use (%d bytes)\n%d blocks ready to be recycled (%d bytes)\n", count_used, used, count-count_used, recycle);
+        LOG_INFO("%d bytes wasted\n%d bytes free\n", wasted, free);
     }
 }
 
@@ -143,76 +149,93 @@ void mod_config::Tick() {
 
 void mod_config::defrag()
 {
-    printf("Defragging the configuration memory, all pointers, live and stored will be invalid now!!\n");
+    LOG_WARNING("Defragging the configuration memory, all pointers, live and stored will be invalid now!!\n");
     uint8_t blk[4096];
     //initialise the block to 0xFFFF
     memset(blk, 0xFF, 4096);
 
-    const block *b = cfg_start;
-    uint32_t offset = 0;
-    uint32_t mem_offset = (uint32_t)cfg_start - FLASH_BASE_ADDR;
-    while (1)
-    {
-        if (b->block_size == 0xFFFF) //end of the configuration data
-        {
-            uint32_t page_end = ((uint32_t)cfg_free + 4095) & ~4095;
-            if (offset == 0)
-            {
-                printf("No blocks to keep\n");
-                //clear all the configuration memory up to the block that contains cfg_free
-                //find the end of the page just before cfg_free
-                //clear the memory
-                multicore_lockout_start_blocking();
-                uint32_t irq_status = save_and_disable_interrupts();
-                flash_range_erase(FLASH_RESERVED, page_end - (uint32_t)cfg_start);
-                restore_interrupts(irq_status);
-                multicore_lockout_end_blocking();
-                cfg_free = cfg_start;
-                return;
-            }
-            //clear the memory between mem_offset and the end of the page
-            multicore_lockout_start_blocking();
-            uint32_t irq_status = save_and_disable_interrupts();
-            flash_range_erase(mem_offset, page_end - FLASH_BASE_ADDR - mem_offset);
-            if (offset > 0)
-            {
-                //program the last block
-                flash_range_program(mem_offset, blk, 4096);
-            }
-            restore_interrupts(irq_status);
-            multicore_lockout_end_blocking();
-            return;
-        }
-        if (b->used)
-        {
-            for (int i=0; i<b->padded_size(); i++)
-            {
-                blk[offset++] = ((uint8_t *)b)[i];
-                if (offset == 4096)
-                {
-                    //erase the flash
-                    multicore_lockout_start_blocking();
-                    uint32_t irq_status = save_and_disable_interrupts();
-                    flash_range_erase(mem_offset, 4096);
-                    //write the block to the flash
-                    flash_range_program(mem_offset, blk, 4096);
-                    restore_interrupts(irq_status);
-                    multicore_lockout_end_blocking();
-                    //move to the next page
-                    mem_offset += 4096;
-                    offset = 0;
-                    //initialise the block to 0xFFFF
-                    memset(blk, 0xFF, 4096);
-                }
-            }
-        }
-        b = b->next();
-    }
+    // new idea for defrag:
+    // enabled by using the block type to tell how many pointers are included
+    // the pointers MUST be in a fixed location in the struct, I say at the start of the data block so they are word aligned guaranteed
+    // defrag does 3 passes:
+    // - pass 1, scan through the cfg memory and copy all the used blocks, as they are, to a file on the sd
+    //   keep track of the position of each
+    // - pass 2, scan through this file, and for each pointer, find the block and the offset within the block
+    //   if the block is active, replace the pointer with a pointer to the updated position of the same block
+    //   if the block is not active, copy the block at the end of the file
+    // - pass 3, find the first flash block where it differs from the temporary file
+    //   clear from there until the end, then start copying the contents from the file
+
+    // const block *b = cfg_start;
+    // uint32_t offset = 0;
+    // uint32_t mem_offset = (uint32_t)cfg_start - FLASH_BASE_ADDR;
+    // while (1)
+    // {
+    //     if (b->block_size == 0xFFFF) //end of the configuration data
+    //     {
+    //         uint32_t page_end = ((uint32_t)cfg_free + 4095) & ~4095;
+    //         if (offset == 0)
+    //         {
+    //             printf("No blocks to keep\n");
+    //             //clear all the configuration memory up to the block that contains cfg_free
+    //             //find the end of the page just before cfg_free
+    //             //clear the memory
+    //             multicore_lockout_start_blocking();
+    //             uint32_t irq_status = save_and_disable_interrupts();
+    //             flash_range_erase(FLASH_RESERVED, page_end - (uint32_t)cfg_start);
+    //             restore_interrupts(irq_status);
+    //             multicore_lockout_end_blocking();
+    //             cfg_free = cfg_start;
+    //             return;
+    //         }
+    //         //clear the memory between mem_offset and the end of the page
+    //         multicore_lockout_start_blocking();
+    //         uint32_t irq_status = save_and_disable_interrupts();
+    //         flash_range_erase(mem_offset, page_end - FLASH_BASE_ADDR - mem_offset);
+    //         if (offset > 0)
+    //         {
+    //             //program the last block
+    //             flash_range_program(mem_offset, blk, 4096);
+    //         }
+    //         restore_interrupts(irq_status);
+    //         multicore_lockout_end_blocking();
+    //         return;
+    //     }
+    //     if (b->used)
+    //     {
+    //         for (int i=0; i<b->padded_size(); i++)
+    //         {
+    //             blk[offset++] = ((uint8_t *)b)[i];
+    //             if (offset == 4096)
+    //             {
+    //                 //erase the flash
+    //                 multicore_lockout_start_blocking();
+    //                 uint32_t irq_status = save_and_disable_interrupts();
+    //                 flash_range_erase(mem_offset, 4096);
+    //                 //write the block to the flash
+    //                 flash_range_program(mem_offset, blk, 4096);
+    //                 restore_interrupts(irq_status);
+    //                 multicore_lockout_end_blocking();
+    //                 //move to the next page
+    //                 mem_offset += 4096;
+    //                 offset = 0;
+    //                 //initialise the block to 0xFFFF
+    //                 memset(blk, 0xFF, 4096);
+    //             }
+    //         }
+    //     }
+    //     b = b->next();
+    // }
 }
 
 DEOPTIMIZE
 const block *mod_config::find(uint8_t type, const char *name) const
 {
+    if (!valid)
+    {
+        return nullptr;
+    }
+
     //walk the configuration blocks to find the block with the given name and type
     const block *b = cfg_start;
     while (b < cfg_free)
@@ -250,30 +273,33 @@ void recycle(const block *b)
     multicore_lockout_end_blocking();
 }
 
-template<typename T>
-DEOPTIMIZE T *mod_config::SetConfig(const std::string& key, const T& value) {
-    const block *b = find(getClassID<T>(), key.c_str());
+const void *mod_config::SetConfig_impl(const std::string& key, uint8_t id, const void *value, uint16_t size) {
+    if (!valid)
+    {
+        return nullptr;
+    }
+
+    const block *b = find(id, key.c_str());
     if (b)
     {
         //check if the data is the same
-        if (memcmp(b->data(), &value, sizeof(T)) == 0)
+        if (memcmp(b->data(), value, size) == 0)
         {
             //nothing new is stored, returns the address of the data (not the block)
-            return (T *)b->data();
+            return b->data();
         }
     }
     block new_block;
-    new_block.set(sizeof(T), key.size()+1, getClassID<T>());
+    new_block.set(size, key.size() + 1, id);
 
     //check if there is enough space for the new block
     if (cfg_end - cfg_free < new_block.padded_size())
     {
         //compact the flash memory
         defrag();
-        if (cfg_end - cfg_free < sizeof(block) + key.size() + sizeof(T))
+        if (cfg_end - cfg_free < sizeof(block) + key.size() + 1 + size)
         {
-            printf("No space left in the configuration memory");
-            __breakpoint();
+            LOG_PANIC("No space left in the configuration memory");
             return nullptr;
         }
     }
@@ -289,7 +315,7 @@ DEOPTIMIZE T *mod_config::SetConfig(const std::string& key, const T& value) {
     memcpy(page + offset, &new_block, sizeof(block));
     offset += sizeof(block);
     const char *name = key.c_str();
-    for (int i = 0; i < key.size()+1; i++)
+    for (int i = 0; i < key.size() + 1; i++)
     {
         if (offset >= 256)
         {
@@ -305,8 +331,8 @@ DEOPTIMIZE T *mod_config::SetConfig(const std::string& key, const T& value) {
         }
         page[offset++] = name[i];
     }
-    offset += new_block.padded_name_size() - (key.size()+1);
-    for (int i = 0; i < sizeof(T); i++)
+    offset += new_block.padded_name_size() - (key.size() + 1);
+    for (int i = 0; i < size; i++)
     {
         if (offset >= 256)
         {
@@ -320,7 +346,7 @@ DEOPTIMIZE T *mod_config::SetConfig(const std::string& key, const T& value) {
             page_start += 256;
             offset = 0;
         }
-        page[offset++] = ((uint8_t *)&value)[i];
+        page[offset++] = ((uint8_t *)value)[i];
     }
     if (offset > 0)
     {
@@ -338,17 +364,26 @@ DEOPTIMIZE T *mod_config::SetConfig(const std::string& key, const T& value) {
     }
     auto ptr = cfg_free->data();
     cfg_free = cfg_free->next();
-    return (T *)ptr;
+    return ptr;
 }
 
-template<typename T>
-T *mod_config::GetConfig(const std::string& key) const {
-    const block *b = find(getClassID<T>(), key.c_str());
+const void *mod_config::GetConfig_impl(const std::string& key, uint8_t id) const {
+    if (!valid)
+    {
+        return nullptr;
+    }
+
+    const block *b = find(id, key.c_str());
     if (b)
     {
-        return (T *)b->data();
+        return b->data();
     }
     return nullptr;
+}
+
+void mod_config::load()
+{
+
 }
 
 // Logic to save data in the flash memory:

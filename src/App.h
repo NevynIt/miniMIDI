@@ -18,9 +18,11 @@
 #include "mod_DSP.h"
 #include "mod_Synth.h"
 #include "mod_Blink.h"
+#include "mod_Stdio.h"
 #include <vector>
 #include <memory>
 #include "hardware/timer.h"
+#include "hwconfig.h"
 
 #define mMApp (App::GetInstance())
 
@@ -54,7 +56,8 @@ public:
     static inline App& GetInstance() { return appInstance; }
 
     void Init() override;
-    void Tick() override;
+
+    int main();
 
     void Init_c0();
     void Init_c1();
@@ -77,7 +80,9 @@ public:
     mod_USB_Audio usbAudio;
     mod_USB_MIDI usbMidi;
     mod_USB_UART usbUart;
+    mod_Stdio stdio;
 
+    hw_cfg *hwConfig = nullptr;
 private:
     App() = default; // Private constructor for singleton pattern
     static App appInstance;

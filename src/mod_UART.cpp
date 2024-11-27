@@ -7,14 +7,35 @@
 #include "pico/stdio/driver.h"
 #include "lua.hpp"
 
-extern "C" {
-    void stdio_uart_init_full(struct uart_inst *uart, uint baud_rate, int tx_pin, int rx_pin);
-}
-
 lua_State *L;
 
 void writeChar(EmbeddedCli *cli, char c) {
     uart_putc(UART_INST, c);
+}
+
+void handleBootlogCommand(EmbeddedCli *cli, char *args, void *context) {
+    if (strcmp(args, "print") == 0) {
+        FILE *file = fopen("bootlog.txt", "r");
+        if (file == nullptr) {
+            printf("Error: cannot open bootlog.txt\n");
+            return;
+        }
+
+        char buffer[256];
+        while (fgets(buffer, sizeof(buffer), file) != nullptr) {
+            printf("%s", buffer);
+        }
+
+        fclose(file);
+    } else if (strcmp(args, "delete") == 0) {
+        if (remove("bootlog.txt") == 0) {
+            printf("bootlog.txt deleted successfully\n");
+        } else {
+            printf("Error: cannot delete bootlog.txt\n");
+        }
+    } else {
+        printf("Invalid argument for bootlog command\n");
+    }
 }
 
 void handleCliCommand(EmbeddedCli *cli, CliCommand *command) {
@@ -43,10 +64,6 @@ namespace uart_stdio
     char linebuffer[1024];
     int linebuffer_pos = 0;
 
-    void out_flush(void)
-    {
-    }
-
     void out_chars(const char *buf, int len)
     {
         for (int i = 0; i < len; i++)
@@ -61,33 +78,68 @@ namespace uart_stdio
                 linebuffer[linebuffer_pos++] = buf[i];
         }
     }
-
-    stdio_driver_t mM_uart = {
-        .out_chars = out_chars,
-        .out_flush = out_flush,
-        .in_chars = nullptr,
-        .set_chars_available_callback = nullptr,
-        .next = nullptr,
-    };
 }
 
 void mod_UART::out(const void *buffer, size_t count) {
     uart_stdio::out_chars((const char *)buffer, count);
 }
 
+struct UartPinMapping {
+    int tx_pin;
+    int rx_pin;
+    uart_inst_t *uart_instance;
+};
+
+static const UartPinMapping uart_pin_map[] = {
+    {0, 1, uart0},
+    {4, 5, uart1},
+    {8, 9, uart1},
+    {12, 13, uart0},
+    {16, 17, uart0},
+    {20, 21, uart1},
+    {24, 25, uart1},
+    {28, 29, uart0}
+};
+
+uart_inst_t* get_uart_instance(int tx_pin, int rx_pin) {
+    for (const auto& mapping : uart_pin_map) {
+        if (mapping.tx_pin == tx_pin && mapping.rx_pin == rx_pin) {
+            return mapping.uart_instance;
+        }
+    }
+    return nullptr;
+}
+
 void mod_UART::Init() {
     // Initialize UART
-    gpio_set_function(GPIO_UART_TX, GPIO_FUNC_UART);
-    gpio_set_function(GPIO_UART_RX, GPIO_FUNC_UART);
-    uart_init(UART_INST, UART_BAUD_RATE);
+    gpio_set_function(mMApp.hwConfig->gpio_uart_tx, GPIO_FUNC_UART);
+    gpio_set_function(mMApp.hwConfig->gpio_uart_rx, GPIO_FUNC_UART);
+
+    // Determine UART instance from pin numbers
+    uart_inst_t *uart_instance = get_uart_instance(mMApp.hwConfig->gpio_uart_tx, mMApp.hwConfig->gpio_uart_rx);
+
+    if (uart_instance == nullptr) {
+        LOG_ERROR("Error: Invalid UART pin configuration\n");
+        return;
+    }
+
+    uart_init(uart_instance, mMApp.hwConfig->uart_baudrate);
 
     // Initialize embedded CLI
     cli = embeddedCliNewDefault();
     cli->writeChar = writeChar;
     cli->onCommand = handleCliCommand;
 
-    // register UART stdio driver
-    stdio_set_driver_enabled(&uart_stdio::mM_uart, true);
+    embeddedCliAddBinding(cli, {
+        "bootlog",
+        "Prints or deletes the bootlog from the SD card",
+        false,
+        nullptr,
+        handleBootlogCommand
+    });
+
+    // register UART stdio callback
+    mMApp.stdio.registerPrintCallback(uart_stdio::out_chars, mod_Stdio::debug);
     printf("\n\n\nUART STDIO initialized\n");
 
     // Initialize Lua
@@ -98,10 +150,9 @@ void mod_UART::Init() {
 
     // Load Lua script
     if (luaL_dofile(L, "script.lua") != LUA_OK) {
-        printf("Error loading Lua script: %s\n", lua_tostring(L, -1));
+        LOG_WARNING("Warning: cannot load Lua script: %s\n", lua_tostring(L, -1));
         lua_pop(L, 1);
     }
-
 }
 
 void mod_UART::Tick() {

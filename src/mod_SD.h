@@ -17,6 +17,7 @@ public:
     bool Unmount();
     bool WriteFile(const std::string &path, const void *data, unsigned int size);
     bool ReadFile(const std::string& path, std::string& data);
+    bool AppendFile(const std::string &path, const void *data, unsigned int size);
 
     FF_FILE *fopen(const char *pcFile, const char *pcMode);
     int fclose(FF_FILE *pxStream);
