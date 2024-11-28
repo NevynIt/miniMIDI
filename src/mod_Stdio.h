@@ -57,9 +57,17 @@ public:
                 for (auto &fn : panicCallbacks)
                     fn();
                 __breakpoint();
-                exit(1);
+                if (exitOnError)
+                    exit(1);
                 break;
             case LogLevel::error:
+                if (exitOnError)
+                {
+                    for (auto &fn : panicCallbacks)
+                        fn();
+                    __breakpoint();
+                    exit(1);
+                }
                 __breakpoint();
                 break;
         }
@@ -78,6 +86,8 @@ public:
 
     void registerPanicCallback(panic_fn fn);
     void unregisterPanicCallback(panic_fn fn);
+
+    bool exitOnError = false;
 
 private:
     LogLevel level[2] = {LogLevel::info, LogLevel::info}; //one per core

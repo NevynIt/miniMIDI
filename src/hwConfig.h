@@ -4,7 +4,12 @@
 #include "hardware/gpio.h"
 #include <stdint.h>
 
-#define DEOPTIMIZE __attribute__((optimize("O0")))
+#define STRINGIFY(x) #x
+#define TOSTRING(x) STRINGIFY(x)
+
+#define DEOPTIMIZE \
+    _Pragma(TOSTRING(message("Deoptimizing here"))) \
+    __attribute__((optimize("O0")))
 
 //slowly update all modules to use this instead of the defines
 struct hw_cfg

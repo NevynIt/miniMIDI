@@ -5,7 +5,6 @@
 #include "stdio.h"
 #include "pico/sem.h"
 
-// Define the static instance of App
 App App::appInstance;
 semaphore_t startup_sem;
 
@@ -13,7 +12,6 @@ void core1_entry()
 {
     multicore_lockout_victim_init();
 
-    sem_acquire_blocking(&startup_sem);
     mMApp.Init_c1();
 
     while (true)
@@ -24,6 +22,7 @@ void core1_entry()
 
 int App::main()
 {
+    // prevent core 1 from running until core 0 is ready
     sem_init(&startup_sem, 0, 1);
 
     multicore_launch_core1(core1_entry);
@@ -45,12 +44,12 @@ void caching_print_fn(const char *buf, int len)
 
 void flush_cache()
 {
-    startup_stdio_cache->append("-----End of bootlog\n");
     mMApp.stdio.unregisterPrintCallback(caching_print_fn, mod_Stdio::debug);
     mMApp.stdio.unregisterPanicCallback(flush_cache);
+    startup_stdio_cache->append("-----End of bootlog\n");
 
     if (mMApp.sd.mounted)
-        mMApp.sd.AppendFile("bootlog.txt", startup_stdio_cache->c_str(), startup_stdio_cache->length());
+        mMApp.sd.WriteFile("bootlog.txt", startup_stdio_cache->c_str(), startup_stdio_cache->length());
     else
         LOG_DEBUG(startup_stdio_cache->c_str());
     delete startup_stdio_cache;
@@ -61,7 +60,7 @@ void App::Init()
     // Initialize the modules on core 0
     Init_c0();
 
-    //let core 1 initialise the modules and run
+    //let core 1 initialise the modules
     sem_release(&startup_sem);
 
     //wait for core 1 to finish initialisation
@@ -96,18 +95,29 @@ void App::Init_c0()
     blink.Init();
     uart.Init();
     //done up to here
-    display.Init();
-    //activate display stdio output
-    ledStrip.Init();
-    sd.Init();
-    //activate bootlog stdio output
-    sequencer.Init();
-    //lua.Init();
-    config.load();
-    encoders.Init();
-    joys.Init();
-    usbUart.Init();
-    usbMidi.Init();
+
+    //lower priority
+    display.Init(); //todo: reading configuration information from flash and doing a splash screen
+    //activate display stdio output //todo
+    ledStrip.Init(); //todo: reading configuration information from flash and doing a visual effect on the leds
+    sd.Init(); //todo: reading configuration information from flash
+    sequencer.Init(); //todo: everything, the module is empty at the moment
+
+    //medium priority
+    //lua.Init(); //todo: separate lua from uart, and make it a module
+    //lua.load_config(); //todo: run the configuration scripts from the sd, and update the configuration as needed
+
+    //lower priority
+    encoders.Init(); //todo: reading configuration information from flash
+    joys.Init(); //todo: reading configuration information from flash, and merge with the encoders in a single module
+    usbUart.Init(); //todo: everything
+    usbMidi.Init(); //todo: everything
+
+    //next priority
+    //usbMSC.Init(); //todo: everything from scratch, must update the sd module first to access r/w the blocks one by one
+                     //present one readonly drive with an image of the flash memory, separated between the program and the configuration
+                     //present one read/write drive with the sd card
+                     //it should be pretty easy actually
 
     // non time critical modules run on core 0
     std::vector<Module*> &mods =  modules_c0;
@@ -123,18 +133,23 @@ void App::Init_c0()
     mods.push_back(&joys);
     mods.push_back(&usbUart);
     mods.push_back(&usbMidi);
+    // modules_c0.push_back(&usbMSC);
 }
 
 void App::Init_c1() {
-    // Initialize the modules on core 1
-    dsp.Init();
-    //adc.Init();
-    //pwm.Init();
-    //i2s.Init();
-    synth.Init();
-    usbAudio.Init();
-    usb.Init();
+    //wait for core 0 to finish initialisation
+    sem_acquire_blocking(&startup_sem);
 
+    // Initialize the modules on core 1
+    dsp.Init(); //todo: a lot, including testing and finalising the use of the new asm and processing buffers with it
+    //adc.Init(); //todo: everything from scratch
+    //pwm.Init(); //todo: everything from scratch
+    //i2s.Init(); //todo: everything from scratch
+    synth.Init(); //todo: moving from wave generators to instruments and linking to midi
+    usbAudio.Init(); //todo: testing the input interface and implementing the volume control to the onboard speaker?
+    usb.Init(); //add support for the usb drive interface usb configuration
+
+    // let core 0 run
     sem_release(&startup_sem);
 
     // time critical modules run on core 1

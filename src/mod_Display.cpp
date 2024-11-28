@@ -26,6 +26,7 @@ typedef enum
     SET_CHARGE_PUMP = 0x8D
 } ssd1306_command_t;
 
+// move to config parameter, remove from codebase
 const uint8_t InitCMDS[] = {
     SET_DISP,
     // timing and driving scheme

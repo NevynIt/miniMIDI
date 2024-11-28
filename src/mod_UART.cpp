@@ -9,26 +9,28 @@
 
 lua_State *L;
 
+uart_inst_t *uart_instance;
+
 void writeChar(EmbeddedCli *cli, char c) {
-    uart_putc(UART_INST, c);
+    uart_putc(uart_instance, c);
 }
 
 void handleBootlogCommand(EmbeddedCli *cli, char *args, void *context) {
     if (strcmp(args, "print") == 0) {
-        FILE *file = fopen("bootlog.txt", "r");
+        FIL *file = mMApp.sd.fopen("bootlog.txt", "r");
         if (file == nullptr) {
             printf("Error: cannot open bootlog.txt\n");
             return;
         }
 
         char buffer[256];
-        while (fgets(buffer, sizeof(buffer), file) != nullptr) {
+        while (mMApp.sd.fgets(buffer, sizeof(buffer), file) != nullptr) {
             printf("%s", buffer);
         }
 
-        fclose(file);
+        mMApp.sd.fclose(file);
     } else if (strcmp(args, "delete") == 0) {
-        if (remove("bootlog.txt") == 0) {
+        if (mMApp.sd.remove("bootlog.txt") == 0) {
             printf("bootlog.txt deleted successfully\n");
         } else {
             printf("Error: cannot delete bootlog.txt\n");
@@ -116,7 +118,7 @@ void mod_UART::Init() {
     gpio_set_function(mMApp.hwConfig->gpio_uart_rx, GPIO_FUNC_UART);
 
     // Determine UART instance from pin numbers
-    uart_inst_t *uart_instance = get_uart_instance(mMApp.hwConfig->gpio_uart_tx, mMApp.hwConfig->gpio_uart_rx);
+    uart_instance = get_uart_instance(mMApp.hwConfig->gpio_uart_tx, mMApp.hwConfig->gpio_uart_rx);
 
     if (uart_instance == nullptr) {
         LOG_ERROR("Error: Invalid UART pin configuration\n");
@@ -156,8 +158,8 @@ void mod_UART::Init() {
 }
 
 void mod_UART::Tick() {
-    while (uart_is_readable(UART_INST)) {
-        uint8_t c = uart_getc(UART_INST);
+    while (uart_is_readable(uart_instance)) {
+        uint8_t c = uart_getc(uart_instance);
         embeddedCliReceiveChar(cli, c);
     }
     embeddedCliProcess(cli);

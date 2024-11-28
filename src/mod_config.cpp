@@ -13,6 +13,9 @@
 
 uint32_t flash_size;
 
+static_assert(sizeof(void *) == 4, "This code is for 32-bit pointers only");
+#pragma message("mod_config code is very specific for the rp2040")
+
 static void __attribute__((constructor)) getMemSize(void) {
     uint8_t txbuf[FLASH_JEDEC_ID_TOTAL_BYTES] = {0};
     uint8_t rxbuf[FLASH_JEDEC_ID_TOTAL_BYTES] = {0};
@@ -71,7 +74,10 @@ public:
 extern uint8_t __flash_binary_start;
 extern uint8_t __flash_binary_end;
 
-#define FLASH_BASE_ADDR 0x10000000  // Base address of the flash memory
+#define FLASH_BASE_ADDR_XIP    0x10000000  // Base address of the flash memory for XIP
+#define FLASH_BASE_ADDR_CACHED 0x60000000  // Base address of the flash memory, cached access
+#define FLASH_BASE_ADDR_UNCACHED 0x80000000  // Base address of the flash memory, cache disabled access
+#define FLASH_BASE_ADDR FLASH_BASE_ADDR_CACHED
 
 void mod_config::format(int blks)
 {
@@ -154,15 +160,16 @@ void mod_config::defrag()
     //initialise the block to 0xFFFF
     memset(blk, 0xFF, 4096);
 
+    LOG_PANIC("Defrag not implemented yet\n");
+
     // new idea for defrag:
-    // enabled by using the block type to tell how many pointers are included
-    // the pointers MUST be in a fixed location in the struct, I say at the start of the data block so they are word aligned guaranteed
     // defrag does 3 passes:
     // - pass 1, scan through the cfg memory and copy all the used blocks, as they are, to a file on the sd
     //   keep track of the position of each
     // - pass 2, scan through this file, and for each pointer, find the block and the offset within the block
     //   if the block is active, replace the pointer with a pointer to the updated position of the same block
-    //   if the block is not active, copy the block at the end of the file
+    //   if the block is not active, copy the inactive block at the end of the file (to be processed as well)
+    //      and replace the pointer with a pointer to the new position of the inactive block
     // - pass 3, find the first flash block where it differs from the temporary file
     //   clear from there until the end, then start copying the contents from the file
 
@@ -228,7 +235,6 @@ void mod_config::defrag()
     // }
 }
 
-DEOPTIMIZE
 const block *mod_config::find(uint8_t type, const char *name) const
 {
     if (!valid)
@@ -253,7 +259,6 @@ const block *mod_config::find(uint8_t type, const char *name) const
     return nullptr;
 }
 
-DEOPTIMIZE
 void recycle(const block *b)
 {
     uint8_t page[256];
@@ -273,33 +278,234 @@ void recycle(const block *b)
     multicore_lockout_end_blocking();
 }
 
-const void *mod_config::SetConfig_impl(const std::string& key, uint8_t id, const void *value, uint16_t size) {
+typedef union
+{
+    void *ptr;
+    uint32_t word;
+    struct __packed 
+    {
+        uint8_t type: 4, user_id: 4;
+        uint8_t skip;
+        uint16_t user_data;
+    };
+} block_word;
+
+enum ptr_action
+{
+    ptr_action_copy,
+    ptr_action_update,
+    ptr_action_warn,
+    ptr_action_error,
+    ptr_action_skiptag,
+};
+
+ptr_action check_pointer(const void *ptr, const void *src, uint16_t size, uint8_t id)
+{
+    // cfg_start = (const block *)(FLASH_BASE_ADDR + FLASH_RESERVED);
+    // cfg_end = (const block *)(FLASH_BASE_ADDR + flash_size);
+
+    const block_word *w = (const block_word *)&ptr;
+    switch (w->type)
+    {
+    case 0x0: //null and boot rom
+    case 0x4: //peripherals
+    case 0x5: //peripherals
+    case 0xE: //ARM PPB
+        return ptr_action_copy;
+    case 0x1: //flash XIP
+        if (w->word >= (FLASH_BASE_ADDR_XIP + FLASH_RESERVED) && w->word < (FLASH_BASE_ADDR_XIP + flash_size))
+            return ptr_action_update;
+        else
+            return ptr_action_error;
+    case 0x2: //ram
+        if (w->ptr >= src && w->ptr < src + size)
+            return ptr_action_update;
+        else
+            return ptr_action_error;
+    case 0x6: //flash XIP cached
+        if (w->word >= (FLASH_BASE_ADDR_CACHED + FLASH_RESERVED) && w->word < (FLASH_BASE_ADDR_CACHED + flash_size))
+            return ptr_action_copy;
+        else
+            return ptr_action_error;
+    case 0xF: //skip tag
+        return ptr_action_skiptag;
+    default: //invalid
+        return ptr_action_warn;
+    }
+}
+
+void update_pointer(void **ptr, const void *src, const void *dst, uint16_t size, uint8_t id)
+{
+    block_word *w = (block_word *)(*ptr);
+    switch (w->type)
+    {
+    case 0x1: //flash XIP
+        w->word += FLASH_BASE_ADDR_CACHED - FLASH_BASE_ADDR_XIP;
+        break;
+    case 0x2: //ram
+        w->ptr = (void *)((uint32_t)w->ptr - (uint32_t)src + (uint32_t)dst);
+        break;
+    }
+}
+
+const void *fix_pointers(const void *src, const void *dst, uint16_t size, uint8_t id, const char *key)
+{
+    switch (id)
+    {
+        case cfgNoPointers:
+            return src;
+        case cfgPointers:
+        {
+            //check if there is any pointer to fix or invalid pointers
+            bool doupdate = false;
+            for (int i = 0; i < size / 4; i++)
+            {
+                ptr_action action = check_pointer(((const void **)src)[i], src, size, id);
+                switch (action)
+                {
+                case ptr_action_copy:
+                    break;
+                case ptr_action_update:
+                    doupdate = true;
+                    break;
+                case ptr_action_warn:
+                    LOG_WARNING("Warning: Invalid pointer in %s, word %d, %p\n", key, i, ((const void **)src)[i]);
+                    break;
+                case ptr_action_error:
+                    LOG_ERROR("Error: Invalid pointer in %s, word %d, %p\n", key, i, ((const void **)src)[i]);
+                    return nullptr;
+                case ptr_action_skiptag:
+                    LOG_WARNING("Warning: Invalid skiptag in %s, word %d\n", key, i);
+                    break;
+                }
+            }
+            if (doupdate)
+            {
+                void *new_data = malloc(size);
+                if (new_data == nullptr)
+                {
+                    LOG_ERROR("Error: Not enough memory to fix the pointers in %s\n", key);
+                    return nullptr;
+                }
+                memcpy(new_data, src, size);
+                for (int i = 0; i < size / 4; i++)
+                {
+                    update_pointer(&((void **)new_data)[i], src, new_data, size, id);
+                }
+                return new_data;
+            }
+            else
+            {
+                return src;
+            }
+        }
+        case cfgTagged:
+        {
+            bool do_update = false;
+            //check if there is any pointer to fix or invalid pointers
+            for (int i = 0; i < size / 4; i++)
+            {
+                ptr_action action = check_pointer(((const void **)src)[i], src, size, id);
+                switch (action)
+                {
+                case ptr_action_copy:
+                    break;
+                case ptr_action_update:
+                    do_update = true;
+                    break;
+                case ptr_action_warn:
+                    LOG_WARNING("Warning: Invalid pointer in %s, word %d, %p\n", key, i, ((const void **)src)[i]);
+                    break;
+                case ptr_action_error:
+                    LOG_ERROR("Error: Invalid pointer in %s, word %d, %p\n", key, i, ((const void **)src)[i]);
+                    return nullptr;
+                case ptr_action_skiptag:
+                {
+                    auto j = i; //store to log the word number if needed
+                    i += ((const block_word *)src)[i].skip + 1;
+                    if (i >= size / 4)
+                    {
+                        LOG_ERROR("Error: Overflow skiptag in %s, word %d\n", key, j);
+                        return nullptr;
+                    }
+                }
+                    break;
+                }
+            }
+            if (do_update)
+            {
+                void *new_data = malloc(size);
+                if (new_data == nullptr)
+                {
+                    LOG_ERROR("Error: Not enough memory to fix the pointers in %s\n", key);
+                    return nullptr;
+                }
+                memcpy(new_data, src, size);
+                for (int i = 0; i < size / 4; i++)
+                {
+                    const block_word *w = (const block_word *)&((const void **)new_data)[i];
+                    if (w->type == 0xF)
+                    {
+                        i += w->skip;
+                    }
+                    else
+                        update_pointer(&((void **)new_data)[i], src, new_data, size, id);
+                }
+                return new_data;
+            }
+            else
+            {
+                return src;
+            }
+        }
+        default:
+            LOG_ERROR("Error: Invalid id %d in %s\n", id, key);
+            break;
+    }
+}
+
+const void *mod_config::SetConfig(const char *key, uint8_t id, const void *src, uint16_t size) {
     if (!valid)
     {
         return nullptr;
     }
 
-    const block *b = find(id, key.c_str());
+    const void *value = src;
+
+    const block *b = find(id, key);
     if (b)
     {
+        value = fix_pointers(src, b->data(), size, id, key);
+        if (value == nullptr)
+        {
+            return nullptr;
+        }
         //check if the data is the same
         if (memcmp(b->data(), value, size) == 0)
         {
             //nothing new is stored, returns the address of the data (not the block)
+            if (value != src) free((void *)value);
             return b->data();
         }
+        //free this copy, as the block will go somewhere else and dst is different
+        if (value != src) free((void *)value);
+        value = src;
     }
+    //the block will go to the address at cfg_free->data()
+    value = fix_pointers(value, cfg_free->data(), size, id, key);
     block new_block;
-    new_block.set(size, key.size() + 1, id);
+    auto key_size = strlen(key) + 1;
+    new_block.set(size, key_size, id);
 
     //check if there is enough space for the new block
     if (cfg_end - cfg_free < new_block.padded_size())
     {
         //compact the flash memory
         defrag();
-        if (cfg_end - cfg_free < sizeof(block) + key.size() + 1 + size)
+        if (cfg_end - cfg_free < sizeof(block) + key_size + size)
         {
             LOG_PANIC("No space left in the configuration memory");
+            if (value != src) free((void *)value);
             return nullptr;
         }
     }
@@ -314,8 +520,7 @@ const void *mod_config::SetConfig_impl(const std::string& key, uint8_t id, const
     //copy the new block to the buffer (there is always space, as blocks are always aligned to 4 bytes, and they are 4 bytes long)
     memcpy(page + offset, &new_block, sizeof(block));
     offset += sizeof(block);
-    const char *name = key.c_str();
-    for (int i = 0; i < key.size() + 1; i++)
+    for (int i = 0; i < key_size; i++)
     {
         if (offset >= 256)
         {
@@ -329,9 +534,9 @@ const void *mod_config::SetConfig_impl(const std::string& key, uint8_t id, const
             page_start += 256;
             offset = 0;
         }
-        page[offset++] = name[i];
+        page[offset++] = key[i];
     }
-    offset += new_block.padded_name_size() - (key.size() + 1);
+    offset += new_block.padded_name_size() - key_size;
     for (int i = 0; i < size; i++)
     {
         if (offset >= 256)
@@ -361,29 +566,32 @@ const void *mod_config::SetConfig_impl(const std::string& key, uint8_t id, const
     if (b)
     { // invalidate the old data
         recycle(b);
+        for (b = find(id, key); b != nullptr && b != cfg_free; b = find(id, key))
+            recycle(b);
+        if (!b)
+        {
+            LOG_ERROR("Error: The block was not stored: %s\n", key);
+            return nullptr;
+        }
     }
     auto ptr = cfg_free->data();
     cfg_free = cfg_free->next();
+    if (value != src) free((void *)value);
     return ptr;
 }
 
-const void *mod_config::GetConfig_impl(const std::string& key, uint8_t id) const {
+const void *mod_config::GetConfig(const char *key, uint8_t id) const {
     if (!valid)
     {
         return nullptr;
     }
 
-    const block *b = find(id, key.c_str());
+    const block *b = find(id, key);
     if (b)
     {
         return b->data();
     }
     return nullptr;
-}
-
-void mod_config::load()
-{
-
 }
 
 // Logic to save data in the flash memory:
@@ -393,7 +601,7 @@ void mod_config::load()
 // each block is composed by:
 // - 16 bit of block size (S)
 // - 1 bit of block recycle flag (1 = in use, 0 = memory ready to be recycled)
-// - 7 bits of block type 
+// - 7 bits of block class id 
 // - 8 bit of block name size (N)
 // - N bytes for the name (null terminated)
 // - S-N-4 bytes of data
