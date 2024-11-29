@@ -107,6 +107,18 @@ namespace dsp::exec
                 { //wave parameter
                     I[code->tgt] = ops[param.id]->getParam(param.index);
                 }
+                else if (code->src == 4)
+                { //literal pointer
+                    I[code->tgt] = (SampleType *)(code+1)->raw;
+                    int16_t idx;
+                    if (code->flag)
+                        idx = (SampleType)(code+3)->raw;
+                    else
+                        idx = 0;
+                    
+                    I[code->tgt] = *((SampleType **)(code+1)) + idx; //this really needs to be tested!
+                    code++; //one extra word is consumed in this case
+                }
                 else
                 {
                     int16_t idx;

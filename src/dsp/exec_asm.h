@@ -48,18 +48,24 @@ namespace dsp::exec
         // basic commands
         load, //loads a literal into an immediate register
                 //tgt selects the register
-                //src is the number of literals to load in sequence
+                //src is the number of literals to load in sequence, 0 makes no sense but is valid
                 //flag is ignored
                 //opcode + 1 is the first literal, and so on
                 //src opcodes are consumed by the load command
         sel, //sets the pointer of one of the indirect registers
                 //tgt selects the indirect register, (0 to 31)
-                //src selects between wave parameter (0), global buffer 0-65535 with no index (1), global buffer 0-255 with index from a register (2), and relative to another indirect register, with index taken from a parameter (3)
+                //src selects between
+                        // wave parameter (0)
+                        // global buffer 0-65535 with no index (1)
+                        // global buffer 0-255 with index from a register (2)
+                        // relative to another indirect register, with index taken from a parameter (3)
+                        // literal pointer (4)
                 //flag tells if an optional index is included, which then consumes one more opcode
                 //for wave, opcode + 1 is 8 bit for the wave id, and 8 bit for the parameter id (index)
-                //for global buffer, src>>2 is lookup page, opcode + 1 is 16 bit for the buffer id (the extra index is added to 0)
-                //for global buffer with index, src>>2 is lookup page, opcode + 1 is 8 bit for the buffer id, src and flag are used to fetch the index (the extra index is added to this)
+                //for global buffer, src>>3 is lookup page, opcode + 1 is 16 bit for the buffer id (the extra index is added to 0)
+                //for global buffer with index, src>>3 is lookup page, opcode + 1 is 8 bit for the buffer id, src and flag are used to fetch the index (the extra index is added to this)
                 //for relative index, opcode + 1 is 8 bit for the indirect register (5 used), src&flag gets the base index offset from a register, see below, (the extra index is added to this)
+                //for literal pointer, opcode + 1 and opcode + 2 are the 32 bit pointer, the extra index is added to this pointer
         mov, //moves the content of the source register to the target register
                 //tgt selects the target register
                 //src selects the source register
