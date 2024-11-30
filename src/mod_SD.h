@@ -15,11 +15,12 @@ public:
 
     bool Mount(); //for use by the microcontroller application
     bool Unmount();
+    bool Mounted() { return open_count>0; }
 
-    //card must be mounted for these to work
-    bool WriteFile(const std::string &path, const void *data, unsigned int size);
-    bool ReadFile(const std::string& path, std::string& data);
-    bool AppendFile(const std::string &path, const void *data, unsigned int size);
+    //these fail if the card is locked
+    bool WriteFile(const char *path, const void *data, unsigned int size);
+    const std::string ReadFile(const char *path);
+    bool AppendFile(const char *path, const void *data, unsigned int size);
 
     FF_FILE *fopen(const char *pcFile, const char *pcMode);
     int fclose(FF_FILE *pxStream);
@@ -42,18 +43,15 @@ public:
     int rename(const char *pcOldName, const char *pcNewName, int bDeleteIfExists);
     char *fgets(char *pcBuffer, size_t xCount, FF_FILE *pxStream);
 
-    //card must be unmounted for these to work
-    bool cardReady();
-    uint32_t getSectorCount();
-    uint32_t getSectorSize();
-    bool lock(); //for use by the USB stack
+    //lock the card for direct access using diskio functions
+    bool lock();
     bool unlock();
-    bool isWriteable();
-    int32_t read(uint32_t sector, uint16_t offset, uint8_t *buffer, uint32_t count);
-    int32_t write(uint32_t sector, uint16_t offset, uint8_t *buffer, uint32_t count);
 
-    bool mounted, locked;
     uint32_t sectors = 0;
+    uint32_t open_count = 0;
+    bool incr_count();
+    bool decr_count();
+    bool locked = false;
 };
 
 #endif // MOD_SD_H

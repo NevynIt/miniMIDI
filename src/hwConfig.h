@@ -2,6 +2,8 @@
 #define HWCONFIG_H
 
 #include "hardware/gpio.h"
+#include "hardware/uart.h"
+#include "hardware/spi.h"
 #include <stdint.h>
 
 #define STRINGIFY(x) #x
@@ -11,10 +13,14 @@
     _Pragma(TOSTRING(message("Deoptimizing here"))) \
     __attribute__((optimize("O0")))
 
+static constexpr uint16_t compiled_hw_cfg_version = 1; //update this whenever a breaking change is done in the struct below
+
 //slowly update all modules to use this instead of the defines
 struct hw_cfg
 {
 public:
+    uint16_t version = compiled_hw_cfg_version;
+
     //system configuration
     uint32_t cpu_khz = 12*12*1000;
     static constexpr uint32_t flash_reserved = 4*1024*1024; //keep hardcoded
@@ -38,8 +44,7 @@ public:
     uint8_t encoder_count = 4;
 
     //SD configuration
-    uint8_t spi_sd = 1;
-    uint32_t spi_sd_speed = 1000000;
+    uint32_t spi_baud_rate = 125 * 1000 * 1000 / 4;  // 31250000 Hz
 
     //uart configuration
     uint32_t uart_baudrate = 115200;
@@ -127,15 +132,64 @@ typedef enum {
     GPIO_Board_RGB = 23 // 23 - (Board RGB Led)
 } GPIO_Pin;
 
-// Board Configuration
-#define CPU_KHZ 12*12*1000 //12MHz multiple needed for USB
-#define BLINK_REFRESH_HZ 24
+struct UartPinMapping {
+    int tx_pin;
+    int rx_pin;
+    uart_inst_t *uart_instance;
+};
+
+static const UartPinMapping uart_pin_map[] = { //I have included only consecutive pins for now
+    {0, 1, uart0},
+    {4, 5, uart1},
+    {8, 9, uart1},
+    {12, 13, uart0},
+    {16, 17, uart0},
+    {20, 21, uart1},
+    {24, 25, uart1},
+    {28, 29, uart0}
+};
+
+inline uart_inst_t* get_uart_instance(int tx_pin, int rx_pin) {
+    for (const auto& mapping : uart_pin_map) {
+        if (mapping.tx_pin == tx_pin && mapping.rx_pin == rx_pin) {
+            return mapping.uart_instance;
+        }
+    }
+    return nullptr;
+}
+
+struct SpiPinMapping {
+    int rx_pin;
+    int ck_pin;
+    int tx_pin;
+    spi_inst_t *spi_instance;
+};
+
+static const SpiPinMapping spi_pin_map[] = { //I have included only consecutive pins for now
+    {0, 2, 3, spi0},
+    {4, 2, 3, spi0},
+    {4, 6, 7, spi0},
+    {8, 10, 11, spi1},
+    {12, 10, 11, spi1},
+    {12, 14, 15, spi1},
+    {16, 18, 19, spi0},
+    {20, 18, 19, spi0},
+    {20, 22, 23, spi0},
+    {24, 26, 27, spi1},
+    // Add more mappings as needed
+};
+
+inline spi_inst_t* get_spi_instance(int rx_pin, int ck_pin, int tx_pin) {
+    for (const auto& mapping : spi_pin_map) {
+        if (mapping.rx_pin == rx_pin && mapping.ck_pin == ck_pin && mapping.tx_pin == tx_pin) {
+            return mapping.spi_instance;
+        }
+    }
+    return nullptr;
+}
 
 // Flash Configuration
 #define FLASH_RESERVED 4*1024*1024 //4MB reserved for code, the rest for data
-
-// SD card configuration
-#define SPI_SD spi1
 
 // Display configuration
 #define I2C_DISPLAY i2c1

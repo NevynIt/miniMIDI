@@ -5,6 +5,8 @@
 #include "hardware/gpio.h"
 #include "App.h"
 
+//based on https://github.com/daschr/pico-ssd1306
+
 typedef enum
 {
     SET_CONTRAST = 0x81,

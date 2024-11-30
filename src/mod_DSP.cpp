@@ -128,16 +128,16 @@ void test_wave(WaveType wave, const char *name, sample_ptr buffer, size_t count,
 
 void mod_DSP::Test()
 {
-    return; 
-    
-    bool sdtest = false; 
-    sdtest = mMApp.sd.mounted; //Uncomment to write test files to SD card if present
     static bool test_done = false;
     if (test_done)
         return;
 
     test_done = true;
     printf("Starting DSP tests\n");
+
+    bool sdtest = false;
+    if (mMApp.sd.Mount())
+        sdtest = true;
 
     if (sdtest)
         printf("SD Card test start\n");
@@ -183,5 +183,8 @@ void mod_DSP::Test()
 
     printf("DSP test done\n");
     if (sdtest)
+    {
         printf("SD Card test done\n");
+        mMApp.sd.Unmount();
+    }
 }

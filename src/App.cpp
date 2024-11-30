@@ -29,8 +29,6 @@ int App::main()
 
     Init();
 
-    mMApp.sd.Unmount();
-
     while (true)
     {
         Tick_c0();
@@ -53,8 +51,11 @@ void flush_cache()
     mMApp.stdio.unregisterPanicCallback(flush_cache);
     startup_stdio_cache->append("-----End of bootlog\n");
 
-    if (mMApp.sd.mounted)
+    if (mMApp.sd.Mount())
+    {
         mMApp.sd.WriteFile("bootlog.txt", startup_stdio_cache->c_str(), startup_stdio_cache->length());
+        mMApp.sd.Unmount();
+    }
     else
         LOG_DEBUG(startup_stdio_cache->c_str());
     delete startup_stdio_cache;
@@ -108,7 +109,7 @@ void App::Init_c0()
 
     config.Init();
     hwConfig = config.GetConfig<hw_cfg>("hw_config");
-    if (hwConfig == nullptr)
+    if (hwConfig == nullptr || hwConfig->version != compiled_hw_cfg_version)
     {
         LOG_WARNING("hw_config not found\n");
         hwConfig = new hw_cfg();

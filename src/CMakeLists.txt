@@ -1,7 +1,6 @@
 # Add executable. Default name is the project name, version 0.1
 
-add_subdirectory(no-OS-FatFS-SD-SPI-RPi-Pico/FatFs_SPI build)
-# add_subdirectory(iir1 iir1_build)
+add_subdirectory(SdLib/src build)
 
 # Define the parameter FPM_WIDTH
 set(FPM_WIDTH 16)
@@ -26,6 +25,7 @@ add_executable(miniMIDI
     mod_UART.cpp
     mod_config.cpp
     mod_SD.cpp
+    mod_SD_hw_config.c
     mod_Display.cpp
     mod_Encoders.cpp
     mod_Joys.cpp
@@ -154,8 +154,10 @@ pico_enable_stdio_uart(miniMIDI 1)
 target_include_directories(miniMIDI PRIVATE
   ${CMAKE_CURRENT_LIST_DIR}
   ${CMAKE_CURRENT_LIST_DIR}/.. # for our common lwipopts or any other standard includes, if required
-  ${CMAKE_CURRENT_LIST_DIR}/no-OS-FatFS-SD-SPI-RPi-Pico/FatFs_SPI/include
-  ${CMAKE_CURRENT_LIST_DIR}/no-OS-FatFS-SD-SPI-RPi-Pico/FatFs_SPI/sd_driver
+  ${CMAKE_CURRENT_LIST_DIR}/SdLib/include
+  ${CMAKE_CURRENT_LIST_DIR}/SdLib/src/include
+  ${CMAKE_CURRENT_LIST_DIR}/SdLib/src/sd_driver
+  ${CMAKE_CURRENT_LIST_DIR}/SdLib/src/ff15/source
   # ${CMAKE_CURRENT_LIST_DIR}/pico-ssd1306
   # ${CMAKE_CURRENT_LIST_DIR}/QuadratureDecoder
   ${CMAKE_CURRENT_LIST_DIR}/ledColors
@@ -180,7 +182,7 @@ target_link_libraries(miniMIDI
         hardware_pio
         hardware_pwm
         hardware_flash
-        FatFs_SPI
+        no-OS-FatFS-SD-SDIO-SPI-RPi-Pico
         tinyusb_device
         tinyusb_board
         lua

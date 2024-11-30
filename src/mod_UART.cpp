@@ -96,32 +96,6 @@ void mod_UART::out(const void *buffer, size_t count) {
     uart_stdio::out_chars((const char *)buffer, count);
 }
 
-struct UartPinMapping {
-    int tx_pin;
-    int rx_pin;
-    uart_inst_t *uart_instance;
-};
-
-static const UartPinMapping uart_pin_map[] = {
-    {0, 1, uart0},
-    {4, 5, uart1},
-    {8, 9, uart1},
-    {12, 13, uart0},
-    {16, 17, uart0},
-    {20, 21, uart1},
-    {24, 25, uart1},
-    {28, 29, uart0}
-};
-
-uart_inst_t* get_uart_instance(int tx_pin, int rx_pin) {
-    for (const auto& mapping : uart_pin_map) {
-        if (mapping.tx_pin == tx_pin && mapping.rx_pin == rx_pin) {
-            return mapping.uart_instance;
-        }
-    }
-    return nullptr;
-}
-
 void mod_UART::Init() {
     // Initialize UART
     gpio_set_function(mMApp.hwConfig->gpio_uart_tx, GPIO_FUNC_UART);
