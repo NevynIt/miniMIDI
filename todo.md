@@ -1,4 +1,5 @@
 todo:
+- replace the sd library with the new one 
 - next priority: access the configuration memory and the sd card from usb
 - next priority: separate lua and run startup script
 - rbj filter, params and refresh filter every x samples

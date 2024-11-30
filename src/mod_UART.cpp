@@ -17,6 +17,7 @@ void writeChar(EmbeddedCli *cli, char c) {
 
 void handleBootlogCommand(EmbeddedCli *cli, char *args, void *context) {
     if (strcmp(args, "print") == 0) {
+        mMApp.sd.Mount();
         FIL *file = mMApp.sd.fopen("bootlog.txt", "r");
         if (file == nullptr) {
             printf("Error: cannot open bootlog.txt\n");
@@ -29,6 +30,7 @@ void handleBootlogCommand(EmbeddedCli *cli, char *args, void *context) {
         }
 
         mMApp.sd.fclose(file);
+        mMApp.sd.Unmount();
     } else if (strcmp(args, "delete") == 0) {
         if (mMApp.sd.remove("bootlog.txt") == 0) {
             printf("bootlog.txt deleted successfully\n");
@@ -38,6 +40,14 @@ void handleBootlogCommand(EmbeddedCli *cli, char *args, void *context) {
     } else {
         printf("Invalid argument for bootlog command\n");
     }
+}
+
+void handlePauseCommand(EmbeddedCli *cli, char *args, void *context) {
+    mMApp.stdio.pause();
+}
+
+void handleResumeCommand(EmbeddedCli *cli, char *args, void *context) {
+    mMApp.stdio.resume();
 }
 
 void handleCliCommand(EmbeddedCli *cli, CliCommand *command) {
@@ -134,14 +144,31 @@ void mod_UART::Init() {
 
     embeddedCliAddBinding(cli, {
         "bootlog",
-        "Prints or deletes the bootlog from the SD card",
+        "bootlog print   -- Prints the bootlog from the SD card\n\
+        bootlog delete  -- Deletes the bootlog from the SD card",
         false,
         nullptr,
         handleBootlogCommand
     });
 
+    embeddedCliAddBinding(cli, {
+        "pause",
+        "pause  -- Pauses the stdio output",
+        false,
+        nullptr,
+        handlePauseCommand
+    });
+
+    embeddedCliAddBinding(cli, {
+        "resume",
+        "resume  -- Resumes the stdio output",
+        false,
+        nullptr,
+        handleResumeCommand
+    });
+
     // register UART stdio callback
-    mMApp.stdio.registerPrintCallback(uart_stdio::out_chars, mod_Stdio::debug);
+    mMApp.stdio.registerPrintCallback(uart_stdio::out_chars, mod_Stdio::verbose);
     printf("\n\n\nUART STDIO initialized\n");
 
     // Initialize Lua

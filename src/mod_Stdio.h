@@ -9,6 +9,7 @@
 typedef void (*print_fn)(const char *buf, int len);
 typedef void (*panic_fn)();
 
+#define LOG_VERBOSE(...) mMApp.stdio.log(mod_Stdio::LogLevel::verbose, __VA_ARGS__)
 #define LOG_DEBUG(...) mMApp.stdio.log(mod_Stdio::LogLevel::debug, __VA_ARGS__)
 #define LOG_INFO(...) mMApp.stdio.log(mod_Stdio::LogLevel::info, __VA_ARGS__)
 #define LOG_WARNING(...) mMApp.stdio.log(mod_Stdio::LogLevel::warning, __VA_ARGS__)
@@ -24,6 +25,7 @@ public:
         warning,
         info,
         debug,
+        verbose,
         LOG_LEVEL_COUNT
     };
 
@@ -82,19 +84,24 @@ public:
     }
 
     void registerPrintCallback(print_fn fn, LogLevel level);
-    void unregisterPrintCallback(print_fn fn, LogLevel level);
+    void unregisterPrintCallback(print_fn fn);
 
     void registerPanicCallback(panic_fn fn);
     void unregisterPanicCallback(panic_fn fn);
 
+    void pause();
+    void resume();
+
     bool exitOnError = false;
+    bool paused = false;
+    std::vector<std::pair<std::string, LogLevel>> logBuffer;
 
 private:
     LogLevel level[2] = {LogLevel::info, LogLevel::info}; //one per core
     std::string in_buffer;
     void (*chars_available_callback)(void*) = nullptr;
     void *chars_available_param = nullptr;
-    mutex_t mutex;
+    recursive_mutex_t mutex;
     std::vector<print_fn> printCallbacks[LogLevel::LOG_LEVEL_COUNT];
     std::vector<panic_fn> panicCallbacks;
 };

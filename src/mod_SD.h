@@ -13,8 +13,10 @@ public:
     void Tick() override;
     void Test() override;
 
-    bool Mount();
+    bool Mount(); //for use by the microcontroller application
     bool Unmount();
+
+    //card must be mounted for these to work
     bool WriteFile(const std::string &path, const void *data, unsigned int size);
     bool ReadFile(const std::string& path, std::string& data);
     bool AppendFile(const std::string &path, const void *data, unsigned int size);
@@ -40,7 +42,18 @@ public:
     int rename(const char *pcOldName, const char *pcNewName, int bDeleteIfExists);
     char *fgets(char *pcBuffer, size_t xCount, FF_FILE *pxStream);
 
-    bool mounted;
+    //card must be unmounted for these to work
+    bool cardReady();
+    uint32_t getSectorCount();
+    uint32_t getSectorSize();
+    bool lock(); //for use by the USB stack
+    bool unlock();
+    bool isWriteable();
+    int32_t read(uint32_t sector, uint16_t offset, uint8_t *buffer, uint32_t count);
+    int32_t write(uint32_t sector, uint16_t offset, uint8_t *buffer, uint32_t count);
+
+    bool mounted, locked;
+    uint32_t sectors = 0;
 };
 
 #endif // MOD_SD_H

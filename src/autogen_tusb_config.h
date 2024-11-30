@@ -29,8 +29,11 @@
 #define CFG_TUD_MIDI 1
 #define CFG_TUD_MIDI_RX_BUFSIZE CFG_TUD_ENDPOINT0_SIZE
 #define CFG_TUD_MIDI_TX_BUFSIZE CFG_TUD_ENDPOINT0_SIZE
-#define CFG_TUD_MSC 0
-#define STRING_ARRAY_SIZE 13
+#define CFG_TUD_MSC 1
+#define CFG_TUD_MSC_EP_BUFSIZE 512
+#define CFG_TUD_MSC_FUNC_1_DESC_LEN 23
+#define CFG_TUD_MSC_FUNC_1_EP_BUFSIZE 512
+#define STRING_ARRAY_SIZE 14
 
 /* INTERFACES */
 enum {
@@ -41,6 +44,7 @@ enum {
     ITF_NUM_mM_Serial_data = 4,
     ITF_NUM_mM_MIDI = 5,
     ITF_NUM_mM_MIDI_streaming = 6,
+    ITF_NUM_mM_SD = 7,
 };
 
 /* ENDPOINTS */
@@ -51,6 +55,8 @@ enum {
     EP_NUM_mM_Serial_notif = 3,
     EP_NUM_mM_Serial_io = 4,
     EP_NUM_mM_MIDI_io = 5,
+    EP_NUM_mM_SD_in = 6,
+    EP_NUM_mM_SD_out = 7,
 };
 
 /* AUDIO ENTITIES */

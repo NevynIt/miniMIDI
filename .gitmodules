@@ -37,3 +37,6 @@
 [submodule "src/iir1"]
 	path = src/iir1
 	url = https://github.com/berndporr/iir1
+[submodule "src/no-OS-FatFS-SD-SDIO-SPI-RPi-Pico"]
+	path = src/no-OS-FatFS-SD-SDIO-SPI-RPi-Pico
+	url = https://github.com/carlk3/no-OS-FatFS-SD-SDIO-SPI-RPi-Pico

@@ -24,6 +24,7 @@ static char const * const string_desc_arr[] =
     "mM_MIDI 2",
     "mM_LEDS",
     "mM_SYNTH",
+    "mM_SD",
 };
 
 
@@ -33,7 +34,7 @@ static char const * const string_desc_arr[] =
 static const uint8_t desc_fs_configuration[] = {
 /* #### Configuration Descriptor */\
 /*    9, TUSB_DESC_CONFIGURATION, U16_TO_U8S_LE(_total_len), _itfcount, config_num, _stridx, TU_BIT(7) | _attribute, (_power_ma)/2 */\
-0x9, 0x2, 0xf5, 0x1, 0x7, 0x1, 0x0, 0x80, 0x32, 
+0x9, 0x2, 0xc, 0x2, 0x8, 0x1, 0x0, 0x80, 0x32, 
 /* #### AUDIO Descriptor: mM_Sound */\
 /* {
     "type": "Audio",
@@ -274,6 +275,19 @@ static const uint8_t desc_fs_configuration[] = {
 /* ## MS Endpoint (connected to embedded jack) */\
 /*    (4 + ncables), TUSB_DESC_CS_ENDPOINT, MIDI_CS_ENDPOINT_GENERAL, ncables, [jackids] */\
 0x8, 0x25, 0x1, 0x4, 0x3, 0x7, 0xb, 0xf, 
+/* ### MSC Descriptor: mM_SD */\
+/* {
+    "type": "MSC"
+} */\
+/* ## Interface Descriptor */\
+/*    9, TUSB_DESC_INTERFACE, itf_msc, 0, 2, TUSB_CLASS_MSC, MSC_SUBCLASS_SCSI, MSC_PROTOCOL_BOT, stridx */\
+0x9, 0x4, 0x7, 0x0, 0x2, 0x8, 0x6, 0x50, 0xd, 
+/* ## Endpoint Out Descriptor */\
+/*    7, TUSB_DESC_ENDPOINT, epout, TUSB_XFER_BULK, U16_TO_U8S_LE(epsize), 0 */\
+0x7, 0x5, 0x6, 0x2, 0x40, 0x0, 0x0, 
+/* ## Endpoint In Descriptor */\
+/*    7, TUSB_DESC_ENDPOINT, epin, TUSB_XFER_BULK, U16_TO_U8S_LE(epsize), 0 */\
+0x7, 0x5, 0x86, 0x2, 0x40, 0x0, 0x0, 
 };
 
 //--------------------------------------------------------------------

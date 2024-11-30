@@ -51,7 +51,7 @@ struct __packed tagged_block_example
 {   //be very careful with word alignment
     void *ptr1; //needs to be initialised to a valid pointer before writing to flash
     void *ptr2;
-    void *p = pio1;
+    // void *p = pio1; //this would work, but I did not include the header for pio1
     struct __packed {
         uint8_t s00_tag = 0xF0; //keep this as an invalid pointer tag
         uint8_t s00_skip = 10;

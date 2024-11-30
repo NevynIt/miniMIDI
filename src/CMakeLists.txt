@@ -35,6 +35,7 @@ add_executable(miniMIDI
     mod_USB_Audio.cpp
     mod_USB_MIDI.cpp
     mod_USB_UART.cpp
+    mod_USB_MSC.cpp
     mod_I2S_Audio.cpp
     mod_DSP.cpp
     mod_Blink.cpp
@@ -154,6 +155,7 @@ target_include_directories(miniMIDI PRIVATE
   ${CMAKE_CURRENT_LIST_DIR}
   ${CMAKE_CURRENT_LIST_DIR}/.. # for our common lwipopts or any other standard includes, if required
   ${CMAKE_CURRENT_LIST_DIR}/no-OS-FatFS-SD-SPI-RPi-Pico/FatFs_SPI/include
+  ${CMAKE_CURRENT_LIST_DIR}/no-OS-FatFS-SD-SPI-RPi-Pico/FatFs_SPI/sd_driver
   # ${CMAKE_CURRENT_LIST_DIR}/pico-ssd1306
   # ${CMAKE_CURRENT_LIST_DIR}/QuadratureDecoder
   ${CMAKE_CURRENT_LIST_DIR}/ledColors

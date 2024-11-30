@@ -29,6 +29,8 @@ int App::main()
 
     Init();
 
+    mMApp.sd.Unmount();
+
     while (true)
     {
         Tick_c0();
@@ -39,12 +41,15 @@ std::string *startup_stdio_cache;
 
 void caching_print_fn(const char *buf, int len)
 {
-    startup_stdio_cache->append(buf, len);
+    if (startup_stdio_cache)
+        startup_stdio_cache->append(buf, len);
+    else
+        __breakpoint();
 }
 
 void flush_cache()
 {
-    mMApp.stdio.unregisterPrintCallback(caching_print_fn, mod_Stdio::debug);
+    mMApp.stdio.unregisterPrintCallback(caching_print_fn);
     mMApp.stdio.unregisterPanicCallback(flush_cache);
     startup_stdio_cache->append("-----End of bootlog\n");
 
@@ -53,7 +58,25 @@ void flush_cache()
     else
         LOG_DEBUG(startup_stdio_cache->c_str());
     delete startup_stdio_cache;
+    startup_stdio_cache = nullptr;
 }
+
+void assert_check_fn(const char *buf, int len)
+{
+    static const char assert_str[] = "ASSERT FAILED";
+    if (len < sizeof(assert_str)-1)
+        return;
+    //check if the string is in buf
+    for (int i = 0; i < len - sizeof(assert_str)+1; i++)
+    {
+        if (memcmp(buf + i, assert_str, sizeof(assert_str)-1) == 0)
+        {
+            __breakpoint();
+            break;
+        }
+    }
+}
+
 
 void App::Init()
 {
@@ -78,9 +101,11 @@ void App::Init_c0()
     startup_stdio_cache = new std::string();
     startup_stdio_cache->append("-----Bootlog:\n");
 
-    stdio.registerPrintCallback(caching_print_fn, mod_Stdio::debug);
+    stdio.registerPrintCallback(caching_print_fn, mod_Stdio::verbose);
     stdio.registerPanicCallback(flush_cache);
     
+    stdio.registerPrintCallback(assert_check_fn, mod_Stdio::verbose);
+
     config.Init();
     hwConfig = config.GetConfig<hw_cfg>("hw_config");
     if (hwConfig == nullptr)
@@ -101,7 +126,6 @@ void App::Init_c0()
     //activate display stdio output //todo
     ledStrip.Init(); //todo: reading configuration information from flash and doing a visual effect on the leds
     sd.Init(); //todo: reading configuration information from flash
-    sequencer.Init(); //todo: everything, the module is empty at the moment
 
     //medium priority
     //lua.Init(); //todo: separate lua from uart, and make it a module
@@ -118,22 +142,27 @@ void App::Init_c0()
                      //present one readonly drive with an image of the flash memory, separated between the program and the configuration
                      //present one read/write drive with the sd card
                      //it should be pretty easy actually
+    usbAudio.Init(); //todo: testing the input interface and implementing the volume control to the onboard speaker?
+    usb.Init(); //add support for the usb drive interface usb configuration
 
     // non time critical modules run on core 0
     std::vector<Module*> &mods =  modules_c0;
 
     mods.push_back(&blink);
+    // mods.push_back(&config);
+    mods.push_back(&sd);
     // modules_c0.push_back(&stdio);
     mods.push_back(&uart);
     mods.push_back(&display);
     mods.push_back(&ledStrip);
-    mods.push_back(&sequencer);
     // modules_c0.push_back(&lua);
     mods.push_back(&encoders);
     mods.push_back(&joys);
     mods.push_back(&usbUart);
     mods.push_back(&usbMidi);
     // modules_c0.push_back(&usbMSC);
+    mods.push_back(&usb);
+    mods.push_back(&usbAudio);
 }
 
 void App::Init_c1() {
@@ -141,13 +170,12 @@ void App::Init_c1() {
     sem_acquire_blocking(&startup_sem);
 
     // Initialize the modules on core 1
-    dsp.Init(); //todo: a lot, including testing and finalising the use of the new asm and processing buffers with it
     //adc.Init(); //todo: everything from scratch
-    //pwm.Init(); //todo: everything from scratch
     //i2s.Init(); //todo: everything from scratch
+    //pwm.Init(); //todo: everything from scratch
+    sequencer.Init(); //todo: everything, the module is empty at the moment
     synth.Init(); //todo: moving from wave generators to instruments and linking to midi
-    usbAudio.Init(); //todo: testing the input interface and implementing the volume control to the onboard speaker?
-    usb.Init(); //add support for the usb drive interface usb configuration
+    dsp.Init(); //todo: a lot, including testing and finalising the use of the new asm and processing buffers with it
 
     // let core 0 run
     sem_release(&startup_sem);
@@ -155,13 +183,12 @@ void App::Init_c1() {
     // time critical modules run on core 1
     std::vector<Module*> &mods =  modules_c1;
 
-    mods.push_back(&dsp);
     // modules_c1.push_back(&adc);
-    // modules_c1.push_back(&pwm);
     // modules_c1.push_back(&i2s);
+    // modules_c1.push_back(&pwm);
+    mods.push_back(&sequencer);
     mods.push_back(&synth);
-    mods.push_back(&usb);
-    mods.push_back(&usbAudio);
+    mods.push_back(&dsp);
 }
 
 void App::Tick_c0() {

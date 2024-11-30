@@ -177,9 +177,9 @@ conf_descr_data = { #AUDIO MUST BE THE FIRST FUNCTION
         #         "mM_MIDI 6",
         #     ],	
         # },
-        # 'mM_Data': {
-        #     'type': 'MSC',
-        # },
+        'mM_SD': {
+            'type': 'MSC',
+        },
     },
 }
 
@@ -751,6 +751,53 @@ def build_msc_descr(name, func, params):
     params.defines['CFG_TUD_MSC'] += 1
     params.defines['CFG_TUD_MSC_EP_BUFSIZE'] = 512
 
+    itf_msc = params.itfnum
+    params.itf_use.append(name)
+    params.itfnum += 1
+
+    params.strings.append(name)
+    stridx = params.strnum
+    params.strnum += 1
+
+    epin = params.epnum | 0x80
+    params.ep_use.append(name+'_in')
+    epout = params.epnum
+    params.ep_use.append(name+'_out')
+    params.epnum += 1
+
+
+    n = 0
+    add_cmt(params, n, f"### MSC Descriptor: {name}")
+    add_cmt(params, n, json.dumps(func, indent=4))
+    add_cmt(params, n, "## Interface Descriptor")
+    add_cmt(params, n, "   9, TUSB_DESC_INTERFACE, itf_msc, 0, 2, TUSB_CLASS_MSC, MSC_SUBCLASS_SCSI, MSC_PROTOCOL_BOT, stridx")
+    n += 9
+    add_cmt(params, n, "## Endpoint Out Descriptor")
+    add_cmt(params, n, "   7, TUSB_DESC_ENDPOINT, epout, TUSB_XFER_BULK, U16_TO_U8S_LE(epsize), 0")
+    n += 7
+    add_cmt(params, n, "## Endpoint In Descriptor")
+    add_cmt(params, n, "   7, TUSB_DESC_ENDPOINT, epin, TUSB_XFER_BULK, U16_TO_U8S_LE(epsize), 0")
+    n += 7
+
+    # // Interface number, string index, EP Out & EP In address, EP size
+    # #define TUD_MSC_DESCRIPTOR(_itfnum, _stridx, _epout, _epin, _epsize) \
+    msc_descr = [
+    #   /* Interface */\
+    #   9, TUSB_DESC_INTERFACE, _itfnum, 0, 2, TUSB_CLASS_MSC, MSC_SUBCLASS_SCSI, MSC_PROTOCOL_BOT, _stridx,\
+        9, TUSB_DESC_INTERFACE, itf_msc, 0, 2, TUSB_CLASS_MSC, MSC_SUBCLASS_SCSI, MSC_PROTOCOL_BOT, stridx,
+    #   /* Endpoint Out */\
+    #   7, TUSB_DESC_ENDPOINT, _epout, TUSB_XFER_BULK, U16_TO_U8S_LE(_epsize), 0,\
+        7, TUSB_DESC_ENDPOINT, epout, TUSB_XFER_BULK, 'epsize', '', 0,
+    #   /* Endpoint In */\
+    #   7, TUSB_DESC_ENDPOINT, _epin, TUSB_XFER_BULK, U16_TO_U8S_LE(_epsize), 0
+        7, TUSB_DESC_ENDPOINT, epin, TUSB_XFER_BULK, 'epsize', '', 0
+    ]
+
+    params.defines[f'CFG_TUD_MSC_FUNC_{params.defines["CFG_TUD_MSC"]}_DESC_LEN'] = len(msc_descr)
+    params.defines[f'CFG_TUD_MSC_FUNC_{params.defines["CFG_TUD_MSC"]}_EP_BUFSIZE'] = params.defines['CFG_TUD_MSC_EP_BUFSIZE']
+
+    return msc_descr
+
 def build_full_descriptor(data):
     # build descriptor
     descr = []
@@ -794,7 +841,9 @@ def build_full_descriptor(data):
             params.total_len += len(audio_descr)
             descr.extend(audio_descr)
         elif func['type'] == 'MSC':
-            pass
+            msc_descr = build_msc_descr(name, func, params)
+            params.total_len += len(msc_descr)
+            descr.extend(msc_descr)
 
     params.total_len = U16_TO_U8S_LE(params.total_len)
 

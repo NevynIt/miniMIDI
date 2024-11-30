@@ -76,8 +76,9 @@ extern uint8_t __flash_binary_end;
 
 #define FLASH_BASE_ADDR_XIP    0x10000000  // Base address of the flash memory for XIP
 #define FLASH_BASE_ADDR_CACHED 0x60000000  // Base address of the flash memory, cached access
+//using the cached pointer gets to hardfault
 #define FLASH_BASE_ADDR_UNCACHED 0x80000000  // Base address of the flash memory, cache disabled access
-#define FLASH_BASE_ADDR FLASH_BASE_ADDR_CACHED
+#define FLASH_BASE_ADDR FLASH_BASE_ADDR_XIP
 
 void mod_config::format(int blks)
 {
@@ -460,7 +461,7 @@ const void *fix_pointers(const void *src, const void *dst, uint16_t size, uint8_
         }
         default:
             LOG_ERROR("Error: Invalid id %d in %s\n", id, key);
-            break;
+            return nullptr;
     }
 }
 
