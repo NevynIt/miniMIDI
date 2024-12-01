@@ -20,6 +20,7 @@ void mod_USB_MSC::Test()
     // Perform any USB MSC tests here
 }
 
+#if CFG_TUD_MSC == 1
 /**
  * @brief Reads data from the disk.
  *
@@ -244,3 +245,5 @@ int32_t tud_msc_scsi_cb(uint8_t lun, uint8_t const scsi_cmd[16], void* buffer, u
     }
     return (int32_t)resplen;
 }
+
+#endif

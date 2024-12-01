@@ -7,7 +7,7 @@
 #include "mod_Display.h"
 #include "mod_LedStrip.h"
 #include "mod_USB.h"
-#include "mod_USB_UART.h"
+#include "mod_USB_CDC.h"
 #include "mod_USB_MIDI.h"
 #include "mod_USB_Audio.h"
 #include "mod_SD.h"
@@ -19,6 +19,8 @@
 #include "mod_Synth.h"
 #include "mod_Blink.h"
 #include "mod_Stdio.h"
+#include "mod_USB_MSC.h"
+#include "mod_Lua.h"
 #include <vector>
 #include <memory>
 #include "hardware/timer.h"
@@ -79,8 +81,10 @@ public:
     mod_USB usb;
     mod_USB_Audio usbAudio;
     mod_USB_MIDI usbMidi;
-    mod_USB_UART usbUart;
+    mod_USB_CDC usbCdc;
+    mod_USB_MSC usbMsc;
     mod_Stdio stdio;
+    mod_Lua lua;
 
     hw_cfg *hwConfig = nullptr;
 private:

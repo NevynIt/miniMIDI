@@ -34,13 +34,14 @@ add_executable(miniMIDI
     mod_USB.cpp
     mod_USB_Audio.cpp
     mod_USB_MIDI.cpp
-    mod_USB_UART.cpp
+    mod_USB_CDC.cpp
     mod_USB_MSC.cpp
     mod_I2S_Audio.cpp
     mod_DSP.cpp
     mod_Blink.cpp
     mod_Synth.cpp
     mod_Stdio.cpp
+    mod_Lua.cpp
     embedded-cli/lib/src/embedded_cli.c
 
     # wavetables/WT_BASE.cpp

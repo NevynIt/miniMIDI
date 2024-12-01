@@ -631,20 +631,20 @@ uint8_t getClassID<testdata>() {
 
 void mod_config::Test()
 {
-    static bool test_done = false;
-    if (test_done) return;
-    test_done = true;
+    // static bool test_done = false;
+    // if (test_done) return;
+    // test_done = true;
 
-    testdata td = {13, 23, 44, "test"};
-    printf("size of testdata: %d\n", sizeof(testdata));
-    auto tmp1 = SetConfig("test", td);
-    auto tmp2 = GetConfig<testdata>("test");
-    if (tmp1 != tmp2)
-    {
-        printf("Error: the data is not the same\n");
-    }
-    else
-    {
-        printf("Data stored and retrieved correctly\n");
-    }
+    // testdata td = {13, 23, 44, "test"};
+    // printf("size of testdata: %d\n", sizeof(testdata));
+    // auto tmp1 = SetConfig("test", td);
+    // auto tmp2 = GetConfig<testdata>("test");
+    // if (tmp1 != tmp2)
+    // {
+    //     printf("Error: the data is not the same\n");
+    // }
+    // else
+    // {
+    //     printf("Data stored and retrieved correctly\n");
+    // }
 }

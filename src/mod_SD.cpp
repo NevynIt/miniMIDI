@@ -401,10 +401,13 @@ int _open(const char *pathname, int flags, int mode) {
         if (open_files[i].obj.fs == nullptr) { 
             int ff_mode = 0;
             ff_mode = fcntl_to_ff(flags, mode);
+            if (!mMApp.sd.incr_count())
+                return -1;
             FRESULT res = f_open(&open_files[i], pathname, ff_mode);
             if (res == FR_OK) {
                 return i + 3;
             }
+            mMApp.sd.decr_count();
             return -1;
         }
     }
@@ -423,8 +426,8 @@ ssize_t _read(int fd, void *buffer, size_t count) {
 
 ssize_t _write(int fd, const void *buffer, size_t count) {
     if (fd == 1 || fd == 2) {
-        // Redirect stdout and stderr to UART
-        mMApp.uart.out(buffer, count);
+        // Redirect stdout and stderr to stdio
+        mMApp.stdio.out_chars((const char *)buffer, count);
         return count;
     }
 
@@ -446,6 +449,7 @@ int _close(int fd) {
     if (res == FR_OK) {
         // Clear the file object
         memset(&open_files[fd], 0, sizeof(FIL));
+        mMApp.sd.decr_count();
         return 0;
     }
     return -1;

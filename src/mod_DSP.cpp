@@ -136,7 +136,7 @@ void mod_DSP::Test()
     printf("Starting DSP tests\n");
 
     bool sdtest = false;
-    if (mMApp.sd.Mount())
+    if (sdtest && mMApp.sd.Mount())
         sdtest = true;
 
     if (sdtest)

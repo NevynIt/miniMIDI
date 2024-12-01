@@ -1,99 +1,65 @@
-#include "mod_UART.h"
-#include "msg_MIDI.h"
-#include "hardware/uart.h"
-#include "pico/stdio.h"
-#include "stdio.h"
 #include "App.h"
-#include "pico/stdio/driver.h"
-#include "lua.hpp"
+#include "hardware/uart.h"
+#include "embedded_cli.h"
 
-lua_State *L;
-
-uart_inst_t *uart_instance;
-
-void writeChar(EmbeddedCli *cli, char c) {
-    uart_putc(uart_instance, c);
+void mod_UART::writeChar_u0(EmbeddedCli *cli, char c) {
+    uart_putc(uart0, c);
 }
 
-void handleBootlogCommand(EmbeddedCli *cli, char *args, void *context) {
-    if (strcmp(args, "print") == 0) {
-        mMApp.sd.Mount();
-        FIL *file = mMApp.sd.fopen("bootlog.txt", "r");
-        if (file == nullptr) {
-            printf("Error: cannot open bootlog.txt\n");
-            return;
-        }
-
-        char buffer[256];
-        while (mMApp.sd.fgets(buffer, sizeof(buffer), file) != nullptr) {
-            printf("%s", buffer);
-        }
-
-        mMApp.sd.fclose(file);
-        mMApp.sd.Unmount();
-    } else if (strcmp(args, "delete") == 0) {
-        if (mMApp.sd.remove("bootlog.txt") == 0) {
-            printf("bootlog.txt deleted successfully\n");
-        } else {
-            printf("Error: cannot delete bootlog.txt\n");
-        }
-    } else {
-        printf("Invalid argument for bootlog command\n");
-    }
+void mod_UART::writeChar_u1(EmbeddedCli *cli, char c) {
+    uart_putc(uart1, c);
 }
 
-void handlePauseCommand(EmbeddedCli *cli, char *args, void *context) {
-    mMApp.stdio.pause();
+void mod_UART::onHelp(EmbeddedCli *cli, char *tokens, void *context) {
+    mMApp.stdio.addLogChannel(LogChannel::lc_uart);
+    printf("Welcome to miniMIDI Serial interface\n"
+           "  Use the Lua language to interact with the system\n"
+           "  System functions are under the global table mM\n"
+           "  ?expr is a shorthand for print(expr)\n"
+           );
+    mMApp.stdio.removeLogChannel(LogChannel::lc_uart);
 }
 
-void handleResumeCommand(EmbeddedCli *cli, char *args, void *context) {
-    mMApp.stdio.resume();
-}
-
-void handleCliCommand(EmbeddedCli *cli, CliCommand *command) {
-    // lua_getglobal(L, "handleCommand");
-    // merge command name and args
-    if (command->args[0] != 0)
-    {
-        std::string commandStr = command->name;
+void mod_UART::handleCliCommand(EmbeddedCli *cli, CliCommand *command)
+{
+    std::string commandStr = command->name;
+    if (command->args != nullptr)
         commandStr += " ";
         commandStr += command->args;
-	    luaL_loadstring(L, commandStr.c_str());
-    }
-    else
+
+    if (commandStr[0] == '?')
     {
-        luaL_loadstring(L, command->name);
-    }
-
-    if (lua_pcall(L, 0, LUA_MULTRET, 0) != LUA_OK) {
-        printf("Lua error: %s\n", lua_tostring(L, -1));
-        lua_pop(L, 1);
-    }
-}
-
-namespace uart_stdio
-{
-    char linebuffer[1024];
-    int linebuffer_pos = 0;
-
-    void out_chars(const char *buf, int len)
-    {
-        for (int i = 0; i < len; i++)
+        if (commandStr.size() == 1)
         {
-            if (buf[i] == '\n' || linebuffer_pos == sizeof(linebuffer) - 1)
-            {
-                linebuffer[linebuffer_pos] = 0;
-                embeddedCliPrint(mMApp.uart.cli, linebuffer);
-                linebuffer_pos = 0;
-            }
-            else
-                linebuffer[linebuffer_pos++] = buf[i];
+            mod_UART::onHelp(cli, nullptr, nullptr);
+            return;
         }
+        else
+            commandStr = "print(" + commandStr.substr(1) + ")";
+    }
+
+    mMApp.stdio.addLogChannel(LogChannel::lc_uart);
+    mMApp.lua.doString(commandStr.c_str());
+    mMApp.stdio.removeLogChannel(LogChannel::lc_uart);
+}
+
+void mod_UART::print_fn(LogFilter filter, const char *buf, int len)
+{
+    for (int i = 0; i < len; i++)
+    {
+        if (buf[i] == '\n' || linebuffer_pos == sizeof(linebuffer) - 1)
+        {
+            linebuffer[linebuffer_pos] = 0;
+            embeddedCliPrint(cli, linebuffer);
+            linebuffer_pos = 0;
+        }
+        else
+            linebuffer[linebuffer_pos++] = buf[i];
     }
 }
 
-void mod_UART::out(const void *buffer, size_t count) {
-    uart_stdio::out_chars((const char *)buffer, count);
+void mod_UART::clear_terminal() {
+    embeddedCliPrint(cli, "\x1B[2J\x1B[H");
 }
 
 void mod_UART::Init() {
@@ -112,50 +78,31 @@ void mod_UART::Init() {
     uart_init(uart_instance, mMApp.hwConfig->uart_baudrate);
 
     // Initialize embedded CLI
-    cli = embeddedCliNewDefault();
-    cli->writeChar = writeChar;
-    cli->onCommand = handleCliCommand;
+    auto c = embeddedCliDefaultConfig();
+    c->enableAutoComplete = false;
+    cli = embeddedCliNew(c);
+    if (uart_instance == uart0)
+        cli->writeChar = mod_UART::writeChar_u0;
+    else
+        cli->writeChar = mod_UART::writeChar_u1;
+    cli->onCommand = mod_UART::handleCliCommand;
 
     embeddedCliAddBinding(cli, {
-        "bootlog",
-        "bootlog print   -- Prints the bootlog from the SD card\n\
-        bootlog delete  -- Deletes the bootlog from the SD card",
-        false,
-        nullptr,
-        handleBootlogCommand
-    });
-
-    embeddedCliAddBinding(cli, {
-        "pause",
-        "pause  -- Pauses the stdio output",
-        false,
-        nullptr,
-        handlePauseCommand
-    });
-
-    embeddedCliAddBinding(cli, {
-        "resume",
-        "resume  -- Resumes the stdio output",
-        false,
-        nullptr,
-        handleResumeCommand
+            "help",
+            "Print a help message",
+            false,
+            nullptr,
+            mod_UART::onHelp
     });
 
     // register UART stdio callback
-    mMApp.stdio.registerPrintCallback(uart_stdio::out_chars, mod_Stdio::verbose);
-    printf("\n\n\nUART STDIO initialized\n");
+    mMApp.stdio.registerTarget(this);
+    log_mask.channel = LogChannel::lc_uart;
 
-    // Initialize Lua
-    L = luaL_newstate();
-    luaL_openlibs(L);
+    printf("UART STDIO initialized\n");
 
-    printf("Lua initialized\n");
-
-    // Load Lua script
-    if (luaL_dofile(L, "script.lua") != LUA_OK) {
-        LOG_WARNING("Warning: cannot load Lua script: %s\n", lua_tostring(L, -1));
-        lua_pop(L, 1);
-    }
+    clear_terminal();
+    onHelp(cli, nullptr, nullptr);
 }
 
 void mod_UART::Tick() {
