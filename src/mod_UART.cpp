@@ -80,6 +80,8 @@ void mod_UART::Init() {
     // Initialize embedded CLI
     auto c = embeddedCliDefaultConfig();
     c->enableAutoComplete = false;
+    c->cmdBufferSize = 256;
+    c->historyBufferSize = 1024;
     cli = embeddedCliNew(c);
     if (uart_instance == uart0)
         cli->writeChar = mod_UART::writeChar_u0;

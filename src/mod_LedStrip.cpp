@@ -1,7 +1,7 @@
 #include "mod_LedStrip.h"
 #include "ws2812.pio.h"
 #include <cmath>
-#include "led_colors.h"
+// #include "led_colors.h"
 #include "time.h"
 #include <string.h>
 #include "stdio.h"
@@ -123,7 +123,7 @@ void mod_LedStrip::SetColor(uint index, uint32_t color)
 void mod_LedStrip::SetColor(uint index, uint8_t tone, uint8_t brightness)
 {
     if (tone >= 128 || brightness >= 128) return;
-    SetColor(index, LedColor[tone][brightness]);
+    // SetColor(index, LedColor[tone][brightness]);
 }
 
 void mod_LedStrip::Clear()

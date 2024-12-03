@@ -79,6 +79,9 @@ public:
     void Tick() override;
     void Test() override;
 
+    virtual const char **GetCommands() const override;
+    virtual int DoCommand(int i, lua_State *L) override;
+
     int in_chars(char *buf, int len);
     void out_flush();
     void set_chars_available_callback(void (*fn)(void*), void *param);

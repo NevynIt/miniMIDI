@@ -87,6 +87,9 @@ public:
     void Tick() override;
     void Test() override;
 
+    virtual const char **GetCommands() const override;
+    virtual int DoCommand(int i, lua_State *L) override;
+
     const block *find(uint8_t type, const char *name) const;
     void defrag();
     void format(int blks = 0);

@@ -50,7 +50,7 @@ add_executable(miniMIDI
     dsp/wave.cpp
     dsp/exec_asm.cpp
     midi_const/midi_frequencies.cpp
-    ledColors/led_colors.cpp
+    # ledColors/led_colors.cpp
     # QuadratureDecoder/QuadratureDecoder.cpp
     rp2040_i2s_example/i2s.c
     # pico-ssd1306/ssd1306.c

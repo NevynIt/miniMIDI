@@ -148,6 +148,8 @@ void mod_config::Init() {
         LOG_INFO("%d blocks in use (%d bytes)\n%d blocks ready to be recycled (%d bytes)\n", count_used, used, count-count_used, recycle);
         LOG_INFO("%d bytes wasted\n%d bytes free\n", wasted, free);
     }
+
+    mMApp.lua.registerModule(this, "config");
 }
 
 void mod_config::Tick() {
@@ -648,3 +650,52 @@ void mod_config::Test()
     //     printf("Data stored and retrieved correctly\n");
     // }
 }
+
+
+const char **mod_config::GetCommands() const {
+    static const char *commands[] = {
+        "set",
+        "get",
+        "getCfgStart",
+        nullptr
+    };
+    return commands;
+}
+
+int mod_config::DoCommand(int i, lua_State *L) {
+    switch (i) {
+        case 0:
+        {
+            const char *key = luaL_checkstring(L, 1);
+            uint8_t id = luaL_checkinteger(L, 2);
+            size_t size;
+            const void *data = luaL_checklstring(L, 3, &size);
+            void *ptr = (void *)SetConfig(key, id, data, size);
+            if (ptr)
+            {
+                lua_pushlightuserdata(L, ptr);
+                return 1;
+            }
+            return 0;
+        }
+        case 1:
+        {
+            const char *key = luaL_checkstring(L, 1);
+            uint8_t id = luaL_checkinteger(L, 2);
+            const void *ptr = GetConfig(key, id);
+            if (ptr)
+            {
+                lua_pushlightuserdata(L, (void *)ptr);
+                return 1;
+            }
+            return 0;
+        }
+        case 2:
+        {
+            lua_pushlightuserdata(L, (void *)cfg_start);
+            return 1;
+        }
+    }
+    return 0;
+}
+

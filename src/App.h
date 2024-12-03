@@ -66,25 +66,26 @@ public:
     void Tick_c0();
     void Tick_c1();
 
-    mod_I2S_Audio audio;
-    mod_Blink blink;
+    mod_Lua lua;
+    mod_Stdio stdio;
     mod_config config;
+    mod_Blink blink;
+    mod_UART uart;
     mod_Display display;
-    mod_DSP dsp;
-    mod_Encoders encoders;
-    mod_Joys joys;
     mod_LedStrip ledStrip;
     mod_SD sd;
-    mod_Sequencer sequencer;
-    mod_Synth synth;
-    mod_UART uart;
+    mod_Encoders encoders;
+    mod_Joys joys;
+    mod_USB_CDC usbCdc;
     mod_USB usb;
     mod_USB_Audio usbAudio;
     mod_USB_MIDI usbMidi;
-    mod_USB_CDC usbCdc;
     mod_USB_MSC usbMsc;
-    mod_Stdio stdio;
-    mod_Lua lua;
+
+    mod_I2S_Audio i2s;
+    mod_Sequencer sequencer;
+    mod_Synth synth;
+    mod_DSP dsp;
 
     hw_cfg *hwConfig = nullptr;
 private:

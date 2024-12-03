@@ -135,7 +135,7 @@ void App::Init_c0()
     mods.push_back(&uart);
     mods.push_back(&display);
     mods.push_back(&ledStrip);
-    // mods.push_back(&lua);
+    mods.push_back(&lua);
     mods.push_back(&encoders);
     mods.push_back(&joys);
     mods.push_back(&usbCdc);

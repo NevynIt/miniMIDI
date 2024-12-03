@@ -39,6 +39,8 @@ void mod_Stdio::Init()
     stdio_set_driver_enabled(&mM_stdio_driver, true);
     recursive_mutex_init(&mutex);
     registerTarget(&watchdog);
+
+    mMApp.lua.registerModule(this, "stdio");
 }
 
 void mod_Stdio::Tick()
@@ -117,6 +119,65 @@ void mod_Stdio::push(const char *str, int len)
     {
         chars_available_callback(chars_available_param);
     }
+}
+
+const char **mod_Stdio::GetCommands() const {
+    static const char *commands[] = {
+        "print",
+        "setExitOnError",
+        "setPauseOnWarning",
+        "setPauseOnChannelNone",
+        "getBytesSentOnNone",
+        "getLogFilter",
+        "setLogFilter",
+        nullptr
+    };
+    return commands;
+}
+
+int mod_Stdio::DoCommand(int i, lua_State *L) {
+    switch (i) {
+        case 0: // print
+            printf(lua_tostring(L, 1));
+            lua_pop(L, 1);
+            return 0;
+        case 1: // setExitOnError
+            watchdog.exitOnError = lua_toboolean(L, 1);
+            return 0;
+        case 2: // setPauseOnWarning
+            watchdog.pauseOnWarning = lua_toboolean(L, 1);
+            return 0;
+        case 3: // setPauseOnChannelNone
+            watchdog.pauseOnChannelNone = lua_toboolean(L, 1);
+            return 0;
+        case 4: // getBytesSentOnNone
+            lua_pushinteger(L, watchdog.bytes_sent_on_none);
+            return 1;
+        case 5: // getLogFilter
+            {
+                LogFilter filter = getLogFilter();
+                lua_newtable(L);
+                lua_pushstring(L, "channel");
+                lua_pushinteger(L, filter.channel);
+                lua_settable(L, -3);
+                lua_pushstring(L, "level");
+                lua_pushinteger(L, filter.level);
+                lua_settable(L, -3);
+                return 1;
+            }
+        case 6: // setLogFilter
+            {
+                LogFilter filter;
+                luaL_checktype(L, 1, LUA_TTABLE);
+                lua_getfield(L, 1, "channel");
+                filter.channel = static_cast<LogChannel>(lua_tointeger(L, -1));
+                lua_getfield(L, 1, "level");
+                filter.level = static_cast<LogLevel>(lua_tointeger(L, -1));
+                setLogFilter(filter);
+                return 0;
+            }
+    }
+    return 0;
 }
 
 void stdio_watchdog::print_fn(LogFilter filter, const char *buf, int len)
