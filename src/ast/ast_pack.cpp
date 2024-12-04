@@ -1,6 +1,7 @@
 #include <string>
-#include "ast_char.hpp"
+#include "ast_char.h"
 #include "ast_pack.h"
+#include <map>
 
 namespace _detail
 {
@@ -207,49 +208,74 @@ namespace _detail
     // alpha = 'a' to 'z' | 'A' to 'Z'
     // identifier = <alpha> { <alpha> | <digit> | '_' }
     
-    using quoted_name = sequence3<token<'\''>, identifier, token<'\''>, select_fn<1>>;
+    // using quoted_name = dec<seq3<token<'\''>, identifier, token<'\''>>, select_fn<1>>;
+    ast_rule(quoted_name, (dec<seq3<token<'\''>, identifier, token<'\''>>, select_fn<1>>));
+
     using number = str2long;
+    // ast_rule(number, (str2long));
 
     char_array_decl(char, type_chars) = "xXcbB?hHiIlLqQnNefdspP";
     using type = token_choice<char_array(type_chars)>;
 
-    using bitfield = repeat<sequence2<number, 
-                                    optional<token<':'>>,
-                                    select_fn<0>>, 0, -1, make_bitfield_fn>;
+    using bitfield_def = dec<rep<dec<seq<number, 
+                                    opt<token<':'>>>,
+                                    select_fn<0>>, 0, -1>, make_bitfield_fn>;
+    ast_rule(bitfield, bitfield_def);
 
-    using array_size = sequence3<token<'['>, choice2<number,quoted_name>, token<']'>, select_fn<1>>;
+    // using array_size = dec<seq3<token<'['>, choice<number,quoted_name>, token<']'>>, select_fn<1>>;
+    ast_rule(array_size, (dec<seq3<token<'['>, choice<number,quoted_name>, token<']'>>, select_fn<1>>));
 
-    using format2 = choice2<type,
-                            sequence3<token<'<'>,
+    using field_count = choice<number,quoted_name>;
+
+    using format2 = dec<choicei<type,
+                            dec<seq3<token<'<'>,
                                     bitfield,
-                                    token<'>'>,
-                                    select_fn<1>>,
+                                    token<'>'>>,
+                                    select_fn<1>>>,
                             make_format_fn>;
-    using field2 = sequence3<optional<choice2<number,quoted_name>>, 
+
+    using field2_def = dec<seq3<opt<field_count>, 
                             format2, 
-                            optional<array_size>, 
+                            opt<array_size>>, 
                             make_field_fn>;
-    using struct2 = sequence2<oneOrMore<sequence2<optional<whitespace>, 
-                                                field2, 
-                                                select_fn<1>>, make_struct_fn>, 
-                            optional<whitespace>, 
-                            select_fn<0>>;
+    ast_rule(field2, field2_def);
 
-    using format1 = choice3<type,
-                            sequence3<token<'<'>, bitfield, token<'>'>, select_fn<1>>,
-                            sequence3<token<'{'>, struct2,  token<'}'>, select_fn<1>>, 
+    using struct2 = dec<seq<
+                            dec<some<dec<seq<opt<whitespace>,field2>, select_fn<1>>>, make_struct_fn>,
+                            opt<whitespace>>,
+                        select_fn<0>>;
+
+    using format1 = dec<choice3i<type,
+                            dec<seq3<token<'<'>, bitfield, token<'>'>>, select_fn<1>>,
+                            dec<seq3<token<'{'>, struct2,  token<'}'>>, select_fn<1>>>, 
                             make_format_fn>;
-    using field1 = sequence3<optional<choice2<number,quoted_name>>, format1, optional<array_size>, make_field_fn>;
-    using struct1 = sequence2<oneOrMore<sequence2<optional<whitespace>, field1, select_fn<1>>, make_struct_fn>, optional<whitespace>, select_fn<0>>;
+    using field1_def = dec<seq3<opt<field_count>, 
+                            format1, 
+                            opt<array_size>>, 
+                            make_field_fn>;
+    ast_rule(field1, field1_def);
 
-    using format0 = choice3<type,
-                            sequence3<token<'<'>, bitfield, token<'>'>, select_fn<1>>,
-                            sequence3<token<'{'>, struct1, token<'}'>, select_fn<1>>, 
+    using struct1 = dec<seq<
+                            dec<some<dec<seq<opt<whitespace>,field1>, select_fn<1>>>, make_struct_fn>,
+                            opt<whitespace>>,
+                        select_fn<0>>;
+
+    using format0 = dec<choice3i<type,
+                            dec<seq3<token<'<'>, bitfield, token<'>'>>, select_fn<1>>,
+                            dec<seq3<token<'{'>, struct1,  token<'}'>>, select_fn<1>>>, 
                             make_format_fn>;
-    using field0 = sequence3<optional<choice2<number,quoted_name>>, format0, optional<array_size>, make_field_fn>;
-    using struct0 = sequence2<oneOrMore<sequence2<optional<whitespace>, field0, select_fn<1>>, make_struct_fn>, optional<whitespace>, select_fn<0>>;
+    using field0_def = dec<seq3<opt<field_count>, 
+                            format0, 
+                            opt<array_size>>, 
+                            make_field_fn>;
+    ast_rule(field0, field0_def);
+    
+    using struct0 = dec<seq<
+                            dec<some<dec<seq<opt<whitespace>,field0>, select_fn<1>>>, make_struct_fn>,
+                            opt<whitespace>>,
+                        select_fn<0>>;
 
-    using structure = choice3<no_match, no_match, struct0, make_format_fn>;
+    using structure = dec<choice3i<fail_always, fail_always, struct0>, make_format_fn>;
 } // namespace _detail
 
 field_info *parse_pack_format_string(const char *fmt)
@@ -267,18 +293,41 @@ field_info *parse_pack_format_string(const char *fmt)
     return f;
 }
 
+std::map<char, const char *> typestrings = {
+    {'x', "pad byte"},
+    {'X', "pad word"},
+    {'c', "char"},
+    {'b', "signed char"},
+    {'B', "unsigned char"},
+    {'?', "bool"},
+    {'h', "short"},
+    {'H', "unsigned short"},
+    {'i', "int"},
+    {'I', "unsigned int"},
+    {'l', "long"},
+    {'L', "unsigned long"},
+    {'q', "long long"},
+    {'Q', "unsigned long long"},
+    {'n', "ssize_t"},
+    {'N', "size_t"},
+    {'e', "float"},
+    {'f', "float"},
+    {'d', "double"},
+    {'s', "string"},
+    {'p', "pascal string"},
+    {'P', "pointer"}};
+
 void print_field(field_info *f, const char *indent)
 {
     if (!f)
         return;
     
-    if (f->count_name)
-    {
-        printf("%s'%s'", indent, f->count_name);
-    }
-    else
-        printf("%s%d", indent, f->count);
+    //print the field in the format: type_string name
 
+    if (f->count > 1)
+        printf("%s//repeat %d times\n", indent, f->count);
+    
+    printf("%s", indent, f->count);
     if (f->type == 1)
     {
         printf("<");
@@ -290,7 +339,7 @@ void print_field(field_info *f, const char *indent)
     }
     else if (f->type == 2)
     {
-        printf("{\n");
+        printf("struct {\n");
         for (auto ff : *f->fields)
         {
             std::string new_indent = std::string(indent) + "  ";
@@ -300,13 +349,17 @@ void print_field(field_info *f, const char *indent)
     }
     else
     {
-        printf("%c", f->type);
+        printf("%s", typestrings[f->type]);
     }
+
+    const char *name = (f->count_name) ? f->count_name : "_";
+    printf(" %s", name);
 
     if (f->array_size_name)
     {
-        printf("['%s']\n", f->array_size_name);
+        printf("[%s]", f->array_size_name);
     }
-    else
-        printf("[%d]\n", f->array_size);
+    else if (f->array_size > 1)
+        printf("[%d]", f->array_size);
+    printf(";\n");
 }

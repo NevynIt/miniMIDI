@@ -139,7 +139,7 @@ int mod_Lua::DoCommand(int i, lua_State *L) {
     for X, packing is the same as B, unpacking produces a string of hex digits
 */
 
-#include "ast_pack.h"
+#include "ast/ast_pack.h"
 
 int mod_Lua::pack(const char *fmt)
 {
