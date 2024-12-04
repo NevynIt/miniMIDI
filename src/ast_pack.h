@@ -3,7 +3,7 @@
 #include <cstdint>
 
     /*
-    format string: { [<count>]<type>["[" <arraysize> "]"] }
+    format string: { [ <count> | '\'' <name> '\'' ]<type>["[" <arraysize> | '\'' <name> '\'' "]"] }
 
     whitespace is ignored before and after a format string
     <type> can be a character (see below), a bitfield <n:n:...>, or a struct {<format> <format> ...}
@@ -30,14 +30,13 @@
     s:8   char[] (zero terminated)
     p:8   char[] (pascal style, 8 bit for size, followed by the characters)
     P:32  void * (packing -> int; unpacking -> lightuserdata)
-
-    
     */
 
 class field_info
 {
 public:
     int count = 1;
+    char *count_name = nullptr;
     char type = 0; //0 = invalid, 1 = bitfield, 2 = struct, other chars are the type
     union
     {
@@ -45,6 +44,7 @@ public:
         std::vector<field_info *> *fields;
     };
     int array_size = 0; //0 = not an array, >0 = array size
+    char *array_size_name = nullptr;
 
     ~field_info()
     {
@@ -55,6 +55,14 @@ public:
         else if (type == 2)
         {
             delete fields;
+        }
+        if (count_name)
+        {
+            delete count_name;
+        }
+        if (array_size_name)
+        {
+            delete array_size_name;
         }
     }
 };

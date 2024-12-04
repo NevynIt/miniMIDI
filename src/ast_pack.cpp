@@ -12,15 +12,18 @@ namespace _detail
             whitespace = ' ' | '\t' | '\n' | '\r'
             number = <digit> { <digit> }
             bitfield = { <number> [ ":" ] }
+            alpha = 'a' to 'z' | 'A' to 'Z'
+            identifier = <alpha> { <alpha> | <digit> | '_' }
+            quoted_name = '\'' <identifier> '\''
 
             formaT1 = <type> | "<" <bitfield> ">"
-            field2 = [ <number> ] <formaT1> [ "[" <number> "]" ]
+            field2 = [ <number> | <quoted_name> ] <formaT1> [ "[" <number> | <quoted_name> "]" ]
             strucT1 = { [ <whitespace> ] <field2> } [ <whitespace> ]
             formaT0 = <type> | "{" <strucT1> "}" | "<" <bitfield> ">"
-            field1 = [ <number> ] <formaT0> [ "[" <number> "]" ]
+            field1 = [ <number> | <quoted_name> ] <formaT0> [ "[" <number> | <quoted_name> "]" ]
             strucT0 = { [ <whitespace> ] <field1> } [ <whitespace> ]
             format = <type> | "{" <strucT0> "}" | "<" <bitfield> ">"
-            field = [ <number> ] <format> [ "[" <number> "]" ]
+            field = [ <number> | <quoted_name> ] <format> [ "[" <number> | <quoted_name> "]" ]
             struct = { [ <whitespace> ] <field> } [ <whitespace> ]
     */
 
@@ -124,21 +127,33 @@ namespace _detail
             field_info *f = (field_info *)l->V->at(1)->P;
             if (l->V->at(0)->V->size() == 1)
             {
-                if (!l->V->at(0)->V->at(0)->type == 'l')
+                if (l->V->at(0)->V->at(0)->type == 'l')
+                    f->count = l->V->at(0)->V->at(0)->l;
+                else if (l->V->at(0)->V->at(0)->type == 's')
+                {
+                    f->count_name = l->V->at(0)->V->at(0)->s;
+                    l->V->at(0)->V->at(0)->s = nullptr;
+                }
+                else
                 {
                     delete l;
                     return nullptr;
                 }
-                f->count = l->V->at(0)->V->at(0)->l;
             }
             if (l->V->at(2)->V->size() == 1)
             {
-                if (!l->V->at(2)->V->at(0)->type == 'l')
+                if (l->V->at(2)->V->at(0)->type == 'l')
+                    f->array_size = l->V->at(2)->V->at(0)->l;
+                else if (l->V->at(2)->V->at(0)->type == 's')
+                {
+                    f->array_size_name = l->V->at(2)->V->at(0)->s;
+                    l->V->at(2)->V->at(0)->s = nullptr;
+                }
+                else
                 {
                     delete l;
                     return nullptr;
                 }
-                f->array_size = l->V->at(2)->V->at(0)->l;
             }
             l->V->at(1)->P = nullptr;
             l->invalidate();
@@ -187,6 +202,12 @@ namespace _detail
         };
     };
 
+    //these are already defined in ast_char.hpp
+    // dogit = '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9'
+    // alpha = 'a' to 'z' | 'A' to 'Z'
+    // identifier = <alpha> { <alpha> | <digit> | '_' }
+    
+    using quoted_name = sequence3<token<'\''>, identifier, token<'\''>, select_fn<1>>;
     using number = str2long;
 
     char_array_decl(char, type_chars) = "xXcbB?hHiIlLqQnNefdspP";
@@ -196,7 +217,7 @@ namespace _detail
                                     optional<token<':'>>,
                                     select_fn<0>>, 0, -1, make_bitfield_fn>;
 
-    using array_size = sequence3<token<'['>, number, token<']'>, select_fn<1>>;
+    using array_size = sequence3<token<'['>, choice2<number,quoted_name>, token<']'>, select_fn<1>>;
 
     using format2 = choice2<type,
                             sequence3<token<'<'>,
@@ -204,7 +225,7 @@ namespace _detail
                                     token<'>'>,
                                     select_fn<1>>,
                             make_format_fn>;
-    using field2 = sequence3<optional<number>, 
+    using field2 = sequence3<optional<choice2<number,quoted_name>>, 
                             format2, 
                             optional<array_size>, 
                             make_field_fn>;
@@ -218,14 +239,14 @@ namespace _detail
                             sequence3<token<'<'>, bitfield, token<'>'>, select_fn<1>>,
                             sequence3<token<'{'>, struct2,  token<'}'>, select_fn<1>>, 
                             make_format_fn>;
-    using field1 = sequence3<optional<number>, format1, optional<array_size>, make_field_fn>;
+    using field1 = sequence3<optional<choice2<number,quoted_name>>, format1, optional<array_size>, make_field_fn>;
     using struct1 = sequence2<oneOrMore<sequence2<optional<whitespace>, field1, select_fn<1>>, make_struct_fn>, optional<whitespace>, select_fn<0>>;
 
     using format0 = choice3<type,
                             sequence3<token<'<'>, bitfield, token<'>'>, select_fn<1>>,
                             sequence3<token<'{'>, struct1, token<'}'>, select_fn<1>>, 
                             make_format_fn>;
-    using field0 = sequence3<optional<number>, format0, optional<array_size>, make_field_fn>;
+    using field0 = sequence3<optional<choice2<number,quoted_name>>, format0, optional<array_size>, make_field_fn>;
     using struct0 = sequence2<oneOrMore<sequence2<optional<whitespace>, field0, select_fn<1>>, make_struct_fn>, optional<whitespace>, select_fn<0>>;
 
     using structure = choice3<no_match, no_match, struct0, make_format_fn>;
@@ -236,6 +257,10 @@ field_info *parse_pack_format_string(const char *fmt)
     using namespace _detail;
     _detail::stream s{fmt};
     _detail::lexeme *l = _detail::structure::match(s);
+    if (l == nullptr)
+    {
+        return nullptr;
+    }
     field_info *f = (field_info *)l->P;
     l->P = nullptr;
     delete l;
@@ -244,7 +269,16 @@ field_info *parse_pack_format_string(const char *fmt)
 
 void print_field(field_info *f, const char *indent)
 {
-    printf("%s%d", indent, f->count);
+    if (!f)
+        return;
+    
+    if (f->count_name)
+    {
+        printf("%s'%s'", indent, f->count_name);
+    }
+    else
+        printf("%s%d", indent, f->count);
+
     if (f->type == 1)
     {
         printf("<");
@@ -268,5 +302,11 @@ void print_field(field_info *f, const char *indent)
     {
         printf("%c", f->type);
     }
-    printf("[%d]\n", f->array_size);
+
+    if (f->array_size_name)
+    {
+        printf("['%s']\n", f->array_size_name);
+    }
+    else
+        printf("[%d]\n", f->array_size);
 }

@@ -2,10 +2,34 @@
 #include <cstdint>
 #include <vector>
 #include <cstring>
+#include <type_traits>
 
 namespace ast
 {
     //parser of objects of type O
+
+    // Helper trait to detect if T has an eof() method
+    template<typename T, typename = void>
+    struct has_eof_method : std::false_type {};
+
+    template<typename T>
+    struct has_eof_method<T, std::void_t<decltype(std::declval<T>().eof())>> : std::true_type {};
+
+    // Overload when T has an eof() method
+    template <typename T>
+    std::enable_if_t<has_eof_method<T>::value, bool>
+    call_eof(const T& obj)
+    {
+        return obj.eof();
+    }
+
+    // Overload when T does not have an eof() method
+    template <typename T>
+    std::enable_if_t<!has_eof_method<T>::value, bool>
+    call_eof(const T& obj)
+    {
+        return *obj == T(0);
+    }
 
     class void_param
     {
@@ -18,27 +42,33 @@ namespace ast
     {
     public:
         using object = O;
-        O operator *()
+
+        inline O operator *()
         {
             return *cur;
         }
 
-        stream &operator ++()
+        inline stream &operator ++()
         {
             cur++;
         }
 
-        stream operator ++(int)
+        inline stream operator ++(int)
         {
             stream s = *this;
             cur++;
             return s;
         }
 
-        stream &operator +=(size_t n)
+        inline stream &operator +=(size_t n)
         {
             cur += n;
             return *this;
+        }
+
+        inline bool eof() const
+        {
+            return *cur == 0;
         }
 
         O *cur = nullptr;
@@ -290,6 +320,9 @@ namespace ast
         template <typename S>
         static inline lexeme<O> *match(S &s)
         {
+            if (call_eof(s))
+                return nullptr;
+
             if (*s == value)
             {
                 lexeme<O> *l = new lexeme<O>();
@@ -311,6 +344,9 @@ namespace ast
         template <typename S>
         static inline lexeme<O> *match(S &s)
         {
+            if (call_eof(s))
+                return nullptr;
+
             if (*s >= start && *s <= end)
             {
                 lexeme<O> *l = new lexeme<O>();
@@ -341,6 +377,9 @@ namespace ast
         template <typename S>
         static inline lexeme<O> *match(S &s)
         {
+            if (call_eof(s))
+                return nullptr;
+
             lexeme<O> *l = new lexeme<O>();
             for (size_t i = 0; i < size; i++)
             {
@@ -366,12 +405,20 @@ namespace ast
         template <typename S>
         static inline lexeme<O> *match(S &s)
         {
+            if (call_eof(s))
+                return nullptr;
+
             lexeme<O> *l = new lexeme<O>();
             l->type = 'v';
             l->v = new std::vector<O>(size);
             for (size_t i = 0; arr[i] != 0; i++)
             {
-                if (*s == arr[i])
+                if (call_eof(s))
+                {
+                    delete l;
+                    return nullptr;
+                }
+                else if (*s == arr[i])
                 {
                     l->v->at(i) = *s;
                     s++;
@@ -383,6 +430,54 @@ namespace ast
                 }
             }
             return refinery<O, F0, F1, F2, F3>::refine(l);
+        }
+    };
+
+    //make the escape equal to the delimiter to disable it. escape skips the delimiter only, otherwise is passed as literal, so that Fx can handle it
+    template<typename O, O delimiter, O escape = delimiter, typename F0 = void_param, typename F1 = void_param, typename F2 = void_param, typename F3 = void_param>
+    class token_delimited : refinery<O, F0, F1, F2, F3>
+    {
+    public:
+        using object = O;
+
+        template <typename S>
+        static inline lexeme<O> *match(S &s)
+        {
+            if (call_eof(s) || *s != delimiter)
+                return nullptr;
+            s++;
+
+            lexeme<O> *l = new lexeme<O>();
+            l->type = 'v';
+            l->v = new std::vector<O>();
+            while (!call_eof(s) && *s != delimiter)
+            {
+                if (*s == escape)
+                {
+                    s++;
+                    if (call_eof(s))
+                    {
+                        delete l;
+                        return nullptr;
+                    }
+                    if (*s != delimiter)
+                    {
+                        l->v->push_back(escape);
+                    }
+                }
+                l->v->push_back(*s);
+                s++;
+            }
+            if (*s == delimiter)
+            {
+                s++;
+                return refinery<O, F0, F1, F2, F3>::refine(l);
+            }
+            else
+            {
+                delete l;
+                return nullptr;
+            }
         }
     };
 
@@ -443,6 +538,9 @@ namespace ast
         template <typename S>
         static inline lexeme<object> *match(S &s)
         {
+            if (call_eof(s))
+                return nullptr;
+
             lexeme<object> *l = new lexeme<object>();
             l->type = 'V';
             l->V = new std::vector<lexeme<object>*>();
@@ -495,24 +593,6 @@ namespace ast
         }
     };
 
-    template<typename T0, typename T1, typename T2 = void_param, typename T3 = void_param, typename T4 = void_param, typename T5 = void_param, typename T6 = void_param, typename F0 = void_param, typename F1 = void_param, typename F2 = void_param, typename F3 = void_param>
-    using sequence_base = sequence7<T0, T1, T2, T3, T4, T5, T6, F0, F1, F2, F3>;
-
-    template<typename T0, typename T1, typename F0 = void_param, typename F1 = void_param, typename F2 = void_param, typename F3 = void_param>
-    using sequence2 = sequence_base<T0, T1, void_param, void_param, void_param, void_param, void_param, F0, F1, F2, F3>;
-
-    template<typename T0, typename T1, typename T2, typename F0 = void_param, typename F1 = void_param, typename F2 = void_param, typename F3 = void_param>
-    using sequence3 = sequence_base<T0, T1, T2, void_param, void_param, void_param, void_param, F0, F1, F2, F3>;
-
-    template<typename T0, typename T1, typename T2, typename T3, typename F0 = void_param, typename F1 = void_param, typename F2 = void_param, typename F3 = void_param>
-    using sequence4 = sequence_base<T0, T1, T2, T3, void_param, void_param, void_param, F0, F1, F2, F3>;
-
-    template<typename T0, typename T1, typename T2, typename T3, typename T4, typename F0 = void_param, typename F1 = void_param, typename F2 = void_param, typename F3 = void_param>
-    using sequence5 = sequence_base<T0, T1, T2, T3, T4, void_param, void_param, F0, F1, F2, F3>;
-
-    template<typename T0, typename T1, typename T2, typename T3, typename T4, typename T5, typename F0 = void_param, typename F1 = void_param, typename F2 = void_param, typename F3 = void_param>
-    using sequence6 = sequence_base<T0, T1, T2, T3, T4, T5, void_param, F0, F1, F2, F3>;
-
     template<typename T0, typename T1, typename T2 = void_param, typename T3 = void_param, typename T4 = void_param, typename T5 = void_param, typename T6 = void_param, typename F0 = choice_fn<typename T0::object>, typename F1 = void_param, typename F2 = void_param, typename F3 = void_param>
     class choice7 : public refinery<typename T0::object, F0, F1, F2, F3>
     {
@@ -528,6 +608,9 @@ namespace ast
         template <typename S>
         static inline lexeme<object> *match(S &s)
         {
+            if (call_eof(s))
+                return nullptr;
+
             lexeme<object> *l = new lexeme<object>();
             S s_backup = s;
 
@@ -601,29 +684,12 @@ namespace ast
                     return refinery<object, F0, F1, F2, F3>::refine(l);
                 }
             }
-
+            
+            delete l;
             s = s_backup;
             return nullptr;
         }
     };
-
-    template<typename T0, typename T1, typename T2 = void_param, typename T3 = void_param, typename T4 = void_param, typename T5 = void_param, typename T6 = void_param, typename F0 = choice_fn<typename T0::object>, typename F1 = void_param, typename F2 = void_param, typename F3 = void_param>
-    using choice_base = choice7<T0, T1, T2, T3, T4, T5, T6, F0, F1, F2, F3>;
-
-    template<typename T0, typename T1, typename F0 = choice_fn<typename T0::object>, typename F1 = void_param, typename F2 = void_param, typename F3 = void_param>
-    using choice2 = choice_base<T0, T1, void_param, void_param, void_param, void_param, void_param, F0, F1, F2, F3>;
-
-    template<typename T0, typename T1, typename T2, typename F0 = choice_fn<typename T0::object>, typename F1 = void_param, typename F2 = void_param, typename F3 = void_param>
-    using choice3 = choice_base<T0, T1, T2, void_param, void_param, void_param, void_param, F0, F1, F2, F3>;
-
-    template<typename T0, typename T1, typename T2, typename T3, typename F0 = choice_fn<typename T0::object>, typename F1 = void_param, typename F2 = void_param, typename F3 = void_param>
-    using choice4 = choice_base<T0, T1, T2, T3, void_param, void_param, void_param, F0, F1, F2, F3>;
-
-    template<typename T0, typename T1, typename T2, typename T3, typename T4, typename F0 = choice_fn<typename T0::object>, typename F1 = void_param, typename F2 = void_param, typename F3 = void_param>
-    using choice5 = choice_base<T0, T1, T2, T3, T4, void_param, void_param, F0, F1, F2, F3>;
-
-    template<typename T0, typename T1, typename T2, typename T3, typename T4, typename T5, typename F0 = choice_fn<typename T0::object>, typename F1 = void_param, typename F2 = void_param, typename F3 = void_param>
-    using choice6 = choice_base<T0, T1, T2, T3, T4, T5, void_param, F0, F1, F2, F3>;
 
     template<typename T0, int min = 0, int max = -1, typename F0 = void_param, typename F1 = void_param, typename F2 = void_param, typename F3 = void_param>
     class repeat : public refinery<typename T0::object, F0, F1, F2, F3>
@@ -640,7 +706,7 @@ namespace ast
             S s_backup = s;
             int count = 0;
 
-            while (max == -1 || count < max)
+            while ((max == -1 || count < max) && !call_eof(s))
             {
                 auto li = T0::match(s);
                 if (li)
