@@ -1,11 +1,10 @@
 #include <string>
-#include "ast.hpp"
+#include "ast_char.hpp"
 #include "ast_pack.h"
 
 namespace _detail
 {
-    using namespace ast;
-    
+    using namespace ast_char;
     /*
         Grammar definition for format strings:
             digit = '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9'
@@ -25,44 +24,10 @@ namespace _detail
             struct = { [ <whitespace> ] <field> } [ <whitespace> ]
     */
 
-    using digit = token_range<char, '0', '9'>;
-    struct whitespace_array
-    {
-        static constexpr char arr[] = {' ', '\t', '\n', '\r'};
-        static constexpr int size = sizeof(arr) / sizeof(arr[0]);
-    };
-    using whitespace = token_oneOrMore<char, whitespace_array>;
-    struct type_array
-    {
-        static constexpr char arr[] = {'x', 'X', 'c', 'b', 'B', '?', 'h', 'H', 'i', 'I', 'l', 'L', 'q', 'Q', 'n', 'N', 'e', 'f', 'd', 's', 'p', 'P'};
-        static constexpr int size = sizeof(arr) / sizeof(arr[0]);
-    };
-    using type = token_array<char, type_array>;
-
-    class make_number_fn
-    {
-    public:
-        static inline lexeme<char> *fire(lexeme<char> *l)
-        {
-            //convert the vector of digits l.v to a number
-            int number = 0;
-            for (auto li : *l->v)
-            {
-                number = number * 10 + li - '0';
-            }
-            delete l->v;
-            l->type = 'l';
-            l->l = number;
-            return l;
-        }
-    };
-
-    using number = token_oneOrMore<digit, make_number_fn>;
-
     class make_bitfield_fn
     {
     public:
-        static inline lexeme<char> *fire(lexeme<char> *l)
+        static inline lexeme *refine(lexeme *l)
         {
             std::vector<uint8_t> *bitfield = new std::vector<uint8_t>();
             if (!l->type == 'V')
@@ -83,23 +48,17 @@ namespace _detail
             delete l->V;
             l->type = 'P';
             l->P = bitfield;
-            l->invalidate_cb = [](lexeme<char> *l) {
+            l->invalidate_cb = [](lexeme *l) {
                 delete (std::vector<uint8_t> *)l->P;
             };
             return l;
         }
     };
 
-    using bitfield = repeat<sequence2<number, 
-                                    optional<token<char, ':'>>,
-                                    select_fire_fn<char,0>>, 0, -1, make_bitfield_fn>;
-
-    using array_size = sequence3<token<char, '['>, number, token<char, ']'>, select_fire_fn<char, 1>>;
-
     class make_format_fn
     {
     public:
-        static inline lexeme<char> *fire(lexeme<char> *l)
+        static inline lexeme *refine(lexeme *l)
         {
             //l is a choice between:
             //  0 = type
@@ -145,7 +104,7 @@ namespace _detail
             l->invalidate();
             l->type = 'P';
             l->P = f;
-            l->invalidate_cb = [](lexeme<char> *l) {
+            l->invalidate_cb = [](lexeme *l) {
                 delete (field_info *)l->P;
             };
             return l;
@@ -155,7 +114,7 @@ namespace _detail
     class make_field_fn
     {
     public:
-        static inline lexeme<char> *fire(lexeme<char> *l)
+        static inline lexeme *refine(lexeme *l)
         {
             if (l->type != 'V' || l->V->size() != 3 || l->V->at(0)->type != 'V' || l->V->at(1)->type != 'P' || l->V->at(2)->type != 'V')
             {
@@ -185,7 +144,7 @@ namespace _detail
             l->invalidate();
             l->type = 'P';
             l->P = f;
-            l->invalidate_cb = [](lexeme<char> *l) {
+            l->invalidate_cb = [](lexeme *l) {
                 delete (field_info *)l->P;
             };
             return l;
@@ -195,7 +154,7 @@ namespace _detail
     class make_struct_fn
     {
     public:
-        static inline lexeme<char> *fire(lexeme<char> *l)
+        static inline lexeme *refine(lexeme *l)
         {
             if (l->type != 'V')
             {
@@ -221,18 +180,29 @@ namespace _detail
             l->invalidate();
             l->type = 'P';
             l->P = fields;
-            l->invalidate_cb = [](lexeme<char> *l) {
+            l->invalidate_cb = [](lexeme *l) {
                 delete (std::vector<field_info *> *)l->P;
             };
             return l;
         };
     };
 
+    using number = str2long;
+
+    char_array_decl(char, type_chars) = "xXcbB?hHiIlLqQnNefdspP";
+    using type = token_choice<char_array(type_chars)>;
+
+    using bitfield = repeat<sequence2<number, 
+                                    optional<token<':'>>,
+                                    select_fn<0>>, 0, -1, make_bitfield_fn>;
+
+    using array_size = sequence3<token<'['>, number, token<']'>, select_fn<1>>;
+
     using format2 = choice2<type,
-                            sequence3<token<char, '<'>,
+                            sequence3<token<'<'>,
                                     bitfield,
-                                    token<char, '>'>,
-                                    select_fire_fn<char, 1>>,
+                                    token<'>'>,
+                                    select_fn<1>>,
                             make_format_fn>;
     using field2 = sequence3<optional<number>, 
                             format2, 
@@ -240,32 +210,32 @@ namespace _detail
                             make_field_fn>;
     using struct2 = sequence2<oneOrMore<sequence2<optional<whitespace>, 
                                                 field2, 
-                                                select_fire_fn<char, 1>>, make_struct_fn>, 
+                                                select_fn<1>>, make_struct_fn>, 
                             optional<whitespace>, 
-                            select_fire_fn<char, 0>>;
+                            select_fn<0>>;
 
     using format1 = choice3<type,
-                            sequence3<token<char, '<'>, bitfield, token<char, '>'>, select_fire_fn<char, 1>>,
-                            sequence3<token<char, '{'>, struct2, token<char, '}'>, select_fire_fn<char, 1>>, 
+                            sequence3<token<'<'>, bitfield, token<'>'>, select_fn<1>>,
+                            sequence3<token<'{'>, struct2,  token<'}'>, select_fn<1>>, 
                             make_format_fn>;
     using field1 = sequence3<optional<number>, format1, optional<array_size>, make_field_fn>;
-    using struct1 = sequence2<oneOrMore<sequence2<optional<whitespace>, field1, select_fire_fn<char, 1>>, make_struct_fn>, optional<whitespace>, select_fire_fn<char, 0>>;
+    using struct1 = sequence2<oneOrMore<sequence2<optional<whitespace>, field1, select_fn<1>>, make_struct_fn>, optional<whitespace>, select_fn<0>>;
 
     using format0 = choice3<type,
-                            sequence3<token<char, '<'>, bitfield, token<char, '>'>, select_fire_fn<char, 1>>,
-                            sequence3<token<char, '{'>, struct1, token<char, '}'>, select_fire_fn<char, 1>>, 
+                            sequence3<token<'<'>, bitfield, token<'>'>, select_fn<1>>,
+                            sequence3<token<'{'>, struct1, token<'}'>, select_fn<1>>, 
                             make_format_fn>;
     using field0 = sequence3<optional<number>, format0, optional<array_size>, make_field_fn>;
-    using struct0 = sequence2<oneOrMore<sequence2<optional<whitespace>, field0, select_fire_fn<char, 1>>, make_struct_fn>, optional<whitespace>, select_fire_fn<char, 0>>;
+    using struct0 = sequence2<oneOrMore<sequence2<optional<whitespace>, field0, select_fn<1>>, make_struct_fn>, optional<whitespace>, select_fn<0>>;
 
-    using structure = choice3<no_match<char>, no_match<char>, struct0, make_format_fn>;
+    using structure = choice3<no_match, no_match, struct0, make_format_fn>;
 } // namespace _detail
 
 field_info *parse_pack_format_string(const char *fmt)
 {
     using namespace _detail;
-    _detail::stream<const char> s{fmt};
-    auto l = _detail::structure::match(s);
+    _detail::stream s{fmt};
+    _detail::lexeme *l = _detail::structure::match(s);
     field_info *f = (field_info *)l->P;
     l->P = nullptr;
     delete l;
