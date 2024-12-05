@@ -1,7 +1,7 @@
 #pragma once
 #include <vector>
 #include <cstdint>
-#include "lua.hpp"
+#include "lua/lua.hpp"
 
     /*
     format string: { [ <count> | '\'' <name> '\'' ]<type>["[" <arraysize> | '\'' <name> '\'' "]"] }
@@ -70,7 +70,7 @@ public:
         }
     }
 
-    static field_info *parse(const char *fmt);
+    static field_info *parse(char *fmt);
     void print(const char *indent = "");
     int pack(lua_State *L);
     int unpack(lua_State *L);

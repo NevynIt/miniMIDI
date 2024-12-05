@@ -26,13 +26,6 @@ void mod_Lua::Init() {
             lua_pop(L, 1);
             return f->unpack(L);
         }},
-        {"calcsize", [](lua_State *L) -> int {
-            lua_getfield(L, 1, "__field_info");
-            field_info *f = (field_info *)lua_touserdata(L, -1);
-            lua_pop(L, 1);
-            lua_pushinteger(L, f->calcsize());
-            return 1;
-        }},
         {"pack", [](lua_State *L) -> int {
             lua_getfield(L, 1, "__field_info");
             field_info *f = (field_info *)lua_touserdata(L, -1);

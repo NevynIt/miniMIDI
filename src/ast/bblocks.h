@@ -13,7 +13,12 @@ namespace ast::_b
     public:
         using object = O;
 
-        inline O operator *()
+        inline O &operator *()
+        {
+            return *cur;
+        }
+
+        inline const O &operator *() const
         {
             return *cur;
         }
