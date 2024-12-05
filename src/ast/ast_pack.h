@@ -70,7 +70,7 @@ public:
         }
     }
 
-    static field_info *parse(char *fmt);
+    static field_info *parse(const char *fmt);
     void print(const char *indent = "");
     int pack(lua_State *L);
     int unpack(lua_State *L);

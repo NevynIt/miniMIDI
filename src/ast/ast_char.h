@@ -9,7 +9,7 @@ namespace ast_char
 
     using base_fn = ast::_f::base_fn<obj>;
     using stream = ast::_b::stream<obj>;
-    // using stream_const = ast::_b::stream<const obj>;
+    using stream_const = ast::_b::stream<const obj>;
     using lexeme = ast::_b::lexeme<obj>;
     using noop_fn = ast::_f::noop_fn<obj>;
     using concat_fn = ast::_f::concat_fn<obj>;

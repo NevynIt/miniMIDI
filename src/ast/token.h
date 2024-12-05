@@ -5,6 +5,23 @@
 
 namespace ast::_t
 {
+    template<typename O, typename S>
+    ast::_b::lexeme<O> *base_token_match(S &s, O value)
+    {
+        if (ast::_h::stream_eof(s))
+            return nullptr;
+
+        if (*s == value)
+        {
+            ast::_b::lexeme<O> *l = new ast::_b::lexeme<O>();
+            l->type = 'o';
+            l->o = value;
+            s++;
+            return l;
+        }
+        return nullptr;
+    }
+
     template<typename O, O value>
     class token
     {
@@ -14,18 +31,7 @@ namespace ast::_t
         template <typename S>
         static inline ast::_b::lexeme<O> *match(S &s)
         {
-            if (ast::_h::stream_eof(s))
-                return nullptr;
-
-            if (*s == value)
-            {
-                ast::_b::lexeme<O> *l = new ast::_b::lexeme<O>();
-                l->type = 'o';
-                l->o = value;
-                s++;
-                return l;
-            }
-            return nullptr;
+            return base_token_match(s, value);
         }
     };
 
