@@ -5,29 +5,30 @@
 
 namespace ast::_h
 {
-    // Helper trait to detect if T has an eof() method
-    template<typename T, typename = void>
-    struct has_eof_method : std::false_type {};
-
-    template<typename T>
-    struct has_eof_method<T, std::void_t<decltype(std::declval<T>().eof())>> : std::true_type {};
-
-    // Overload when T has an eof() method
-    template <typename T>
-    std::enable_if_t<has_eof_method<T>::value, bool>
-    call_eof(const T& obj)
-    {
-        return obj.eof();
+    // Helper trait called _NAME_, which calls _FNC_ if T has a _FNC_() method, otherwise calls _ELSE_
+    #define optional_call_decl(_NAME_, _RET_, _FNC_, _ELSE_) \
+    template<typename T, typename = void> \
+    struct _NAME_##_has_##_FNC_##_method : std::false_type {}; \
+    \
+    template<typename T> \
+    struct _NAME_##_has_##_FNC_##_method<T, std::void_t<decltype(std::declval<T>()._FNC_())>> : std::true_type {}; \
+    \
+    template <typename T> \
+    std::enable_if_t<_NAME_##_has_##_FNC_##_method<T>::value, _RET_> \
+    _NAME_(const T& obj) \
+    { \
+        return obj._FNC_(); \
+    } \
+    \
+    template <typename T> \
+    std::enable_if_t<!_NAME_##_has_##_FNC_##_method<T>::value, _RET_> \
+    _NAME_(const T& obj) \
+    { \
+        return (_ELSE_); \
     }
 
-    // Overload when T does not have an eof() method
-    template <typename T>
-    std::enable_if_t<!has_eof_method<T>::value, bool>
-    call_eof(const T& obj)
-    {
-        return *obj == T(0);
-    }
-
+    optional_call_decl(stream_eof, bool, eof, *obj == T(0))
+    
     template <typename O, std::size_t N>
     static constexpr std::size_t getSize(const O (&arr)[N])
     {

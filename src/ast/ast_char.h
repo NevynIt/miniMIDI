@@ -7,6 +7,7 @@ namespace ast_char
 { //specializations for obj = const char
     using obj = char;
 
+    using base_fn = ast::_f::base_fn<obj>;
     using stream = ast::_b::stream<const obj>;
     using lexeme = ast::_b::lexeme<obj>;
     using noop_fn = ast::_f::noop_fn<obj>;
@@ -34,10 +35,10 @@ namespace ast_char
     #define char_array_decl(_TYPE_, _NAME_) inline constexpr _TYPE_ _NAME_[]
     #define char_array(arr) (arr), (ast::_h::getSize(arr)-1)
 
-    class tolong_fn
+    class tolong_fn : public base_fn
     {
     public:
-        static inline lexeme *refine(lexeme *l)
+        static inline lexeme *post_match(lexeme *l)
         {
             if (!l)
                 return nullptr;
@@ -63,10 +64,10 @@ namespace ast_char
         }
     };
 
-    class todouble_fn
+    class todouble_fn : public base_fn
     {
     public:
-        static inline lexeme *refine(lexeme *l)
+        static inline lexeme *post_match(lexeme *l)
         {
             if (!l)
                 return nullptr;
@@ -92,10 +93,10 @@ namespace ast_char
         }
     };
 
-    class tostring_fn
+    class tostring_fn : public base_fn
     {
     public:
-        static inline lexeme *refine(lexeme *l)
+        static inline lexeme *post_match(lexeme *l)
         {
             if (!l)
                 return nullptr;
@@ -145,10 +146,10 @@ namespace ast_char
 
     using str2double = dec<fractional, todouble_fn>;
 
-    class stdEscape_fn
+    class stdEscape_fn : public base_fn
     { //standard escape sequences, including \n, \t, \r, \0, \\ and \xHH
     public:
-        static inline lexeme *refine(lexeme *l)
+        static inline lexeme *post_match(lexeme *l)
         {
             if (!l)
                 return nullptr;

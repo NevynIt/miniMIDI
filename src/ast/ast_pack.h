@@ -1,9 +1,14 @@
 #pragma once
 #include <vector>
 #include <cstdint>
+#include "lua.hpp"
 
     /*
     format string: { [ <count> | '\'' <name> '\'' ]<type>["[" <arraysize> | '\'' <name> '\'' "]"] }
+    <count> is the number of times to repeat the field
+    <name> before the type is the name of the field
+    <arraysize> is the size of the array
+    <name> after the type is a reference to a field set before, that contains the size of the array
 
     whitespace is ignored before and after a format string
     <type> can be a character (see below), a bitfield <n:n:...>, or a struct {<format> <format> ...}
@@ -24,7 +29,6 @@
     Q:64  unsigned 64 bit integer (unsigned long long)
     n:32  ssize_t (same as i)
     N:32  size_t (same as I)
-    e:16  float (half precision)
     f:32  float
     d:64  double
     s:8   char[] (zero terminated)
@@ -36,7 +40,7 @@ class field_info
 {
 public:
     int count = 1;
-    char *count_name = nullptr;
+    char *field_name = nullptr;
     char type = 0; //0 = invalid, 1 = bitfield, 2 = struct, other chars are the type
     union
     {
@@ -56,16 +60,20 @@ public:
         {
             delete fields;
         }
-        if (count_name)
+        if (field_name)
         {
-            delete count_name;
+            delete field_name;
         }
         if (array_size_name)
         {
             delete array_size_name;
         }
     }
+
+    static field_info *parse(const char *fmt);
+    void print(const char *indent = "");
+    int pack(lua_State *L);
+    int unpack(lua_State *L);
 };
 
-field_info *parse_pack_format_string(const char *fmt);
-void print_field(field_info *f, const char *indent = "");
+

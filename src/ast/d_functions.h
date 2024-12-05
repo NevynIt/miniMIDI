@@ -9,20 +9,55 @@
 namespace ast::_f
 {
     template<typename O>
-    class noop_fn
+    class base_fn
     {
     public:
-        static inline ast::_b::lexeme<O> *refine(ast::_b::lexeme<O> *l)
+        using object = O;
+
+        //called before attempting the match
+        //return false to skip the match (no_match will not be called in this case)
+        //do any preparation here
+        template <typename S>
+        static inline bool pre_match(S &s)
+        {
+            return true;
+        }
+
+        //called to match the input, when the object is used as a rule, return nullptr to indicate no match
+        template <typename S>
+        static inline ast::_b::lexeme<O> *match(S &s)
+        {
+            return nullptr;
+        }
+
+        //called after a successful match
+        //do any post processing and cleanup here
+        //return the lexeme to be used in the parent rule
+        static inline ast::_b::lexeme<O> *post_match(ast::_b::lexeme<O> *l)
         {
             return l;
         }
+
+        //called after a failed match
+        //do any cleanup here
+        template <typename S>
+        static inline void no_match(S &s)
+        {
+            //no op
+        }
+    };
+
+    template<typename O>
+    class noop_fn : public base_fn<O>
+    {
+    public:
     };
 
     template<typename O, int n>
-    class select_fn
+    class select_fn : public base_fn<O>
     {
     public:
-        static inline ast::_b::lexeme<O> *refine(ast::_b::lexeme<O> *l)
+        static inline ast::_b::lexeme<O> *post_match(ast::_b::lexeme<O> *l)
         {
             if (l->type == 'V' && l->V->size() > n)
             {
@@ -40,10 +75,10 @@ namespace ast::_f
     };
 
     template<typename O>
-    class choice_fn
+    class choice_fn : public base_fn<O>
     {
     public:
-        static inline ast::_b::lexeme<O> *refine(ast::_b::lexeme<O> *l)
+        static inline ast::_b::lexeme<O> *post_match(ast::_b::lexeme<O> *l)
         {
             if (l->type >= '0' && l->type <= '9')
             {
@@ -61,7 +96,7 @@ namespace ast::_f
     };
 
     template<typename O>
-    class concat_fn
+    class concat_fn : public base_fn<O>
     {
     public:
         static inline bool append(ast::_b::lexeme<O> *l, std::vector<O> *v)
@@ -94,7 +129,7 @@ namespace ast::_f
             return true;
         }
 
-        static inline ast::_b::lexeme<O> *refine(ast::_b::lexeme<O> *l)
+        static inline ast::_b::lexeme<O> *post_match(ast::_b::lexeme<O> *l)
         {
             ast::_b::lexeme<O> *tmp = new ast::_b::lexeme<O>();
             tmp->type = 'v';
@@ -114,12 +149,17 @@ namespace ast::_f
     };
 
     template<typename O>
-    class fail_always
+    class fail_always : public base_fn<O>
     {
     public:
         using object = O;
+        template <typename S>
+        static inline bool pre_match(S &s)
+        {
+            return false;
+        }
 
-        static inline ast::_b::lexeme<O> *refine(ast::_b::lexeme<O> *l)
+        static inline ast::_b::lexeme<O> *post_match(ast::_b::lexeme<O> *l)
         {
             if (l)
                 delete l;

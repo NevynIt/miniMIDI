@@ -1,6 +1,7 @@
 #include "mod_Lua.h"
 #include "mod_Stdio.h"
 #include "App.h"
+#include "ast/ast_pack.h"
 
 void mod_Lua::PreInit() {
     // Initialize Lua engine
@@ -10,6 +11,39 @@ void mod_Lua::PreInit() {
 
 void mod_Lua::Init() {
     registerModule(this, "lua");
+
+    // Create metatable for pack/unpack/calcsize
+    luaL_Reg methods[] = {
+        {"print", [](lua_State *L) -> int {
+            lua_getfield(L, 1, "__field_info");
+            field_info *f = (field_info *)lua_touserdata(L, -1);
+            f->print();
+            return 0;
+        }},
+        {"unpack", [](lua_State *L) -> int {
+            lua_getfield(L, 1, "__field_info");
+            field_info *f = (field_info *)lua_touserdata(L, -1);
+            lua_pop(L, 1);
+            return f->unpack(L);
+        }},
+        {"calcsize", [](lua_State *L) -> int {
+            lua_getfield(L, 1, "__field_info");
+            field_info *f = (field_info *)lua_touserdata(L, -1);
+            lua_pop(L, 1);
+            lua_pushinteger(L, f->calcsize());
+            return 1;
+        }},
+        {"pack", [](lua_State *L) -> int {
+            lua_getfield(L, 1, "__field_info");
+            field_info *f = (field_info *)lua_touserdata(L, -1);
+            lua_pop(L, 1);
+            return f->pack(L);
+        }},
+        {nullptr, nullptr}
+    };
+    luaL_newmetatable(L, "PackUnpackMetaTable");
+    luaL_setfuncs(L, methods, 0);
+    lua_pop(L, 1); // pop the metatable
 
     // Load Lua boot script, which should configure the system
     if (luaL_dofile(L, "boot.lua") != LUA_OK) {
@@ -73,10 +107,8 @@ const char **mod_Lua::GetCommands() const {
     static const char *commands[] = {
         "doString",
         "dump", //dump(ptr, size) return the memory at ptr of size bytes as a string
-        "unpack", //unpack(ptr, fmt) decode a struct at ptr according to fmt
+        "compile", //compile(fmt) prepare the structures to decode according to fmt
         "ptr", //ptr(addr) return addr as lightuserdata
-        "pack",
-        "calcsize",
         nullptr
     };
     return commands;
@@ -100,85 +132,26 @@ int mod_Lua::DoCommand(int i, lua_State *L) {
                 lua_pushlstring(L, (const char *)p, size);
                 return 1;
             }
-        case 2: // unpack
+        case 2: // compile
             {
-                // Get string from Lua stack instead of address
-                size_t len;
-                const char *buffer = luaL_checklstring(L, 1, &len);
-                const char *fmt = luaL_checkstring(L, 2);
+                const char *fmt = luaL_checkstring(L, 1);
+                field_info *f = field_info::parse(fmt);
+                if (!f) {
+                    return luaL_error(L, "Invalid format string");
+                }
 
-                unpack(buffer, (int)len, fmt);
+                lua_newtable(L);
+                luaL_getmetatable(L, "PackUnpackMetaTable"); //maybe change the name one day
+                lua_setmetatable(L, -2);
+
+                lua_pushlightuserdata(L, f);
+                lua_setfield(L, -2, "__field_info");
+
                 return 1;
             }
         case 3: //ptr
             lua_pushlightuserdata(L, (void *)luaL_checkinteger(L, 1));
             return 1;
-        case 4: // pack
-            {
-                // Ensure the data is a table and a string is provided
-                luaL_checktype(L, 1, LUA_TTABLE);
-                const char *fmt = luaL_checkstring(L, 2);
-
-                return pack(fmt);
-            }
-        case 5: // calcsize
-            {
-                const char *fmt = luaL_checkstring(L, 1);
-                int size = calcsize(fmt);
-                if (size < 0) {
-                    return luaL_error(L, "Unknown format specifier in format string");
-                }
-                lua_pushinteger(L, size);
-                return 1;
-            }
     }
     return 0;
-}
-
-/*
-    for X, packing is the same as B, unpacking produces a string of hex digits
-*/
-
-#include "ast/ast_pack.h"
-
-int mod_Lua::pack(const char *fmt)
-{
-    field_info *f = parse_pack_format_string(fmt);
-    if (!f)
-    {
-        return luaL_error(L, "Invalid format string");
-    }
-
-    print_field(f);
-    return 0;
-}
-
-bool mod_Lua::pack_value(std::string &buffer, char type)
-{
-    return false;
-}
-int mod_Lua::calcsize(const char *fmt)
-{
-    field_info *f = parse_pack_format_string(fmt);
-    if (!f)
-    {
-        return -1;
-    }
-
-    return 0;
-}
-
-int mod_Lua::unpack(const char *buffer, int len, const char *fmt)
-{
-    field_info *f = parse_pack_format_string(fmt);
-    if (!f)
-    {
-        return luaL_error(L, "Invalid format string");
-    }
-
-    return 0;
-}
-bool mod_Lua::unpack_value(const char *buffer, int len, int &offset, char type, int array_size)
-{
-    return false;
 }

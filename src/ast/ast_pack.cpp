@@ -9,7 +9,7 @@ namespace _detail
     /*
         Grammar definition for format strings:
             digit = '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9'
-            type = 'x' | 'X' | 'c' | 'b' | 'B' | '?' | 'h' | 'H' | 'i' | 'I' | 'l' | 'L' | 'q' | 'Q' | 'n' | 'N' | 'e' | 'f' | 'd' | 's' | 'p' | 'P'
+            type = 'x' | 'X' | 'c' | 'b' | 'B' | '?' | 'h' | 'H' | 'i' | 'I' | 'l' | 'L' | 'q' | 'Q' | 'n' | 'N' | 'f' | 'd' | 's' | 'p' | 'P'
             whitespace = ' ' | '\t' | '\n' | '\r'
             number = <digit> { <digit> }
             bitfield = { <number> [ ":" ] }
@@ -28,10 +28,10 @@ namespace _detail
             struct = { [ <whitespace> ] <field> } [ <whitespace> ]
     */
 
-    class make_bitfield_fn
+    class make_bitfield_fn : public base_fn
     {
     public:
-        static inline lexeme *refine(lexeme *l)
+        static inline lexeme *post_match(lexeme *l)
         {
             std::vector<uint8_t> *bitfield = new std::vector<uint8_t>();
             if (!l->type == 'V')
@@ -59,10 +59,10 @@ namespace _detail
         }
     };
 
-    class make_format_fn
+    class make_format_fn : public base_fn
     {
     public:
-        static inline lexeme *refine(lexeme *l)
+        static inline lexeme *post_match(lexeme *l)
         {
             //l is a choice between:
             //  0 = type
@@ -115,10 +115,10 @@ namespace _detail
         };
     };
 
-    class make_field_fn
+    class make_field_fn : public base_fn
     {
     public:
-        static inline lexeme *refine(lexeme *l)
+        static inline lexeme *post_match(lexeme *l)
         {
             if (l->type != 'V' || l->V->size() != 3 || l->V->at(0)->type != 'V' || l->V->at(1)->type != 'P' || l->V->at(2)->type != 'V')
             {
@@ -132,7 +132,7 @@ namespace _detail
                     f->count = l->V->at(0)->V->at(0)->l;
                 else if (l->V->at(0)->V->at(0)->type == 's')
                 {
-                    f->count_name = l->V->at(0)->V->at(0)->s;
+                    f->field_name = l->V->at(0)->V->at(0)->s;
                     l->V->at(0)->V->at(0)->s = nullptr;
                 }
                 else
@@ -167,10 +167,10 @@ namespace _detail
         }
     };
 
-    class make_struct_fn
+    class make_struct_fn : public base_fn
     {
     public:
-        static inline lexeme *refine(lexeme *l)
+        static inline lexeme *post_match(lexeme *l)
         {
             if (l->type != 'V')
             {
@@ -214,7 +214,7 @@ namespace _detail
     using number = str2long;
     // ast_rule(number, (str2long));
 
-    char_array_decl(char, type_chars) = "xXcbB?hHiIlLqQnNefdspP";
+    char_array_decl(char, type_chars) = "xXcbB?hHiIlLqQnNfdspP";
     using type = token_choice<char_array(type_chars)>;
 
     using bitfield_def = dec<rep<dec<seq<number, 
@@ -278,7 +278,7 @@ namespace _detail
     using structure = dec<choice3i<fail_always, fail_always, struct0>, make_format_fn>;
 } // namespace _detail
 
-field_info *parse_pack_format_string(const char *fmt)
+field_info *field_info::parse(const char *fmt)
 {
     using namespace _detail;
     _detail::stream s{fmt};
@@ -294,8 +294,8 @@ field_info *parse_pack_format_string(const char *fmt)
 }
 
 std::map<char, const char *> typestrings = {
-    {'x', "pad byte"},
-    {'X', "pad word"},
+    {'x', "pad byte"}, //insert or skip exactly one byte of padding
+    {'X', "pad int32"}, //insert or skip unitl the next int32 boundary
     {'c', "char"},
     {'b', "signed char"},
     {'B', "unsigned char"},
@@ -310,56 +310,330 @@ std::map<char, const char *> typestrings = {
     {'Q', "unsigned long long"},
     {'n', "ssize_t"},
     {'N', "size_t"},
-    {'e', "float"},
     {'f', "float"},
     {'d', "double"},
     {'s', "string"},
     {'p', "pascal string"},
     {'P', "pointer"}};
 
-void print_field(field_info *f, const char *indent)
+void field_info::print(const char *indent)
 {
-    if (!f)
-        return;
-    
     //print the field in the format: type_string name
 
-    if (f->count > 1)
-        printf("%s//repeat %d times\n", indent, f->count);
+    if (count > 1)
+        printf("%s//repeat %d times\n", indent, count);
     
-    printf("%s", indent, f->count);
-    if (f->type == 1)
+    printf("%s", indent, count);
+    if (type == 1)
     {
         printf("<");
-        for (auto b : *f->bitfield)
+        for (auto b : *bitfield)
         {
             printf("%d:", b);
         }
         printf(">");
     }
-    else if (f->type == 2)
+    else if (type == 2)
     {
         printf("struct {\n");
-        for (auto ff : *f->fields)
+        for (auto ff : *fields)
         {
             std::string new_indent = std::string(indent) + "  ";
-            print_field(ff, new_indent.c_str());
+            ff->print(new_indent.c_str());
         }
         printf("%s}", indent);
     }
     else
     {
-        printf("%s", typestrings[f->type]);
+        printf("%s", typestrings[type]);
     }
 
-    const char *name = (f->count_name) ? f->count_name : "_";
+    const char *name = (field_name) ? field_name : "_";
     printf(" %s", name);
 
-    if (f->array_size_name)
+    if (array_size_name)
     {
-        printf("[%s]", f->array_size_name);
+        printf("[%s]", array_size_name);
     }
-    else if (f->array_size > 1)
-        printf("[%d]", f->array_size);
+    else if (array_size > 1)
+        printf("[%d]", array_size);
     printf(";\n");
+}
+
+int field_info::pack(lua_State *L)
+{
+    return 0;
+}
+
+void append_value(lua_State *L)
+{
+    //push the value onto the stack on the table at -2, at the last index
+    lua_rawseti(L, -2, lua_rawlen(L, -2) + 1);
+}
+
+int unpack_simple_value(lua_State *L, field_info *f, ast_char::stream &s, int &size)
+{
+    bool append = true;
+    //simple type
+    switch (f->type)
+    {
+    case 'x':
+        s++;
+        size++;
+        append = false;
+        break;
+    case 'X':
+        {
+            int padbytes = 4 - (size % 4);
+            if (padbytes == 4)
+                padbytes = 0;
+            s += padbytes;
+            size += padbytes;
+            append = false;
+        }
+        break;
+    case 'c':
+        lua_pushinteger(L, *s++);
+        size++;
+        break;
+    case 'b':
+        lua_pushinteger(L, (int8_t)*s++);
+        size++;
+        break;
+    case 'B':
+        lua_pushinteger(L, (uint8_t)*s++);
+        size++;
+        break;
+    case '?':
+        lua_pushboolean(L, *s++);
+        size++;
+        break;
+    case 'h':
+        {
+            int16_t value = *(int16_t *)s.cur;
+            lua_pushinteger(L, value);
+            s += 2;
+            size += 2;
+        }
+        break;
+    case 'H':
+        {
+            uint16_t value = *(uint16_t *)s.cur;
+            lua_pushinteger(L, value);
+            s += 2;
+            size += 2;
+        }
+        break;
+    case 'i':
+    case 'l':
+    case 'n':
+        {
+            int32_t value = *(int32_t *)s.cur;
+            lua_pushinteger(L, value);
+            s += 4;
+            size += 4;
+        }
+        break;
+    case 'I':
+    case 'L':
+    case 'N':
+        {
+            uint32_t value = *(uint32_t *)s.cur;
+            lua_pushinteger(L, value);
+            s += 4;
+            size += 4;
+        }
+        break;
+    case 'q':
+        {
+            int64_t value = *(int64_t *)s.cur;
+            lua_pushinteger(L, value);
+            s += 8;
+            size += 8;
+        }
+        break;
+    case 'Q':
+        {
+            uint64_t value = *(uint64_t *)s.cur;
+            lua_pushinteger(L, value);
+            s += 8;
+            size += 8;
+        }
+        break;
+    case 'f':
+    {
+        float value = *(float *)s.cur;
+        lua_pushnumber(L, value);
+        s += 4;
+        size += 4;
+    }
+        break;
+    case 'd':
+    {
+        double value = *(double *)s.cur;
+        lua_pushnumber(L, value);
+        s += 8;
+        size += 8;
+    }
+        break;
+    case 's':
+        {
+            std::string value;
+            while (*s)
+            {
+                value.push_back(*s++);
+            }
+            lua_pushlstring(L, value.data(), value.size());
+            size += value.size() + 1;
+        }
+        break;
+    case 'p':
+        {
+            uint8_t sz = *s++;
+            std::string value;
+            for (int i = 0; i < sz; i++)
+            {
+                value.push_back(*s++);
+            }
+            lua_pushlstring(L, value.data(), value.size());
+            size += value.size() + 1;
+        }
+        break;
+    case 'P':
+    {
+        void *value = *(void **)s.cur;
+        lua_pushlightuserdata(L, value);
+        s += sizeof(void *);
+        size += sizeof(void *);
+    }
+    break;
+    default:
+        return luaL_error(L, "Invalid type");
+    }
+    if (append)
+        append_value(L);
+    return 1;
+}
+
+int unpack_value(lua_State *L, field_info *f, ast_char::stream &s)
+{   //unpack the field into the table at the top of the stack and leave it there
+    //if the table does not have a __size, add it and set it to 0
+    int size = 0;
+    lua_getfield(L, -1, "__size");
+    if (lua_isnil(L, -1))
+    {
+        lua_pushinteger(L, 0);
+        lua_setfield(L, -2, "__size");
+    }
+    else
+    {
+        size = lua_tointeger(L, -1);
+    }
+    lua_pop(L, 1);
+
+    //handle repetition first
+    int count = f->count;
+    for (int i=0; i<count; i++)
+    {
+        if (f->type == 1)
+        {
+            //bitfield
+            //take the total size in bits and get the closer between 1, 2, 4 and 8 bytes
+            int total_size = 0;
+            for (auto b : *f->bitfield)
+            {
+                total_size += b;
+            }
+            int bytes = (total_size + 7) / 8;
+            if (bytes == 3)
+                bytes = 4;
+            else if (bytes == 5 || bytes == 6 || bytes == 7)
+                bytes = 8;
+            else if (bytes > 8)
+                return luaL_error(L, "Invalid bitfield size");
+            //update the size of the struct
+            size += bytes;
+           
+            //read the bytes
+            uint64_t value = 0;
+            for (int i = 0; i < bytes; i++)
+            {
+                value |= (uint64_t)((uint8_t)*s++) << (i * 8);
+            }
+            //push the values onto the stack
+            int shift = 0;
+            for (auto b : *f->bitfield)
+            {
+                lua_pushinteger(L, (value >> shift) & ((1 << b) - 1));
+                append_value(L);
+                shift += b;
+            }
+        }
+        else if (f->type == 2)
+        {
+            //struct
+            lua_newtable(L);
+            for (auto ff : *f->fields)
+            {
+                if (unpack_value(L, ff, s) != 1)
+                {
+                    return luaL_error(L, "Error unpacking struct");
+                }
+            }
+            lua_getfield(L, -1, "__size");
+            size += lua_tointeger(L, -1);
+            lua_pop(L, 1);
+            append_value(L);
+        }
+        else
+        {
+            int array_size = f->array_size;
+            if (f->array_size_name != nullptr)
+            {
+                lua_getfield(L, -1, f->array_size_name);
+                if (lua_isnil(L, -1))
+                    return luaL_error(L, "Array size field not found");
+                array_size = lua_tointeger(L, -1);
+                lua_pop(L, 1);
+            }
+
+            if (array_size == 1)
+            {
+                if (unpack_simple_value(L, f, s, size) != 1)
+                    return luaL_error(L, "Error unpacking simple value");
+            }
+            else
+            {
+                lua_newtable(L);
+                for (int i = 0; i < array_size; i++)
+                {
+                    if (unpack_simple_value(L, f, s, size) != 1)
+                        return luaL_error(L, "Error unpacking simple value");
+                }
+                append_value(L);
+            }
+        }
+    }
+    if (f->field_name)
+    {
+        //pop the last value and set it also as a field in the table
+        lua_rawgeti(L, -1, lua_rawlen(L, -1));
+        lua_setfield(L, -2, f->field_name);
+    }
+    
+    //update the size of the struct
+    lua_pushinteger(L, size);
+    lua_setfield(L, -2, "__size");
+    return 1;
+}
+
+int field_info::unpack(lua_State *L)
+{
+    //take a light userdata as second parameter (the first is the table)
+    //unpack the data into a new table
+    ast_char::stream s{(const char *)lua_touserdata(L, 2)};
+    if (!s.valid())
+        return luaL_error(L, "Invalid pointer");
+    lua_newtable(L);
+    return unpack_value(L, this, s);
 }

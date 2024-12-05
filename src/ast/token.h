@@ -14,7 +14,7 @@ namespace ast::_t
         template <typename S>
         static inline ast::_b::lexeme<O> *match(S &s)
         {
-            if (ast::_h::call_eof(s))
+            if (ast::_h::stream_eof(s))
                 return nullptr;
 
             if (*s == value)
@@ -38,7 +38,7 @@ namespace ast::_t
         template <typename S>
         static inline ast::_b::lexeme<O> *match(S &s)
         {
-            if (ast::_h::call_eof(s))
+            if (ast::_h::stream_eof(s))
                 return nullptr;
 
             if (*s >= start && *s <= end)
@@ -62,7 +62,7 @@ namespace ast::_t
         template <typename S>
         static inline ast::_b::lexeme<O> *match(S &s)
         {
-            if (ast::_h::call_eof(s))
+            if (ast::_h::stream_eof(s))
                 return nullptr;
 
             ast::_b::lexeme<O> *l = new ast::_b::lexeme<O>();
@@ -90,7 +90,7 @@ namespace ast::_t
         template <typename S>
         static inline ast::_b::lexeme<O> *match(S &s)
         {
-            if (ast::_h::call_eof(s))
+            if (ast::_h::stream_eof(s))
                 return nullptr;
 
             ast::_b::lexeme<O> *l = new ast::_b::lexeme<O>();
@@ -98,7 +98,7 @@ namespace ast::_t
             l->v = new std::vector<O>(size);
             for (size_t i = 0; arr[i] != 0; i++)
             {
-                if (ast::_h::call_eof(s))
+                if (ast::_h::stream_eof(s))
                 {
                     delete l;
                     return nullptr;
@@ -128,19 +128,19 @@ namespace ast::_t
         template <typename S>
         static inline ast::_b::lexeme<O> *match(S &s)
         {
-            if (ast::_h::call_eof(s) || *s != delimiter)
+            if (ast::_h::stream_eof(s) || *s != delimiter)
                 return nullptr;
             s++;
 
             ast::_b::lexeme<O> *l = new ast::_b::lexeme<O>();
             l->type = 'v';
             l->v = new std::vector<O>();
-            while (!ast::_h::call_eof(s) && *s != delimiter)
+            while (!ast::_h::stream_eof(s) && *s != delimiter)
             {
                 if (*s == escape)
                 {
                     s++;
-                    if (ast::_h::call_eof(s))
+                    if (ast::_h::stream_eof(s))
                     {
                         delete l;
                         return nullptr;

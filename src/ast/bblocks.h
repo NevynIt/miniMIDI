@@ -41,6 +41,11 @@ namespace ast::_b
             return *cur == 0;
         }
 
+        inline bool valid() const
+        {
+            return cur != nullptr;
+        }
+
         O *cur = nullptr;
     };
 
