@@ -1,7 +1,7 @@
 #include "mod_Lua.h"
 #include "mod_Stdio.h"
 #include "App.h"
-#include "ast/ast_pack.h"
+#include "lua_pack/pack.h"
 
 void mod_Lua::PreInit() {
     // Initialize Lua engine

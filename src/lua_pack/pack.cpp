@@ -1,6 +1,6 @@
 #include <string>
-#include "ast_char.h"
-#include "ast_pack.h"
+#include "../ast/ast_char.h"
+#include "pack.h"
 #include <map>
 
 namespace _detail
@@ -28,7 +28,7 @@ namespace _detail
             struct = { [ <whitespace> ] <field> } [ <whitespace> ]
     */
 
-    class make_bitfield_fn : public base_fn
+    class make_bitfield_d : public base_d
     {
     public:
         static inline lexeme *post_match(lexeme *l)
@@ -59,7 +59,7 @@ namespace _detail
         }
     };
 
-    class make_format_fn : public base_fn
+    class make_format_d : public base_d
     {
     public:
         static inline lexeme *post_match(lexeme *l)
@@ -115,7 +115,7 @@ namespace _detail
         };
     };
 
-    class make_field_fn : public base_fn
+    class make_field_d : public base_d
     {
     public:
         static inline lexeme *post_match(lexeme *l)
@@ -167,7 +167,7 @@ namespace _detail
         }
     };
 
-    class make_struct_fn : public base_fn
+    class make_struct_d : public base_d
     {
     public:
         static inline lexeme *post_match(lexeme *l)
@@ -208,8 +208,8 @@ namespace _detail
     // alpha = 'a' to 'z' | 'A' to 'Z'
     // identifier = <alpha> { <alpha> | <digit> | '_' }
     
-    // using quoted_name = dec<seq3<token<'\''>, identifier, token<'\''>>, select_fn<1>>;
-    ast_rule(quoted_name, (dec<seq3<token<'\''>, identifier, token<'\''>>, select_fn<1>>));
+    // using quoted_name = dec<seq3<token<'\''>, identifier, token<'\''>>, select_d<1>>;
+    ast_rule(quoted_name, (dec<seq3<token<'\''>, identifier, token<'\''>>, select_d<1>>));
 
     using number = str2long;
     // ast_rule(number, (str2long));
@@ -219,11 +219,11 @@ namespace _detail
 
     using bitfield_def = dec<rep<dec<seq<number, 
                                     opt<token<':'>>>,
-                                    select_fn<0>>, 0, -1>, make_bitfield_fn>;
+                                    select_d<0>>, 0, -1>, make_bitfield_d>;
     ast_rule(bitfield, bitfield_def);
 
-    // using array_size = dec<seq3<token<'['>, choice<number,quoted_name>, token<']'>>, select_fn<1>>;
-    ast_rule(array_size, (dec<seq3<token<'['>, choice<number,quoted_name>, token<']'>>, select_fn<1>>));
+    // using array_size = dec<seq3<token<'['>, choice<number,quoted_name>, token<']'>>, select_d<1>>;
+    ast_rule(array_size, (dec<seq3<token<'['>, choice<number,quoted_name>, token<']'>>, select_d<1>>));
 
     using field_count = choice<number,quoted_name>;
 
@@ -231,51 +231,51 @@ namespace _detail
                             dec<seq3<token<'<'>,
                                     bitfield,
                                     token<'>'>>,
-                                    select_fn<1>>>,
-                            make_format_fn>;
+                                    select_d<1>>>,
+                            make_format_d>;
 
     using field2_def = dec<seq3<opt<field_count>, 
                             format2, 
                             opt<array_size>>, 
-                            make_field_fn>;
+                            make_field_d>;
     ast_rule(field2, field2_def);
 
     using struct2 = dec<seq<
-                            dec<some<dec<seq<opt<whitespace>,field2>, select_fn<1>>>, make_struct_fn>,
+                            dec<some<dec<seq<opt<whitespace>,field2>, select_d<1>>>, make_struct_d>,
                             opt<whitespace>>,
-                        select_fn<0>>;
+                        select_d<0>>;
 
     using format1 = dec<choice3i<type,
-                            dec<seq3<token<'<'>, bitfield, token<'>'>>, select_fn<1>>,
-                            dec<seq3<token<'{'>, struct2,  token<'}'>>, select_fn<1>>>, 
-                            make_format_fn>;
+                            dec<seq3<token<'<'>, bitfield, token<'>'>>, select_d<1>>,
+                            dec<seq3<token<'{'>, struct2,  token<'}'>>, select_d<1>>>, 
+                            make_format_d>;
     using field1_def = dec<seq3<opt<field_count>, 
                             format1, 
                             opt<array_size>>, 
-                            make_field_fn>;
+                            make_field_d>;
     ast_rule(field1, field1_def);
 
     using struct1 = dec<seq<
-                            dec<some<dec<seq<opt<whitespace>,field1>, select_fn<1>>>, make_struct_fn>,
+                            dec<some<dec<seq<opt<whitespace>,field1>, select_d<1>>>, make_struct_d>,
                             opt<whitespace>>,
-                        select_fn<0>>;
+                        select_d<0>>;
 
     using format0 = dec<choice3i<type,
-                            dec<seq3<token<'<'>, bitfield, token<'>'>>, select_fn<1>>,
-                            dec<seq3<token<'{'>, struct1,  token<'}'>>, select_fn<1>>>, 
-                            make_format_fn>;
+                            dec<seq3<token<'<'>, bitfield, token<'>'>>, select_d<1>>,
+                            dec<seq3<token<'{'>, struct1,  token<'}'>>, select_d<1>>>, 
+                            make_format_d>;
     using field0_def = dec<seq3<opt<field_count>, 
                             format0, 
                             opt<array_size>>, 
-                            make_field_fn>;
+                            make_field_d>;
     ast_rule(field0, field0_def);
     
     using struct0 = dec<seq<
-                            dec<some<dec<seq<opt<whitespace>,field0>, select_fn<1>>>, make_struct_fn>,
+                            dec<some<dec<seq<opt<whitespace>,field0>, select_d<1>>>, make_struct_d>,
                             opt<whitespace>>,
-                        select_fn<0>>;
+                        select_d<0>>;
 
-    using structure = dec<choice3i<fail_always, fail_always, struct0>, make_format_fn>;
+    using structure = dec<choice3i<fail_always, fail_always, struct0>, make_format_d>;
 } // namespace _detail
 
 field_info *field_info::parse(const char *fmt)

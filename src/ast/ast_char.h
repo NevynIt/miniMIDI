@@ -7,16 +7,16 @@ namespace ast_char
 { //specializations for obj = const char
     using obj = char;
 
-    using base_fn = ast::_f::base_fn<obj>;
+    using base_d = ast::_f::base_d<obj>;
     using stream = ast::_b::stream<obj>;
     using stream_const = ast::_b::stream<const obj>;
     using lexeme = ast::_b::lexeme<obj>;
-    using noop_fn = ast::_f::noop_fn<obj>;
-    using concat_fn = ast::_f::concat_fn<obj>;
+    using noop_d = ast::_f::noop_d<obj>;
+    using concat_d = ast::_f::concat_d<obj>;
     
     template <int n>
-    using select_fn = ast::_f::select_fn<obj, n>;
-    using choice_fn = ast::_f::choice_fn<obj>;
+    using select_d = ast::_f::select_d<obj, n>;
+    using choice_d = ast::_f::choice_d<obj>;
     using fail_always = ast::_f::fail_always<obj>;
 
     template<obj value>
@@ -36,7 +36,7 @@ namespace ast_char
     #define char_array_decl(_TYPE_, _NAME_) inline constexpr _TYPE_ _NAME_[]
     #define char_array(arr) (arr), (ast::_h::getSize(arr)-1)
 
-    class tolong_fn : public base_fn
+    class tolong_d : public base_d
     {
     public:
         static inline lexeme *post_match(lexeme *l)
@@ -65,7 +65,7 @@ namespace ast_char
         }
     };
 
-    class todouble_fn : public base_fn
+    class todouble_d : public base_d
     {
     public:
         static inline lexeme *post_match(lexeme *l)
@@ -94,7 +94,7 @@ namespace ast_char
         }
     };
 
-    class tostring_fn : public base_fn
+    class tostring_d : public base_d
     {
     public:
         static inline lexeme *post_match(lexeme *l)
@@ -123,31 +123,31 @@ namespace ast_char
     using digit = token_range<'0', '9'>;
 
     inline constexpr obj whitespace_objs[] = " \t\n\r"; 
-    using whitespace = dec<some<token_choice<char_array(whitespace_objs)>>, concat_fn>;
-    // ast_rule(whitespace, (dec<some<token_choice<char_array(whitespace_objs)>>, concat_fn>));
+    using whitespace = dec<some<token_choice<char_array(whitespace_objs)>>, concat_d>;
+    // ast_rule(whitespace, (dec<some<token_choice<char_array(whitespace_objs)>>, concat_d>));
 
     inline constexpr obj alpha_objs[] = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
     using alpha = token_choice<char_array(alpha_objs)>;
     // ast_rule(alpha, (token_choice<char_array(alpha_objs)>));
 
     inline constexpr obj identif_objs[] = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_";
-    using identifier = dec2<seq<alpha,any<token_choice<char_array(identif_objs)>>>,concat_fn, tostring_fn>;
-    // ast_rule(identifier, (dec2<seq<alpha,any<token_choice<char_array(identif_objs)>>>,concat_fn, tostring_fn>));
+    using identifier = dec2<seq<alpha,any<token_choice<char_array(identif_objs)>>>,concat_d, tostring_d>;
+    // ast_rule(identifier, (dec2<seq<alpha,any<token_choice<char_array(identif_objs)>>>,concat_d, tostring_d>));
 
-    using integer = dec<seq<opt<choice<token<'-'>, token<'+'>>>, some<digit>>, concat_fn>;
-    // ast_rule(integer, (dec<seq<opt<choice<token<'-'>, token<'+'>>>, some<digit>>, concat_fn>));
+    using integer = dec<seq<opt<choice<token<'-'>, token<'+'>>>, some<digit>>, concat_d>;
+    // ast_rule(integer, (dec<seq<opt<choice<token<'-'>, token<'+'>>>, some<digit>>, concat_d>));
 
     using fractional = dec<seq3<opt<choice<token<'-'>, token<'+'>>>,
                             some<digit>,
                             opt<seq<token<'.'>, some<digit>>>>,
-                            concat_fn>;
+                            concat_d>;
     // ast_rule(fractional, fractional_def);
 
-    using str2long =  dec<integer, tolong_fn>;
+    using str2long =  dec<integer, tolong_d>;
 
-    using str2double = dec<fractional, todouble_fn>;
+    using str2double = dec<fractional, todouble_d>;
 
-    class stdEscape_fn : public base_fn
+    class stdEscape_d : public base_d
     { //standard escape sequences, including \n, \t, \r, \0, \\ and \xHH
     public:
         static inline lexeme *post_match(lexeme *l)
@@ -219,7 +219,7 @@ namespace ast_char
             return l;
         }
     
-        using dblQuote_str = dec2<ast::_t::token_delimited<obj, '"', '\\'>, stdEscape_fn, tostring_fn>;
-        using sglQuote_str = dec2<ast::_t::token_delimited<obj, '\'', '\\'>, stdEscape_fn, tostring_fn>;
+        using dblQuote_str = dec2<ast::_t::token_delimited<obj, '"', '\\'>, stdEscape_d, tostring_d>;
+        using sglQuote_str = dec2<ast::_t::token_delimited<obj, '\'', '\\'>, stdEscape_d, tostring_d>;
     };
 }

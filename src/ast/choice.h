@@ -3,7 +3,6 @@
 #include "helpers.h"
 #include "bblocks.h"
 
-//put back choice_fn<typename T0::object>
 namespace ast::_c
 {
     template<typename T0, typename T1>

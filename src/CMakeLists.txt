@@ -21,7 +21,7 @@ add_executable(miniMIDI
     module.cpp
     message.cpp
     queue.cpp
-    ast/ast_pack.cpp
+    lua_pack/pack.cpp
     msg_MIDI.cpp
     mod_UART.cpp
     mod_config.cpp

@@ -9,7 +9,7 @@
 namespace ast::_f
 {
     template<typename O>
-    class base_fn
+    class base_d
     {
     public:
         using object = O;
@@ -48,13 +48,13 @@ namespace ast::_f
     };
 
     template<typename O>
-    class noop_fn : public base_fn<O>
+    class noop_d : public base_d<O>
     {
     public:
     };
 
     template<typename O, int n>
-    class select_fn : public base_fn<O>
+    class select_d : public base_d<O>
     {
     public:
         static inline ast::_b::lexeme<O> *post_match(ast::_b::lexeme<O> *l)
@@ -75,7 +75,7 @@ namespace ast::_f
     };
 
     template<typename O>
-    class choice_fn : public base_fn<O>
+    class choice_d : public base_d<O>
     {
     public:
         static inline ast::_b::lexeme<O> *post_match(ast::_b::lexeme<O> *l)
@@ -96,7 +96,7 @@ namespace ast::_f
     };
 
     template<typename O>
-    class concat_fn : public base_fn<O>
+    class concat_d : public base_d<O>
     {
     public:
         static inline bool append(ast::_b::lexeme<O> *l, std::vector<O> *v)
@@ -149,7 +149,7 @@ namespace ast::_f
     };
 
     template<typename O>
-    class fail_always : public base_fn<O>
+    class fail_always : public base_d<O>
     {
     public:
         using object = O;
