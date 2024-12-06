@@ -6,6 +6,7 @@
 namespace _detail
 {
     using namespace ast_char;
+
     /*
         Grammar definition for format strings:
             digit = '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9'
@@ -31,7 +32,7 @@ namespace _detail
     class make_bitfield_d : public base_d
     {
     public:
-        static inline lexeme *post_match(lexeme *l)
+        post_match_method(l)
         {
             std::vector<uint8_t> *bitfield = new std::vector<uint8_t>();
             if (!l->type == 'V')
@@ -52,8 +53,8 @@ namespace _detail
             delete l->V;
             l->type = 'P';
             l->P = bitfield;
-            l->invalidate_cb = [](lexeme *l) {
-                delete (std::vector<uint8_t> *)l->P;
+            l->invalidate_lambda(ll) {
+                delete (std::vector<uint8_t> *)ll->P;
             };
             return l;
         }
@@ -62,7 +63,7 @@ namespace _detail
     class make_format_d : public base_d
     {
     public:
-        static inline lexeme *post_match(lexeme *l)
+        post_match_method(l)
         {
             //l is a choice between:
             //  0 = type
@@ -108,8 +109,8 @@ namespace _detail
             l->invalidate();
             l->type = 'P';
             l->P = f;
-            l->invalidate_cb = [](lexeme *l) {
-                delete (field_info *)l->P;
+            l->invalidate_lambda(ll) {
+                delete (field_info *)ll->P;
             };
             return l;
         };
@@ -118,7 +119,7 @@ namespace _detail
     class make_field_d : public base_d
     {
     public:
-        static inline lexeme *post_match(lexeme *l)
+        post_match_method(l)
         {
             if (l->type != 'V' || l->V->size() != 3 || l->V->at(0)->type != 'V' || l->V->at(1)->type != 'P' || l->V->at(2)->type != 'V')
             {
@@ -160,8 +161,8 @@ namespace _detail
             l->invalidate();
             l->type = 'P';
             l->P = f;
-            l->invalidate_cb = [](lexeme *l) {
-                delete (field_info *)l->P;
+            l->invalidate_lambda(ll) {
+                delete (field_info *)ll->P;
             };
             return l;
         }
@@ -170,7 +171,7 @@ namespace _detail
     class make_struct_d : public base_d
     {
     public:
-        static inline lexeme *post_match(lexeme *l)
+        post_match_method(l)
         {
             if (l->type != 'V')
             {
@@ -196,8 +197,8 @@ namespace _detail
             l->invalidate();
             l->type = 'P';
             l->P = fields;
-            l->invalidate_cb = [](lexeme *l) {
-                delete (std::vector<field_info *> *)l->P;
+            l->invalidate_lambda(ll) {
+                delete (std::vector<field_info *> *)ll->P;
             };
             return l;
         };
@@ -214,7 +215,7 @@ namespace _detail
     using number = str2long;
     // ast_rule(number, (str2long));
 
-    char_array_decl(char, type_chars) = "xXcbB?hHiIlLqQnNfdspP";
+    char_array_decl(type_chars) = "xXcbB?hHiIlLqQnNfdspP";
     using type = token_choice<char_array(type_chars)>;
 
     using bitfield_def = dec<rep<dec<seq<number, 
@@ -227,62 +228,35 @@ namespace _detail
 
     using field_count = choice<number,quoted_name>;
 
-    using format2 = dec<choicei<type,
-                            dec<seq3<token<'<'>,
-                                    bitfield,
-                                    token<'>'>>,
-                                    select_d<1>>>,
-                            make_format_d>;
 
-    using field2_def = dec<seq3<opt<field_count>, 
-                            format2, 
-                            opt<array_size>>, 
-                            make_field_d>;
-    ast_rule(field2, field2_def);
+    alias_declare(structure_alias);
 
-    using struct2 = dec<seq<
-                            dec<some<dec<seq<opt<whitespace>,field2>, select_d<1>>>, make_struct_d>,
-                            opt<whitespace>>,
-                        select_d<0>>;
-
-    using format1 = dec<choice3i<type,
+    using format = dec<choice3i<type,
                             dec<seq3<token<'<'>, bitfield, token<'>'>>, select_d<1>>,
-                            dec<seq3<token<'{'>, struct2,  token<'}'>>, select_d<1>>>, 
+                            dec<seq3<token<'{'>, structure_alias,  token<'}'>>, select_d<1>>>, 
                             make_format_d>;
-    using field1_def = dec<seq3<opt<field_count>, 
-                            format1, 
+    using field_def = dec<seq3<opt<field_count>, 
+                            format, 
                             opt<array_size>>, 
                             make_field_d>;
-    ast_rule(field1, field1_def);
-
-    using struct1 = dec<seq<
-                            dec<some<dec<seq<opt<whitespace>,field1>, select_d<1>>>, make_struct_d>,
-                            opt<whitespace>>,
-                        select_d<0>>;
-
-    using format0 = dec<choice3i<type,
-                            dec<seq3<token<'<'>, bitfield, token<'>'>>, select_d<1>>,
-                            dec<seq3<token<'{'>, struct1,  token<'}'>>, select_d<1>>>, 
-                            make_format_d>;
-    using field0_def = dec<seq3<opt<field_count>, 
-                            format0, 
-                            opt<array_size>>, 
-                            make_field_d>;
-    ast_rule(field0, field0_def);
+    ast_rule(field, field_def);
     
-    using struct0 = dec<seq<
-                            dec<some<dec<seq<opt<whitespace>,field0>, select_d<1>>>, make_struct_d>,
+    using structure = dec<seq<
+                            dec<some<dec<seq<opt<whitespace>,field>, select_d<1>>>, make_struct_d>,
                             opt<whitespace>>,
                         select_d<0>>;
 
-    using structure = dec<choice3i<fail_always, fail_always, struct0>, make_format_d>;
+    alias_define(structure_alias, structure);
+
+    using helper = dec<choice3i<fail_always, fail_always, structure>, make_format_d>;
+
 } // namespace _detail
 
 field_info *field_info::parse(const char *fmt)
 {
     using namespace _detail;
-    _detail::stream_const s{fmt};
-    _detail::lexeme *l = _detail::structure::match(s);
+    // _detail::stream_const s{fmt};
+    auto *l = _detail::helper::match(fmt);
     if (l == nullptr)
     {
         return nullptr;

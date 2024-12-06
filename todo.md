@@ -7,13 +7,61 @@ todo:
 - test division in fpm.h
 
 /*
-The main objective of this module is to load a dynamic configuration file from the SD card and update the configuration of the device.
+The main objective of the datafile parser is to load a dynamic configuration file from the SD card and update the configuration of the device.
 the lua script is called at the beginning, and it in turn calls a C function that takes a string in a custom language and returns
 a byte array with the data. Lua also calls a C function that takes a name and an array and sets the configuration value.
 
 in strings in the custom language, whitespace is ignored and comments are allowed with -- lik, and strings can be split into multiple lines with \ at the end of the line.
 The custom language is as follows (in extended BNF notation)
-    package ::= "package" name block
+
+    --need a special stream that reads from a file live, with buffering to allow some rollback without seeking all the time
+    --whitespace and line comments are skipped by the stream itself
+    --whitespace skipping can be paused (for lua_expressions, strings, names, numbers and other base types)
+
+    letter ::= "a" | "b" | "c" | "d" | "e" | "f" | "g" | "h" | "i" | "j" | "k" | "l" | "m" | "n" | "o" | "p" | "q" | "r" | "s" | "t" | "u" | "v" | "w" | "x" | "y" | "z" | "A" | "B" | "C" | "D" | "E" | "F" | "G" | "H" | "I" | "J" | "K" | "L" | "M" | "N" | "O" | "P" | "Q" | "R" | "S" | "T" | "U" | "V" | "W" | "X" | "Y" | "Z"
+    hex_digit ::= digit | "a" | "b" | "c" | "d" | "e" | "f" | "A" | "B" | "C" | "D" | "E" | "F"
+    digit ::= "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9"
+    bin_digit ::= "0" | "1"
+    padding ::= "@@" --add padding to the next word boundary
+
+    decimal ::= [ "-" ] digit { digit } [ "." digit { digit } ] [ "e" [ "-" ] digit { digit } ] //no whitespace allowed here
+    hexadecimal ::= "0x" hex_digit { hex_digit } [ "." hex_digit { hex_digit } ] [ "p" [ "-" ] digit { digit } ] //no whitespace allowed here
+    binary ::= "0b" bin_digit { bin_digit } [ "." bin_digit { bin_digit } ] [ "e" [ "-" ] digit { digit } ] //no whitespace allowed here
+    name_block ::= { letter | digit | "_" }+ //no whitespace allowed here
+
+    lua_code ::= --special processing (maybe not needed): brackets are matched, strings and comments are skipped, so there can be nested expressions, hopefully no stray {} will be missed, as this would mess up the stream
+    lua_expression ::= "{|" lua_code "|}"   |  
+                        "${|" lua_code "|}" |  --syntactic sugar for !{return (expression)}
+                        "$" name               --syntactic sugar for !{retun name}
+
+    name ::= { name_block | lua_expression }+ //no whitespace allowed between blocks and lua expressions
+    compound_name ::= name { "." name }
+    index ::= { digit } | ( "0x" { hex_digit } ) | lua_expression
+
+    character ::= (not \ or ") | '\"' | '\\' | '\0' | '\n' | '\r' | '\t' | '\x' hex_digit hex_digit
+    string ::= '"' { character } '"' --special processing dblQuote_str
+
+    ref_distance ::= "#{" name [/] "}" --the distance between the position of the first label with that name and the one with the trailing /, in bytes (24 bit value)
+    ref_values ::= "#" name [ "[" index "]" [ ":" index "]" ]
+    ref_pointer ::= "&" name [ "[" index "]" ]
+    reference ::= ref_pointer | ref_values | ref_distance
+
+    literal ::= decimal |
+                hexadecimal |
+                binary |
+                string |
+                reference
+    condition ::=   literal |
+                    lua_expression
+
+    label ::= "@" name ":"
+    flag ::= "!" (name | lua_expression) --these flags are interpreted by the compiler directly and set things like the format of the output (8, 16 or 32 bit int, fixed point types, float, etc...)
+
+    asm_register ::= "out" | "x" | "y" | "z" | "i" digit { digit } | "s" digit { digit }
+    asm_argument ::= literal | lua_expression | asm_register
+    asm_instruction ::= name [ "," { asm_argument } ]
+    asm_expression ::= "[|" { asm_instruction | label } "|]" --the instructions are in a custom assembly language that is converted to a byte array
+
     block ::=   "{" { block } "}" |
                 "if" "(" condition ")" block ["else" block] |
                 "while" "(" condition ")" block |
@@ -24,46 +72,12 @@ The custom language is as follows (in extended BNF notation)
                 lua_expression |
                 asm_expression |
                 padding
-    condition ::=   literal |
-                    lua_expression
-    padding ::= "@@" --add padding to the next word boundary
-    literal ::= decimal |
-                hexadecimal |
-                binary |
-                string |
-                reference
-    decimal ::= [ "-" ] digit { digit } [ "." digit { digit } ] [ "e" [ "-" ] digit { digit } ]
-    hexadecimal ::= "0x" hex_digit { hex_digit } [ "." hex_digit { hex_digit } ] [ "p" [ "-" ] digit { digit } ]
-    binary ::= "0b" bin_digit { bin_digit } [ "." bin_digit { bin_digit } ] [ "e" [ "-" ] digit { digit } ]
-    string ::= '"' { character } '"'
-    character ::= (not \ or ") | '\"' | '\\' | '\0' | '\n' | '\r' | '\t' | '\x' hex_digit hex_digit
-    digit ::= "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9"
-    hex_digit ::= digit | "a" | "b" | "c" | "d" | "e" | "f" | "A" | "B" | "C" | "D" | "E" | "F"
-    bin_digit ::= "0" | "1"
-    label ::= "@" name ":"
-    name ::= { letter | digit | "_" | "." | lua_expression }
-    letter ::= "a" | "b" | "c" | "d" | "e" | "f" | "g" | "h" | "i" | "j" | "k" | "l" | "m" | "n" | "o" | "p" | "q" | "r" | "s" | "t" | "u" | "v" | "w" | "x" | "y" | "z" | "A" | "B" | "C" | "D" | "E" | "F" | "G" | "H" | "I" | "J" | "K" | "L" | "M" | "N" | "O" | "P" | "Q" | "R" | "S" | "T" | "U" | "V" | "W" | "X" | "Y" | "Z"
-    lua_expression ::= "!{" any valid lua expression "}" | --the brackets are matched and strings are skipped, so there can be nested expressions
-                        "${" any valid lua expression "}" | --syntactic sugar for !{return (expression)}
-                        "$" name --syntactic sugar for !{retun name}
-    flag ::= "!" (name | lua_expression) --these flags are interpreted by the compiler directly and set things like the format of the output (8, 16 or 32 bit int, fixed point types, float, etc...)
-    asm_expression ::= "![" { asm_instruction | label } "]" --the instructions are in a custom assembly language that is converted to a byte array
-    asm_instruction ::= name [ "," { asm_argument } ]
-    asm_argument ::= literal | lua_expression | asm_register
-    asm_register ::= "out" | "x" | "y" | "z" | "i" digit { digit } | "s" digit { digit }
-    reference ::= ref_pointer | ref_values | ref_distance
-    ref_pointer ::= "&" name [ "[" index "]" ]
-    ref_values ::= "#" name [ "[" index "]" [ ":" index "]" ]
-    ref_distance ::= "#{" name [/] "}" --the distance between the position of the first label with that name and the one with the trailing /, in bytes (24 bit value)
-    index ::= { digit } | "0x" { hex_digit } | lua_expression
+    
+    package ::= "package" name block
 
-the compiler follows the following stages:
-    1. remove comments and whitespace
-    2. split the string into tokens
-    3. parse the tokens into a tree
-    4. compile the tree into a byte array
+    file ::= {package | lua_expression }
 
-the lua expression is evaluated and any of its results are taken as a strings and included in the code, separated by spaces
+the lua expression is evaluated and any of its results are taken as a strings and included in the code, separated by spaces, processing continues from where the expression was evaluated
 
 ---- the configuration objects can be packages
 ---- by the way, remove the zero termination in the name of the configuration objects

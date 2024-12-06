@@ -5,15 +5,15 @@
 
 namespace ast::_t
 {
-    template<typename O, typename S>
-    ast::_b::lexeme<O> *base_token_match(S &s, O value)
+    template<typename _StreamType, typename _ValueType>
+    lexeme_S *base_token_match(_StreamType &s, _ValueType value)
     {
         if (ast::_h::stream_eof(s))
             return nullptr;
 
         if (*s == value)
         {
-            ast::_b::lexeme<O> *l = new ast::_b::lexeme<O>();
+            lexeme_S *l = new lexeme_S();
             l->type = 'o';
             l->o = value;
             s++;
@@ -26,10 +26,7 @@ namespace ast::_t
     class token
     {
     public:
-        using object = O;
-
-        template <typename S>
-        static inline ast::_b::lexeme<O> *match(S &s)
+        match_method(s)
         {
             return base_token_match(s, value);
         }
@@ -39,17 +36,14 @@ namespace ast::_t
     class token_range
     {
     public:
-        using object = O;
-
-        template <typename S>
-        static inline ast::_b::lexeme<O> *match(S &s)
+        match_method(s)
         {
             if (ast::_h::stream_eof(s))
                 return nullptr;
 
             if (*s >= start && *s <= end)
             {
-                ast::_b::lexeme<O> *l = new ast::_b::lexeme<O>();
+                lexeme_S *l = new lexeme_S();
                 l->type = 'o';
                 l->o = *s;
                 s++;
@@ -63,15 +57,12 @@ namespace ast::_t
     class token_choice
     {
     public:
-        using object = O;
-
-        template <typename S>
-        static inline ast::_b::lexeme<O> *match(S &s)
+        match_method(s)
         {
             if (ast::_h::stream_eof(s))
                 return nullptr;
 
-            ast::_b::lexeme<O> *l = new ast::_b::lexeme<O>();
+            lexeme_S *l = new lexeme_S();
             for (size_t i = 0; i < size; i++)
             {
                 if (*s == arr[i])
@@ -91,17 +82,14 @@ namespace ast::_t
     class token_string
     {
     public:
-        using object = O;
-
-        template <typename S>
-        static inline ast::_b::lexeme<O> *match(S &s)
+        match_method(s)
         {
             if (ast::_h::stream_eof(s))
                 return nullptr;
 
-            ast::_b::lexeme<O> *l = new ast::_b::lexeme<O>();
+            lexeme_S *l = new lexeme_S();
             l->type = 'v';
-            l->v = new std::vector<O>(size);
+            l->v = l->new_v(size);
             for (size_t i = 0; arr[i] != 0; i++)
             {
                 if (ast::_h::stream_eof(s))
@@ -129,18 +117,15 @@ namespace ast::_t
     class token_delimited
     {
     public:
-        using object = O;
-
-        template <typename S>
-        static inline ast::_b::lexeme<O> *match(S &s)
+        match_method(s)
         {
             if (ast::_h::stream_eof(s) || *s != delimiter)
                 return nullptr;
             s++;
 
-            ast::_b::lexeme<O> *l = new ast::_b::lexeme<O>();
+            lexeme_S *l = new lexeme_S();
             l->type = 'v';
-            l->v = new std::vector<O>();
+            l->v = l->new_v();
             while (!ast::_h::stream_eof(s) && *s != delimiter)
             {
                 if (*s == escape)

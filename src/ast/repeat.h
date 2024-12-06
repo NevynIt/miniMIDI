@@ -9,15 +9,12 @@ namespace ast::_r
     class rep
     {
     public:
-        using object = typename T0::object;
-
-        template <typename S>
-        static inline ast::_b::lexeme<object> *match(S &s)
+        match_method(s)
         {
-            ast::_b::lexeme<object> *l = new ast::_b::lexeme<object>();
+            lexeme_S *l = new lexeme_S();
             l->type = 'V';
-            l->V = new std::vector<ast::_b::lexeme<object>*>();
-            S s_backup = s;
+            l->V = l->new_V();
+            auto s_backup = s;
             int count = 0;
 
             while (max == -1 || count < max)
@@ -43,24 +40,12 @@ namespace ast::_r
         }
     };
 
-    // template<typename T0>
-    // using optional = repeat<T0, 0, 1>;
-
-    // template<typename T0>
-    // using zeroOrMore = repeat<T0, 0>;
-
-    // template<typename T0>
-    // using oneOrMore = repeat<T0, 1, -1>;
-
-    // template<typename T0, int min = 0, int max = -1>
-    // using repeat = rep<T0, min, max>;
+    template<typename T0>
+    using opt = rep<T0, 0, 1>; //optional
 
     template<typename T0>
-    using opt = rep<T0, 0, 1>;
+    using any = rep<T0, 0, -1>; //any number of
 
     template<typename T0>
-    using any = rep<T0, 0, -1>;
-
-    template<typename T0>
-    using some = rep<T0, 1, -1>;
+    using some = rep<T0, 1, -1>; //at least one of
 }

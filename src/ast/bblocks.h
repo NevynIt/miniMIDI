@@ -59,6 +59,10 @@ namespace ast::_b
     {
     public:
         using object = O;
+        using o_t = typename std::remove_const_t<O>;
+        using v_t = std::vector<o_t>;
+        using V_t = std::vector<lexeme<O> *>;
+
         lexeme(char type)
         {
             memset(this, 0, sizeof(lexeme));
@@ -66,10 +70,10 @@ namespace ast::_b
             switch (type)
             {
             case 'v':
-                v = new std::vector<O>();
+                v = new_v();
                 break;
             case 'V':
-                V = new std::vector<lexeme<O>*>();
+                V = new_V();
                 break;
             }
         }
@@ -93,6 +97,26 @@ namespace ast::_b
 
         void (*invalidate_cb)(lexeme<O> *l) = nullptr;
         
+        static inline v_t *new_v(size_t size)
+        {
+            return new v_t(size);
+        }
+        
+        static inline v_t *new_v()
+        {
+            return new v_t();
+        }
+
+        static inline lexeme<O> *new_lexeme()
+        {
+            return new lexeme<O>();
+        }
+
+        static inline std::vector<lexeme<O>*> *new_V()
+        {
+            return new std::vector<lexeme<O>*>();
+        }
+
         bool append(O value)
         {
             if (type == 'o')
@@ -104,7 +128,7 @@ namespace ast::_b
                 else
                 {
                     type = 'v';
-                    v = new std::vector<O>();
+                    v = new_v();
                     v->push_back(o);
                     v->push_back(value);
                 }
@@ -132,7 +156,7 @@ namespace ast::_b
             else if (type == '*' || type >= '0' && type <= '9')
             {
                 type = 'V';
-                V = new std::vector<lexeme<O>*>();
+                V = new_V();
                 V->push_back(lex);
                 V->push_back(l);
             }
@@ -155,14 +179,14 @@ namespace ast::_b
             // any value > 127 => the value is user defined
         union
         {
-            object o;                 // type 'o'
-            std::vector<object> *v;   // type 'v' //used by token_repeat
-            std::vector<lexeme*> *V;  // type 'V' //used by sequence and repeat
-            lexeme *lex;              // type '0' to '9', used by choice, or '*', as a reference to another lexeme
+            o_t o;                      // type 'o'
+            v_t *v;                     // type 'v' //used by token_repeat
+            V_t *V;                     // type 'V' //used by sequence and repeat
+            lexeme *lex;                // type '0' to '9', used by choice, or '*', as a reference to another lexeme
             char c;
             int8_t b;
             uint8_t B;
-            bool qm; //question mark character '?'
+            bool qm;                    //question mark character '?'
             int16_t h;
             uint16_t H;
             int32_t l;

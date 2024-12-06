@@ -8,24 +8,19 @@
 
 namespace ast::_f
 {
-    template<typename O>
     class base_d
     {
     public:
-        using object = O;
-
         //called before attempting the match
         //return false to skip the match (no_match will not be called in this case)
         //do any preparation here
-        template <typename S>
-        static inline bool pre_match(S &s)
+        pre_match_method(s)
         {
             return true;
         }
 
         //called to match the input, when the object is used as a rule, return nullptr to indicate no match
-        template <typename S>
-        static inline ast::_b::lexeme<O> *match(S &s)
+        match_method(s)
         {
             return nullptr;
         }
@@ -33,35 +28,31 @@ namespace ast::_f
         //called after a successful match
         //do any post processing and cleanup here
         //return the lexeme to be used in the parent rule
-        static inline ast::_b::lexeme<O> *post_match(ast::_b::lexeme<O> *l)
+        post_match_method(l)
         {
             return l;
         }
 
         //called after a failed match
         //do any cleanup here
-        template <typename S>
-        static inline void no_match(S &s)
+        no_match_method(s)
         {
             //no op
         }
     };
 
-    template<typename O>
-    class noop_d : public base_d<O>
-    {
-    public:
-    };
+    using noop_d = base_d;
 
-    template<typename O, int n>
-    class select_d : public base_d<O>
+    template<int n>
+    class select_d : public base_d
     {
     public:
+        template <typename O>
         static inline ast::_b::lexeme<O> *post_match(ast::_b::lexeme<O> *l)
         {
             if (l->type == 'V' && l->V->size() > n)
             {
-                ast::_b::lexeme<O> *tmp = l->V->at(n);
+                auto tmp = l->V->at(n);
                 l->V->at(n) = nullptr;
                 delete l;
                 return tmp;
@@ -74,15 +65,14 @@ namespace ast::_f
         }
     };
 
-    template<typename O>
-    class choice_d : public base_d<O>
+    class choice_d : public base_d
     {
     public:
-        static inline ast::_b::lexeme<O> *post_match(ast::_b::lexeme<O> *l)
+        post_match_method(l)
         {
             if (l->type >= '0' && l->type <= '9')
             {
-                ast::_b::lexeme<O> *tmp = l->lex;
+                auto tmp = l->lex;
                 l->lex = nullptr;
                 delete l;
                 return tmp;
@@ -95,11 +85,11 @@ namespace ast::_f
         }
     };
 
-    template<typename O>
-    class concat_d : public base_d<O>
+    class concat_d : public base_d
     {
     public:
-        static inline bool append(ast::_b::lexeme<O> *l, std::vector<O> *v)
+        template<typename O>
+        static inline bool append(ast::_b::lexeme<O> *l, typename ast::_b::lexeme<O>::v_t *v)
         {
             if (l->type == 'o')
             {
@@ -129,11 +119,11 @@ namespace ast::_f
             return true;
         }
 
-        static inline ast::_b::lexeme<O> *post_match(ast::_b::lexeme<O> *l)
+        post_match_method(l)
         {
-            ast::_b::lexeme<O> *tmp = new ast::_b::lexeme<O>();
+            auto tmp = l->new_lexeme();
             tmp->type = 'v';
-            tmp->v = new std::vector<O>();
+            tmp->v = tmp->new_v();
             if (append(l, tmp->v))
             {
                 delete l;
@@ -148,26 +138,21 @@ namespace ast::_f
         }
     };
 
-    template<typename O>
-    class fail_always : public base_d<O>
+    class fail_always : public base_d
     {
     public:
-        using object = O;
-        template <typename S>
-        static inline bool pre_match(S &s)
-        {
+        pre_match_method(s)        {
             return false;
         }
 
-        static inline ast::_b::lexeme<O> *post_match(ast::_b::lexeme<O> *l)
+        post_match_method(l)
         {
             if (l)
                 delete l;
             return nullptr;
         }
 
-        template <typename S>
-        static inline ast::_b::lexeme<O> *match(S &s)
+        match_method(s)
         {
             return nullptr;
         }
@@ -175,24 +160,30 @@ namespace ast::_f
 
     static int indent = 0;
 
+    template<typename O> void print_object(O o) { print_object_const(o); }
+    template<typename O> void print_object_const(const O o) {}
+    template<> void print_object_const(const char o) { printf("'%c'", o); }
+    template<> void print_object_const(const char *o) { printf("\"%s\"", o); }
+    template<> void print_object_const(const int o) { printf("%d", o); }
+    template<> void print_object_const(const unsigned int o) { printf("%u", o); }
+    template<> void print_object_const(const long o) { printf("%ld", o); }
+    template<> void print_object_const(const unsigned long o) { printf("%lu", o); }
+    template<> void print_object_const(const long long o) { printf("%lld", o); }
+    template<> void print_object_const(const unsigned long long o) { printf("%llu", o); }
+    template<> void print_object_const(const float o) { printf("%f", o); }
+    template<> void print_object_const(const double o) { printf("%f", o); }
+
     template<typename T0, const char *name>
     class trace
     {
     public:
-        using object = typename T0::object;
-
-        template <typename S>
-        static inline ast::_b::lexeme<object> *match(S &s)
+        match_method(s)
         {
             printf("%*s%s {", indent*2, "", name);
-            //if O happens to be char, we can print it
-            if (std::is_same<object, char>::value)
-            {
-                printf("'%c'", *s);
-            }
+            print_object(*s);
             printf("\n");
             indent++;
-            ast::_b::lexeme<object> *l = T0::match(s);
+            lexeme_S *l = T0::match(s);
             indent--;
             if (l)
             {

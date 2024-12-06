@@ -9,15 +9,10 @@ namespace ast::_s
     class seq//uence2
     {
     public:
-        static_assert(std::is_same<typename T0::object, typename T1::object>::value, "choice types must have the same object type");
-
-        using object = typename T0::object;
-
-        template <typename S>
-        static inline ast::_b::lexeme<object> *match(S &s)
+        match_method(s)
         {
-            ast::_b::lexeme<object> *l = new ast::_b::lexeme<object>('V');
-            S s_backup = s;
+            lexeme_S *l = new lexeme_S('V');
+            auto s_backup = s;
 
             if (!l->append(T0::match(s))) { s = s_backup; delete l; return nullptr; }
             if (!l->append(T1::match(s))) { s = s_backup; delete l; return nullptr; }
@@ -31,16 +26,10 @@ namespace ast::_s
     class seq3
     {
     public:
-        static_assert(std::is_same<typename T0::object, typename T1::object>::value, "choice types must have the same object type");
-        static_assert(std::is_same<typename T0::object, typename T2::object>::value, "choice types must have the same object type");
-
-        using object = typename T0::object;
-
-        template <typename S>
-        static inline ast::_b::lexeme<object> *match(S &s)
+        match_method(s)
         {
-            ast::_b::lexeme<object> *l = new ast::_b::lexeme<object>('V');
-            S s_backup = s;
+            lexeme_S *l = new lexeme_S('V');
+            auto s_backup = s;
 
             if (!l->append(T0::match(s))) { s = s_backup; delete l; return nullptr; }
             if (!l->append(T1::match(s))) { s = s_backup; delete l; return nullptr; }
@@ -55,17 +44,10 @@ namespace ast::_s
     class seq4
     {
     public:
-        static_assert(std::is_same<typename T0::object, typename T1::object>::value, "choice types must have the same object type");
-        static_assert(std::is_same<typename T0::object, typename T2::object>::value, "choice types must have the same object type");
-        static_assert(std::is_same<typename T0::object, typename T3::object>::value, "choice types must have the same object type");
-
-        using object = typename T0::object;
-
-        template <typename S>
-        static inline ast::_b::lexeme<object> *match(S &s)
+        match_method(s)
         {
-            ast::_b::lexeme<object> *l = new ast::_b::lexeme<object>('V');
-            S s_backup = s;
+            lexeme_S *l = new lexeme_S('V');
+            auto s_backup = s;
 
             if (!l->append(T0::match(s))) { s = s_backup; delete l; return nullptr; }
             if (!l->append(T1::match(s))) { s = s_backup; delete l; return nullptr; }
@@ -81,18 +63,10 @@ namespace ast::_s
     class seq5
     {
     public:
-        static_assert(std::is_same<typename T0::object, typename T1::object>::value, "choice types must have the same object type");
-        static_assert(std::is_same<typename T0::object, typename T2::object>::value, "choice types must have the same object type");
-        static_assert(std::is_same<typename T0::object, typename T3::object>::value, "choice types must have the same object type");
-        static_assert(std::is_same<typename T0::object, typename T4::object>::value, "choice types must have the same object type");
-
-        using object = typename T0::object;
-
-        template <typename S>
-        static inline ast::_b::lexeme<object> *match(S &s)
+        match_method(s)
         {
-            ast::_b::lexeme<object> *l = new ast::_b::lexeme<object>('V');
-            S s_backup = s;
+            lexeme_S *l = new lexeme_S('V');
+            auto s_backup = s;
 
             if (!l->append(T0::match(s))) { s = s_backup; delete l; return nullptr; }
             if (!l->append(T1::match(s))) { s = s_backup; delete l; return nullptr; }
@@ -109,19 +83,10 @@ namespace ast::_s
     class seq6
     {
     public:
-        static_assert(std::is_same<typename T0::object, typename T1::object>::value, "choice types must have the same object type");
-        static_assert(std::is_same<typename T0::object, typename T2::object>::value, "choice types must have the same object type");
-        static_assert(std::is_same<typename T0::object, typename T3::object>::value, "choice types must have the same object type");
-        static_assert(std::is_same<typename T0::object, typename T4::object>::value, "choice types must have the same object type");
-        static_assert(std::is_same<typename T0::object, typename T5::object>::value, "choice types must have the same object type");
-
-        using object = typename T0::object;
-
-        template <typename S>
-        static inline ast::_b::lexeme<object> *match(S &s)
+        match_method(s)
         {
-            ast::_b::lexeme<object> *l = new ast::_b::lexeme<object>('V');
-            S s_backup = s;
+            lexeme_S *l = new lexeme_S('V');
+            auto s_backup = s;
 
             if (!l->append(T0::match(s))) { s = s_backup; delete l; return nullptr; }
             if (!l->append(T1::match(s))) { s = s_backup; delete l; return nullptr; }

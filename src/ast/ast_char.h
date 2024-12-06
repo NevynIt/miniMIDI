@@ -5,20 +5,16 @@
 
 namespace ast_char
 { //specializations for obj = const char
+    using namespace ast::_h;
+    using namespace ast::_s;
+    using namespace ast::_c;
+    using namespace ast::_r;
+    using namespace ast::_d;
+    using namespace ast::_f;
+
     using obj = char;
 
-    using base_d = ast::_f::base_d<obj>;
     using stream = ast::_b::stream<obj>;
-    using stream_const = ast::_b::stream<const obj>;
-    using lexeme = ast::_b::lexeme<obj>;
-    using noop_d = ast::_f::noop_d<obj>;
-    using concat_d = ast::_f::concat_d<obj>;
-    
-    template <int n>
-    using select_d = ast::_f::select_d<obj, n>;
-    using choice_d = ast::_f::choice_d<obj>;
-    using fail_always = ast::_f::fail_always<obj>;
-
     template<obj value>
     using token = ast::_t::token<obj, value>;
     template<obj start, obj end>
@@ -28,18 +24,15 @@ namespace ast_char
     template<const obj *arr, std::size_t size>
     using token_string = ast::_t::token_string<obj, arr, size>;
 
-    using namespace ast::_s;
-    using namespace ast::_c;
-    using namespace ast::_r;
-    using namespace ast::_d;
-
-    #define char_array_decl(_TYPE_, _NAME_) inline constexpr _TYPE_ _NAME_[]
+    //take care of the null terminator when using strings as char arrays
+    #define char_array_decl(_NAME_) inline constexpr char _NAME_[]
     #define char_array(arr) (arr), (ast::_h::getSize(arr)-1)
 
+    //useful decorators
     class tolong_d : public base_d
     {
     public:
-        static inline lexeme *post_match(lexeme *l)
+        post_match_method(l)
         {
             if (!l)
                 return nullptr;
@@ -68,7 +61,7 @@ namespace ast_char
     class todouble_d : public base_d
     {
     public:
-        static inline lexeme *post_match(lexeme *l)
+        post_match_method(l)
         {
             if (!l)
                 return nullptr;
@@ -97,7 +90,7 @@ namespace ast_char
     class tostring_d : public base_d
     {
     public:
-        static inline lexeme *post_match(lexeme *l)
+        post_match_method(l)
         {
             if (!l)
                 return nullptr;
@@ -105,7 +98,8 @@ namespace ast_char
             {
                 l->v->push_back(0);
                 char *str = new char[l->v->size()];
-                strcpy(str, l->v->data());
+                for (size_t i = 0; i < l->v->size(); i++)
+                    str[i] = (char)l->v->at(i); //object type agnostic copy
                 l->invalidate();
                 l->type = 's';
                 l->s = str;
@@ -119,38 +113,10 @@ namespace ast_char
         }
     };
 
-    // ast_rule(digit, (token_range<'0', '9'>));
-    using digit = token_range<'0', '9'>;
-
-    inline constexpr obj whitespace_objs[] = " \t\n\r"; 
-    using whitespace = dec<some<token_choice<char_array(whitespace_objs)>>, concat_d>;
-    // ast_rule(whitespace, (dec<some<token_choice<char_array(whitespace_objs)>>, concat_d>));
-
-    inline constexpr obj alpha_objs[] = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
-    using alpha = token_choice<char_array(alpha_objs)>;
-    // ast_rule(alpha, (token_choice<char_array(alpha_objs)>));
-
-    inline constexpr obj identif_objs[] = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_";
-    using identifier = dec2<seq<alpha,any<token_choice<char_array(identif_objs)>>>,concat_d, tostring_d>;
-    // ast_rule(identifier, (dec2<seq<alpha,any<token_choice<char_array(identif_objs)>>>,concat_d, tostring_d>));
-
-    using integer = dec<seq<opt<choice<token<'-'>, token<'+'>>>, some<digit>>, concat_d>;
-    // ast_rule(integer, (dec<seq<opt<choice<token<'-'>, token<'+'>>>, some<digit>>, concat_d>));
-
-    using fractional = dec<seq3<opt<choice<token<'-'>, token<'+'>>>,
-                            some<digit>,
-                            opt<seq<token<'.'>, some<digit>>>>,
-                            concat_d>;
-    // ast_rule(fractional, fractional_def);
-
-    using str2long =  dec<integer, tolong_d>;
-
-    using str2double = dec<fractional, todouble_d>;
-
     class stdEscape_d : public base_d
     { //standard escape sequences, including \n, \t, \r, \0, \\ and \xHH
     public:
-        static inline lexeme *post_match(lexeme *l)
+        post_match_method(l)
         {
             if (!l)
                 return nullptr;
@@ -159,7 +125,7 @@ namespace ast_char
                 delete l;
                 return nullptr;
             }
-            auto *v = new std::vector<obj>();
+            auto *v = l->new_v();
             bool escape = false;
             for (auto c = l->v->begin(); c != l->v->end(); c++)
             {
@@ -218,8 +184,33 @@ namespace ast_char
             l->v = v;
             return l;
         }
-    
-        using dblQuote_str = dec2<ast::_t::token_delimited<obj, '"', '\\'>, stdEscape_d, tostring_d>;
-        using sglQuote_str = dec2<ast::_t::token_delimited<obj, '\'', '\\'>, stdEscape_d, tostring_d>;
     };
+
+    //useful tokens and rules for char streams
+
+    // ast_rule(digit, (token_range<'0', '9'>));
+    using digit = token_range<'0', '9'>;
+
+    inline constexpr obj whitespace_objs[] = " \t\n\r"; 
+    using whitespace = dec<some<token_choice<char_array(whitespace_objs)>>, concat_d>;
+
+    inline constexpr obj alpha_objs[] = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    using alpha = token_choice<char_array(alpha_objs)>;
+
+    inline constexpr obj identif_objs[] = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_";
+    using identifier = dec2<seq<alpha,any<token_choice<char_array(identif_objs)>>>,concat_d, tostring_d>;
+
+    using integer = dec<seq<opt<choice<token<'-'>, token<'+'>>>, some<digit>>, concat_d>;
+
+    using fractional = dec<seq3<opt<choice<token<'-'>, token<'+'>>>,
+                            some<digit>,
+                            opt<seq<token<'.'>, some<digit>>>>,
+                            concat_d>;
+
+    using str2long =  dec<integer, tolong_d>;
+
+    using str2double = dec<fractional, todouble_d>;
+    
+    using dblQuote_str = dec2<ast::_t::token_delimited<obj, '"', '\\'>, stdEscape_d, tostring_d>;
+    using sglQuote_str = dec2<ast::_t::token_delimited<obj, '\'', '\\'>, stdEscape_d, tostring_d>;
 }

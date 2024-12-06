@@ -12,13 +12,10 @@ namespace ast::_d
     class dec//orator
     {
     public:
-        using object = typename T0::object;
-
-        template <typename S>
-        static inline ast::_b::lexeme<object> *match(S &s)
+        match_method(s)
         {
             if (!F0::pre_match(s)) return nullptr;
-            ast::_b::lexeme<object> *l = T0::match(s);
+            lexeme_S *l = T0::match(s);
             if (l) l = F0::post_match(l); else F0::no_match(s);
             return l;
         }
@@ -28,14 +25,11 @@ namespace ast::_d
     class dec2
     {
     public:
-        using object = typename T0::object;
-
-        template <typename S>
-        static inline ast::_b::lexeme<object> *match(S &s)
+        match_method(s)
         {
             if (!F1::pre_match(s)) return nullptr;
             if (!F0::pre_match(s)) { F1::no_match(s); return nullptr; }
-            ast::_b::lexeme<object> *l = T0::match(s);
+            lexeme_S *l = T0::match(s);
             if (l) l = F0::post_match(l); else { F0::no_match(s); F1::no_match(s); }
             if (l) l = F1::post_match(l); else F1::no_match(s);
             return l;
@@ -46,15 +40,12 @@ namespace ast::_d
     class dec3
     {
     public:
-        using object = typename T0::object;
-
-        template <typename S>
-        static inline ast::_b::lexeme<object> *match(S &s)
+        match_method(s)
         {
             if (!F2::pre_match(s)) return nullptr;
             if (!F1::pre_match(s)) { F2::no_match(s); return nullptr; }
             if (!F0::pre_match(s)) { F1::no_match(s); F2::no_match(s); return nullptr; }
-            ast::_b::lexeme<object> *l = T0::match(s);
+            lexeme_S *l = T0::match(s);
             if (l) l = F0::post_match(l); else { F0::no_match(s); F1::no_match(s); F2::no_match(s); }
             if (l) l = F1::post_match(l); else { F1::no_match(s); F2::no_match(s); }
             if (l) l = F2::post_match(l); else F2::no_match(s);
@@ -66,16 +57,13 @@ namespace ast::_d
     class dec4
     {
     public:
-        using object = typename T0::object;
-
-        template <typename S>
-        static inline ast::_b::lexeme<object> *match(S &s)
+        match_method(s)
         {
             if (!F3::pre_match(s)) return nullptr;
             if (!F2::pre_match(s)) { F3::no_match(s); return nullptr; }
             if (!F1::pre_match(s)) { F2::no_match(s); F3::no_match(s); return nullptr; }
             if (!F0::pre_match(s)) { F1::no_match(s); F2::no_match(s); F3::no_match(s); return nullptr; }
-            ast::_b::lexeme<object> *l = T0::match(s);
+            lexeme_S *l = T0::match(s);
             if (l) l = F0::post_match(l); else { F0::no_match(s); F1::no_match(s); F2::no_match(s); F3::no_match(s); }
             if (l) l = F1::post_match(l); else { F1::no_match(s); F2::no_match(s); F3::no_match(s); }
             if (l) l = F2::post_match(l); else { F2::no_match(s); F3::no_match(s); }
@@ -88,17 +76,14 @@ namespace ast::_d
     class dec5
     {
     public:
-        using object = typename T0::object;
-
-        template <typename S>
-        static inline ast::_b::lexeme<object> *match(S &s)
+        match_method(s)
         {
             if (!F4::pre_match(s)) return nullptr;
             if (!F3::pre_match(s)) { F4::no_match(s); return nullptr; }
             if (!F2::pre_match(s)) { F3::no_match(s); F4::no_match(s); return nullptr; }
             if (!F1::pre_match(s)) { F2::no_match(s); F3::no_match(s); F4::no_match(s); return nullptr; }
             if (!F0::pre_match(s)) { F1::no_match(s); F2::no_match(s); F3::no_match(s); F4::no_match(s); return nullptr; }
-            ast::_b::lexeme<object> *l = T0::match(s);
+            lexeme_S *l = T0::match(s);
             if (l) l = F0::post_match(l); else { F0::no_match(s); F1::no_match(s); F2::no_match(s); F3::no_match(s); F4::no_match(s); }
             if (l) l = F1::post_match(l); else { F1::no_match(s); F2::no_match(s); F3::no_match(s); F4::no_match(s); }
             if (l) l = F2::post_match(l); else { F2::no_match(s); F3::no_match(s); F4::no_match(s); }
@@ -112,10 +97,7 @@ namespace ast::_d
     class dec6
     {
     public:
-        using object = typename T0::object;
-
-        template <typename S>
-        static inline ast::_b::lexeme<object> *match(S &s)
+        match_method(s)
         {
             if (!F5::pre_match(s)) return nullptr;
             if (!F4::pre_match(s)) { F5::no_match(s); return nullptr; }
@@ -123,7 +105,7 @@ namespace ast::_d
             if (!F2::pre_match(s)) { F3::no_match(s); F4::no_match(s); F5::no_match(s); return nullptr; }
             if (!F1::pre_match(s)) { F2::no_match(s); F3::no_match(s); F4::no_match(s); F5::no_match(s); return nullptr; }
             if (!F0::pre_match(s)) { F1::no_match(s); F2::no_match(s); F3::no_match(s); F4::no_match(s); F5::no_match(s); return nullptr; }
-            ast::_b::lexeme<object> *l = T0::match(s);
+            lexeme_S *l = T0::match(s);
             if (l) l = F0::post_match(l); else { F0::no_match(s); F1::no_match(s); F2::no_match(s); F3::no_match(s); F4::no_match(s); F5::no_match(s); }
             if (l) l = F1::post_match(l); else { F1::no_match(s); F2::no_match(s); F3::no_match(s); F4::no_match(s); F5::no_match(s); }
             if (l) l = F2::post_match(l); else { F2::no_match(s); F3::no_match(s); F4::no_match(s); F5::no_match(s); }

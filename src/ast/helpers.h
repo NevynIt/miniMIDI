@@ -27,7 +27,7 @@ namespace ast::_h
         return (_ELSE_); \
     }
 
-    optional_call_decl(stream_eof, bool, eof, *obj == T(0))
+    optional_call_decl(stream_eof, bool, eof, !(*obj))
     
     template <typename O, std::size_t N>
     static constexpr std::size_t getSize(const O (&arr)[N])
@@ -48,5 +48,48 @@ namespace ast::_h
     #else
         #define ast_rule(_name_, _rule_) using _name_ = ast::_h::get_argument_type<void(_rule_)>::type
     #endif
+
+    static constexpr int hashString(const char* str)
+    {
+        if (!*str)
+            return 5381;
+        int tmp = hashString(str + 1);
+        return (((tmp & 0x7FFFF)  << 5) + tmp) ^ *str;
+    }
+
+    #define lexeme_S ast::_b::lexeme<std::remove_reference_t<decltype(*std::declval<_StreamType>())>>
+
+    #define alias_define(_NAME_, _SRC_) \
+    template <typename _StreamType> \
+    lexeme_S *_NAME_::match(_StreamType &s) \
+    { \
+        return _SRC_::match(s); \
+    }
+
+    #define match_method(_varname_)\
+    template <typename _StreamType>\
+    static inline lexeme_S *match(_StreamType &_varname_)
+
+    #define pre_match_method(_varname_)\
+    template <typename _StreamType>\
+    static inline bool pre_match(_StreamType &_varname_)
+
+    #define post_match_method(_varname_)\
+    template <typename _ObjectType>\
+    static inline ast::_b::lexeme<_ObjectType> *post_match(ast::_b::lexeme<_ObjectType> *_varname_)
+
+    #define no_match_method(_varname_)\
+    template <typename _StreamType>\
+    static inline void no_match(_StreamType &_varname_)
+
+    #define invalidate_lambda(_varname_)\
+    invalidate_cb = [](ast::_b::lexeme<_ObjectType> *_varname_)
+
+    #define alias_declare(_NAME_) \
+    class _NAME_ \
+    { \
+    public: \
+        match_method(s);\
+    }
 
 }
