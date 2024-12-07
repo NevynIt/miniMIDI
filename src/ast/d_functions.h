@@ -3,12 +3,13 @@
 #include "deps.h"
 #include "helpers.h"
 #include "bblocks.h"
+#include "decorator.h"
 
 //basic decorators for lexemes
 
 namespace ast::_f
 {
-    class base_d
+    class dec_base
     {
     public:
         //called before attempting the match
@@ -41,51 +42,49 @@ namespace ast::_f
         }
     };
 
-    using noop_d = base_d;
+    using noop = dec_base;
 
-    template<int n>
-    class select_d : public base_d
+    template <typename O>
+    static inline ast::_b::lexeme<O> *select_post_match(ast::_b::lexeme<O> *l, int n)
     {
-    public:
-        template <typename O>
-        static inline ast::_b::lexeme<O> *post_match(ast::_b::lexeme<O> *l)
+        if (l->type == 'V')
         {
-            if (l->type == 'V' && l->V->size() > n)
+            if (n < 0)
             {
-                auto tmp = l->V->at(n);
-                l->V->at(n) = nullptr;
-                delete l;
-                return tmp;
+                n = l->V->size() + n;
             }
-            else
+            if (n < 0 || n >= l->V->size())
             {
                 delete l;
                 return nullptr;
             }
+            auto tmp = l->V->at(n);
+            l->V->at(n) = nullptr;
+            delete l;
+            return tmp;
         }
-    };
+        else if (n == 0)
+        {
+            return l;
+        }
+        else
+        {
+            delete l;
+            return nullptr;
+        }
+    }
 
-    class choice_d : public base_d
+    template<int n> //todo: select from the end if n is negative, and separate impl on a helper fnc
+    class select : public dec_base
     {
     public:
         post_match_method(l)
         {
-            if (l->type >= '0' && l->type <= '9')
-            {
-                auto tmp = l->lex;
-                l->lex = nullptr;
-                delete l;
-                return tmp;
-            }
-            else
-            {
-                delete l;
-                return nullptr;
-            }
+            return select_post_match(l, n);
         }
     };
 
-    class concat_d : public base_d
+    class concat : public dec_base
     {
     public:
         template<typename O>
@@ -138,10 +137,11 @@ namespace ast::_f
         }
     };
 
-    class fail_always : public base_d
+    class fail_always : public dec_base
     {
     public:
-        pre_match_method(s)        {
+        pre_match_method(s)
+        {
             return false;
         }
 
@@ -155,6 +155,25 @@ namespace ast::_f
         match_method(s)
         {
             return nullptr;
+        }
+    };
+
+    class pass_always : public dec_base
+    {
+    public:
+        pre_match_method(s)
+        {
+            return true;
+        }
+
+        post_match_method(l)
+        {
+            return l;
+        }
+
+        match_method(s)
+        {
+            return new lexeme_S();
         }
     };
 
@@ -173,27 +192,33 @@ namespace ast::_f
     template<> void print_object_const(const float o) { printf("%f", o); }
     template<> void print_object_const(const double o) { printf("%f", o); }
 
+    template<typename _StreamType>
+    lexeme_S *trace_match(_StreamType &s, const char *name)
+    {
+        printf("%*s%s {", indent*2, "", name);
+        print_object(*s);
+        printf("\n");
+        indent++;
+        lexeme_S *l = T0::match(s);
+        indent--;
+        if (l)
+        {
+            printf("%*s} PASS //%s\n", indent*2, "", name);
+        }
+        else
+        {
+            printf("%*s} FAIL //%s\n", indent*2, "", name);
+        }   
+        return l;
+    }
+
     template<typename T0, const char *name>
     class trace
     {
     public:
         match_method(s)
         {
-            printf("%*s%s {", indent*2, "", name);
-            print_object(*s);
-            printf("\n");
-            indent++;
-            lexeme_S *l = T0::match(s);
-            indent--;
-            if (l)
-            {
-                printf("%*s} PASS //%s\n", indent*2, "", name);
-            }
-            else
-            {
-                printf("%*s} FAIL //%s\n", indent*2, "", name);
-            }   
-            return l;
+            return trace_match(s, name);
         }
     };
 }

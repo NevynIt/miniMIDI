@@ -1,5 +1,6 @@
 todo:
-- next priority: separate lua and run startup script
+- remove decorators and transform them into match classes like tolong<rule>
+- separate lua and run startup script
 - access the configuration memory
 - rbj filter, params and refresh filter every x samples
 - add a wrapper decorator for wrapping any wave and add asm support

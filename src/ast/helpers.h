@@ -15,19 +15,38 @@ namespace ast::_h
     \
     template <typename T> \
     std::enable_if_t<_NAME_##_has_##_FNC_##_method<T>::value, _RET_> \
-    _NAME_(const T& obj) \
+    _NAME_(T& obj) \
     { \
         return obj._FNC_(); \
     } \
     \
     template <typename T> \
     std::enable_if_t<!_NAME_##_has_##_FNC_##_method<T>::value, _RET_> \
-    _NAME_(const T& obj) \
+    _NAME_(T& obj) \
     { \
-        return (_ELSE_); \
+        return (_ELSE_)(obj); \
     }
 
-    optional_call_decl(stream_eof, bool, eof, !(*obj))
+    #define optional_call_decl_1(_NAME_, _RET_, _FNC_, _ELSE_, _PARAM_) \
+    template<typename T, typename = void> \
+    struct _NAME_##_has_##_FNC_##_method1 : std::false_type {}; \
+    \
+    template<typename T> \
+    struct _NAME_##_has_##_FNC_##_method1<T, std::void_t<decltype(std::declval<T>()._FNC_(std::declval<_PARAM_>()))>> : std::true_type {}; \
+    \
+    template <typename T> \
+    std::enable_if_t<_NAME_##_has_##_FNC_##_method1<T>::value, _RET_> \
+    _NAME_(T& obj, _PARAM_ p) \
+    { \
+        return obj._FNC_(p); \
+    } \
+    \
+    template <typename T> \
+    std::enable_if_t<!_NAME_##_has_##_FNC_##_method1<T>::value, _RET_> \
+    _NAME_(T& obj, _PARAM_ p) \
+    { \
+        return (_ELSE_)(obj, p); \
+    }
     
     template <typename O, std::size_t N>
     static constexpr std::size_t getSize(const O (&arr)[N])
@@ -57,7 +76,8 @@ namespace ast::_h
         return (((tmp & 0x7FFFF)  << 5) + tmp) ^ *str;
     }
 
-    #define lexeme_S ast::_b::lexeme<std::remove_reference_t<decltype(*std::declval<_StreamType>())>>
+    #define object_S std::remove_reference_t<decltype(*std::declval<_StreamType>())>
+    #define lexeme_S ast::_b::lexeme<object_S>
 
     #define alias_define(_NAME_, _SRC_) \
     template <typename _StreamType> \
@@ -91,5 +111,4 @@ namespace ast::_h
     public: \
         match_method(s);\
     }
-
 }

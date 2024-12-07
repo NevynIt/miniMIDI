@@ -27,9 +27,12 @@ namespace ast_char
     //take care of the null terminator when using strings as char arrays
     #define char_array_decl(_NAME_) inline constexpr char _NAME_[]
     #define char_array(arr) (arr), (ast::_h::getSize(arr)-1)
+    #define str_decl(_NAME_, _VALUE_)\
+    char_array_decl(_NAME_##_str) = _VALUE_;\
+    using _NAME_ = token_string<char_array(_NAME_##_str)>
 
     //useful decorators
-    class tolong_d : public base_d
+    class tolong : public dec_base
     {
     public:
         post_match_method(l)
@@ -58,7 +61,7 @@ namespace ast_char
         }
     };
 
-    class todouble_d : public base_d
+    class todouble : public dec_base
     {
     public:
         post_match_method(l)
@@ -87,7 +90,7 @@ namespace ast_char
         }
     };
 
-    class tostring_d : public base_d
+    class tostring : public dec_base
     {
     public:
         post_match_method(l)
@@ -113,7 +116,7 @@ namespace ast_char
         }
     };
 
-    class stdEscape_d : public base_d
+    class stdEscape : public dec_base
     { //standard escape sequences, including \n, \t, \r, \0, \\ and \xHH
     public:
         post_match_method(l)
@@ -185,32 +188,31 @@ namespace ast_char
             return l;
         }
     };
-
     //useful tokens and rules for char streams
 
     // ast_rule(digit, (token_range<'0', '9'>));
     using digit = token_range<'0', '9'>;
 
     inline constexpr obj whitespace_objs[] = " \t\n\r"; 
-    using whitespace = dec<some<token_choice<char_array(whitespace_objs)>>, concat_d>;
+    using whitespace = dec<some<token_choice<char_array(whitespace_objs)>>, concat>;
 
     inline constexpr obj alpha_objs[] = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
     using alpha = token_choice<char_array(alpha_objs)>;
 
     inline constexpr obj identif_objs[] = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_";
-    using identifier = dec2<seq<alpha,any<token_choice<char_array(identif_objs)>>>,concat_d, tostring_d>;
+    using identifier = dec2<seq<alpha,any<token_choice<char_array(identif_objs)>>>,concat, tostring>;
 
-    using integer = dec<seq<opt<choice<token<'-'>, token<'+'>>>, some<digit>>, concat_d>;
+    using integer = dec<seq<opt<choice<token<'-'>, token<'+'>>>, some<digit>>, concat>;
 
     using fractional = dec<seq3<opt<choice<token<'-'>, token<'+'>>>,
                             some<digit>,
                             opt<seq<token<'.'>, some<digit>>>>,
-                            concat_d>;
+                            concat>;
 
-    using str2long =  dec<integer, tolong_d>;
+    using str2long =  dec<integer, tolong>;
 
-    using str2double = dec<fractional, todouble_d>;
+    using str2double = dec<fractional, todouble>;
     
-    using dblQuote_str = dec2<ast::_t::token_delimited<obj, '"', '\\'>, stdEscape_d, tostring_d>;
-    using sglQuote_str = dec2<ast::_t::token_delimited<obj, '\'', '\\'>, stdEscape_d, tostring_d>;
+    using dblQuote_str = dec2<ast::_t::token_delimited<obj, '"', '\\'>, stdEscape, tostring>;
+    using sglQuote_str = dec2<ast::_t::token_delimited<obj, '\'', '\\'>, stdEscape, tostring>;
 }

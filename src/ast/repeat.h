@@ -2,10 +2,11 @@
 #include "deps.h"
 #include "helpers.h"
 #include "bblocks.h"
+#include "d_functions.h"
 
 namespace ast::_r
 {
-    template<typename T0, int min = 0, int max = -1>
+    template<typename T0, int min = 0, int max = -1, typename Sep = ast::_f::pass_always>
     class rep
     {
     public:
@@ -14,11 +15,24 @@ namespace ast::_r
             lexeme_S *l = new lexeme_S();
             l->type = 'V';
             l->V = l->new_V();
-            auto s_backup = s;
+            void *sshot = ast::_b::stream_snapshot(s);
             int count = 0;
 
             while (max == -1 || count < max)
             {
+                if (count > 0)
+                {
+                    void *sshot2 = ast::_b::stream_snapshot(s);
+                    auto ls = Sep::match(s);
+                    if (ls)
+                        delete ls;
+                    else
+                    {
+                        ast::_b::stream_restore(s, sshot2);
+                        break;
+                    }
+                }
+
                 auto li = T0::match(s);
                 if (li)
                 {
@@ -34,8 +48,9 @@ namespace ast::_r
             {
                 return l;
             }
-            s = s_backup;
+
             delete l;
+            ast::_b::stream_restore(s, sshot);
             return nullptr;
         }
     };

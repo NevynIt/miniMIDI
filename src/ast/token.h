@@ -8,7 +8,7 @@ namespace ast::_t
     template<typename _StreamType, typename _ValueType>
     lexeme_S *base_token_match(_StreamType &s, _ValueType value)
     {
-        if (ast::_h::stream_eof(s))
+        if (ast::_b::stream_eof(s))
             return nullptr;
 
         if (*s == value)
@@ -38,7 +38,7 @@ namespace ast::_t
     public:
         match_method(s)
         {
-            if (ast::_h::stream_eof(s))
+            if (ast::_b::stream_eof(s))
                 return nullptr;
 
             if (*s >= start && *s <= end)
@@ -59,7 +59,7 @@ namespace ast::_t
     public:
         match_method(s)
         {
-            if (ast::_h::stream_eof(s))
+            if (ast::_b::stream_eof(s))
                 return nullptr;
 
             lexeme_S *l = new lexeme_S();
@@ -84,7 +84,7 @@ namespace ast::_t
     public:
         match_method(s)
         {
-            if (ast::_h::stream_eof(s))
+            if (ast::_b::stream_eof(s))
                 return nullptr;
 
             lexeme_S *l = new lexeme_S();
@@ -92,7 +92,7 @@ namespace ast::_t
             l->v = l->new_v(size);
             for (size_t i = 0; arr[i] != 0; i++)
             {
-                if (ast::_h::stream_eof(s))
+                if (ast::_b::stream_eof(s))
                 {
                     delete l;
                     return nullptr;
@@ -112,31 +112,31 @@ namespace ast::_t
         }
     };
 
-    //make the escape equal to the delimiter to disable it. escape skips the delimiter only, otherwise is passed as literal, so that Fx can handle it
-    template<typename O, O delimiter, O escape = delimiter>
+    //make the escape equal to the end to disable it. escape skips the end or escape delimiters only, otherwise it's passed as literal, so that other decorators can handle it
+    template<typename O, O start, O escape = start, O end = start>
     class token_delimited
     {
     public:
         match_method(s)
         {
-            if (ast::_h::stream_eof(s) || *s != delimiter)
+            if (ast::_b::stream_eof(s) || *s != start)
                 return nullptr;
             s++;
 
             lexeme_S *l = new lexeme_S();
             l->type = 'v';
             l->v = l->new_v();
-            while (!ast::_h::stream_eof(s) && *s != delimiter)
+            while (!ast::_b::stream_eof(s) && *s != end)
             {
                 if (*s == escape)
                 {
                     s++;
-                    if (ast::_h::stream_eof(s))
+                    if (ast::_b::stream_eof(s))
                     {
                         delete l;
                         return nullptr;
                     }
-                    if (*s != delimiter)
+                    if (*s != escape && *s != end)
                     {
                         l->v->push_back(escape);
                     }
@@ -144,7 +144,7 @@ namespace ast::_t
                 l->v->push_back(*s);
                 s++;
             }
-            if (*s == delimiter)
+            if (*s == end)
             {
                 s++;
                 return l;

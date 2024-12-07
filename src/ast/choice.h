@@ -19,6 +19,9 @@ namespace ast::_c
     };
 
     template<typename T0, typename T1>
+    using choice2 = choice<T0, T1>;
+
+    template<typename T0, typename T1>
     class choicei//2
     {
     public:
@@ -30,6 +33,9 @@ namespace ast::_c
             return nullptr;
         }
     };
+
+    template<typename T0, typename T1>
+    using choice2i = choicei<T0, T1>;
 
     template<typename T0, typename T1, typename T2>
     class choice3

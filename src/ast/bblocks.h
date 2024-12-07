@@ -13,6 +13,8 @@ namespace ast::_b
     public:
         using object = O;
 
+        stream(O *cur) : cur(cur) {}
+
         inline O &operator *()
         {
             return *cur;
@@ -43,7 +45,7 @@ namespace ast::_b
 
         inline bool eof() const
         {
-            return *cur == 0;
+            return !cur || !(*cur);
         }
 
         inline bool valid() const
@@ -51,8 +53,58 @@ namespace ast::_b
             return cur != nullptr;
         }
 
+        //return nullptr if the stream is not able to backtrack
+        inline void *snapshot()
+        {
+            return cur;
+        }
+
+        //close the stream if we can't backtrack
+        inline bool restore(void *snapshot)
+        {
+            cur = (O *)snapshot;
+            return eof();
+        }
+
         O *cur = nullptr;
     };
+
+    template <typename O>
+    class nb_stream : public stream<O> //non-backtrackable stream
+    {
+    public:
+        //close the stream if we have to backtrack
+        inline bool restore(void *snapshot)
+        {
+            if (snapshot == cur)
+                return true;
+            cur = nullptr;
+            return eof();
+        }
+    };
+
+    template <typename S>
+    std::enable_if<std::is_pointer_v<S>, bool> default_eof(S &s)
+    {
+        return !s || !(*s);
+    }
+
+    template <typename S>
+    std::enable_if<std::is_pointer_v<S>, void *> default_snapshot(S &s)
+    {
+        return s;
+    }
+
+    template <typename S>
+    std::enable_if<std::is_pointer_v<S>, bool> default_restore(S &s, void *snapshot)
+    {
+        s = (decltype(s))snapshot;
+        return !s || !(*s);
+    }
+
+    optional_call_decl(stream_eof, bool, eof, default_eof)
+    optional_call_decl(stream_snapshot, void *, snapshot, default_snapshot)
+    optional_call_decl_1(stream_restore, bool, restore, default_restore, void *)
 
     template <typename O>
     class lexeme
@@ -159,6 +211,10 @@ namespace ast::_b
                 V = new_V();
                 V->push_back(lex);
                 V->push_back(l);
+            }
+            else if (type == 'v' && l->type == 'v')
+            {
+                v->insert(v->end(), l->v->begin(), l->v->end());
             }
             else
             {

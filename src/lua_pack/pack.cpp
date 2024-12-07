@@ -29,7 +29,7 @@ namespace _detail
             struct = { [ <whitespace> ] <field> } [ <whitespace> ]
     */
 
-    class make_bitfield_d : public base_d
+    class make_bitfield : public dec_base
     {
     public:
         post_match_method(l)
@@ -60,7 +60,7 @@ namespace _detail
         }
     };
 
-    class make_format_d : public base_d
+    class make_format : public dec_base
     {
     public:
         post_match_method(l)
@@ -116,7 +116,7 @@ namespace _detail
         };
     };
 
-    class make_field_d : public base_d
+    class make_field : public dec_base
     {
     public:
         post_match_method(l)
@@ -168,7 +168,7 @@ namespace _detail
         }
     };
 
-    class make_struct_d : public base_d
+    class make_struct : public dec_base
     {
     public:
         post_match_method(l)
@@ -209,8 +209,8 @@ namespace _detail
     // alpha = 'a' to 'z' | 'A' to 'Z'
     // identifier = <alpha> { <alpha> | <digit> | '_' }
     
-    // using quoted_name = dec<seq3<token<'\''>, identifier, token<'\''>>, select_d<1>>;
-    ast_rule(quoted_name, (dec<seq3<token<'\''>, identifier, token<'\''>>, select_d<1>>));
+    // using quoted_name = dec<seq3<token<'\''>, identifier, token<'\''>>, select<1>>;
+    ast_rule(quoted_name, (dec<seq3<token<'\''>, identifier, token<'\''>>, select<1>>));
 
     using number = str2long;
     // ast_rule(number, (str2long));
@@ -220,11 +220,11 @@ namespace _detail
 
     using bitfield_def = dec<rep<dec<seq<number, 
                                     opt<token<':'>>>,
-                                    select_d<0>>, 0, -1>, make_bitfield_d>;
+                                    select<0>>, 0, -1>, make_bitfield>;
     ast_rule(bitfield, bitfield_def);
 
-    // using array_size = dec<seq3<token<'['>, choice<number,quoted_name>, token<']'>>, select_d<1>>;
-    ast_rule(array_size, (dec<seq3<token<'['>, choice<number,quoted_name>, token<']'>>, select_d<1>>));
+    // using array_size = dec<seq3<token<'['>, choice<number,quoted_name>, token<']'>>, select<1>>;
+    ast_rule(array_size, (dec<seq3<token<'['>, choice<number,quoted_name>, token<']'>>, select<1>>));
 
     using field_count = choice<number,quoted_name>;
 
@@ -232,30 +232,29 @@ namespace _detail
     alias_declare(structure_alias);
 
     using format = dec<choice3i<type,
-                            dec<seq3<token<'<'>, bitfield, token<'>'>>, select_d<1>>,
-                            dec<seq3<token<'{'>, structure_alias,  token<'}'>>, select_d<1>>>, 
-                            make_format_d>;
+                            dec<seq3<token<'<'>, bitfield, token<'>'>>, select<1>>,
+                            dec<seq3<token<'{'>, structure_alias,  token<'}'>>, select<1>>>, 
+                            make_format>;
     using field_def = dec<seq3<opt<field_count>, 
                             format, 
                             opt<array_size>>, 
-                            make_field_d>;
+                            make_field>;
     ast_rule(field, field_def);
     
     using structure = dec<seq<
-                            dec<some<dec<seq<opt<whitespace>,field>, select_d<1>>>, make_struct_d>,
+                            dec<some<dec<seq<opt<whitespace>,field>, select<1>>>, make_struct>,
                             opt<whitespace>>,
-                        select_d<0>>;
+                        select<0>>;
 
     alias_define(structure_alias, structure);
 
-    using helper = dec<choice3i<fail_always, fail_always, structure>, make_format_d>;
+    using helper = dec<choice3i<fail_always, fail_always, structure>, make_format>;
 
 } // namespace _detail
 
 field_info *field_info::parse(const char *fmt)
 {
     using namespace _detail;
-    // _detail::stream_const s{fmt};
     auto *l = _detail::helper::match(fmt);
     if (l == nullptr)
     {
