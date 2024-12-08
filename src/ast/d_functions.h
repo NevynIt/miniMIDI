@@ -192,33 +192,27 @@ namespace ast::_f
     template<> void print_object_const(const float o) { printf("%f", o); }
     template<> void print_object_const(const double o) { printf("%f", o); }
 
-    template<typename _StreamType>
-    lexeme_S *trace_match(_StreamType &s, const char *name)
-    {
-        printf("%*s%s {", indent*2, "", name);
-        print_object(*s);
-        printf("\n");
-        indent++;
-        lexeme_S *l = T0::match(s);
-        indent--;
-        if (l)
-        {
-            printf("%*s} PASS //%s\n", indent*2, "", name);
-        }
-        else
-        {
-            printf("%*s} FAIL //%s\n", indent*2, "", name);
-        }   
-        return l;
-    }
-
     template<typename T0, const char *name>
     class trace
     {
     public:
         match_method(s)
         {
-            return trace_match(s, name);
+            printf("%*s%s {", indent*2, "", name);
+            print_object(*s);
+            printf("\n");
+            indent++;
+            lexeme_S *l = T0::match(s);
+            indent--;
+            if (l)
+            {
+                printf("%*s} PASS //%s\n", indent*2, "", name);
+            }
+            else
+            {
+                printf("%*s} FAIL //%s\n", indent*2, "", name);
+            }   
+            return l;
         }
     };
 }

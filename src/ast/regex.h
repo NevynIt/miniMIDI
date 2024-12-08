@@ -61,7 +61,7 @@
  * 
  * Groups: ( ... ) define a group, which will act as a single unit
  * (p)        Group, match the pattern p
- * (?:p)      Non-capturing group, match the pattern but don't capture it
+ * <not implemented yet> --> (?:p)      Non-capturing group, match the pattern but don't capture it
  * 'a(bc)'    Match 'a' followed by 'bc'
  * 'a(?:bc)'  Match 'a' followed by 'bc' but don't capture 'bc'
  * 'a([bc])'   Match 'a' followed by 'b' or 'c'
@@ -141,11 +141,12 @@ namespace ast_char
                 break;
             case 'x':
             {
+                char h[3] = {0};
                 if (ast::_b::stream_eof(++s)) return 0;
-                char high = *s;
+                h[0] = *s;
                 if (ast::_b::stream_eof(++s)) return 0;
-                char low = *s;
-                return (char)strtol({high, low}, nullptr, 16);
+                h[1] = *s;
+                return (char)strtol(h, nullptr, 16);
             }
             default:
                 return c;
@@ -291,7 +292,7 @@ namespace ast_char
                         return;
                     }
                 }
-                else (!escape && c == '\\')
+                else if (!escape && c == '\\')
                 {
                     escape = true;
                 }
@@ -324,7 +325,6 @@ namespace ast_char
                     }
                     else if (c == ']')
                     {
-                        s++;
                         if (start_set)
                         {
                             toggle(start);
@@ -343,11 +343,18 @@ namespace ast_char
                     { //starting a range
                         range = true;
                     }
-                    else //finishing a range
+                    else if (range)//finishing a range
                     {
                         toggle_range(start, c);
                         range = false;
                         start_set = false;
+                    }
+                    else
+                    {
+                        if (start_set)
+                            toggle(start);
+                        start = c;
+                        start_set = true;
                     }
                 }
                 s++;
@@ -518,74 +525,76 @@ namespace ast_char
 
                 lexeme_S *subgroup = nullptr;
 
-                if (repetition.min != 1 || repetition.max != 1)
+                if (repetition.min == 1 && repetition.max == 1)
+                {
+                    if (submatch)
+                    {
+                        l->append(submatch);
+                        //append all the contents to l->V->at(0)->v as well
+                        if (submatch->type == 'v')
+                            l->V->at(0)->append(submatch);
+                        else if (submatch->type == 'V')
+                            l->V->at(0)->append(submatch->V->at(0));
+                    }
+                    else
+                    {
+                        // Restore stream snapshot
+                        ast::_b::stream_restore(s, group_sshot);
+                        // Check for alternatives
+                        if (*pattern != '|')
+                        {
+                            delete l;
+                            return nullptr;
+                        }
+                        else
+                        {
+                            // Skip '|' and proceed
+                            pattern++;
+                            continue;
+                        }
+                    }
+                }
+                else
                 {
                     subgroup = new lexeme_S('V');
-                }
-                else if (submatch)
-                {
-                    l->append(submatch);
-                    //append all the contents to l->V[0]->v as well
-                    if (submatch->type == 'v')
-                        l->V[0]->append(submatch);
-                    else if (submatch->type == 'V')
-                        l->V[0]->append(submatch->V[0]);
-                }
-                else
-                {
-                    // Restore stream snapshot
-                    ast::_b::stream_restore(s, group_sshot);
-                    // Check for alternatives
-                    if (*pattern != '|')
+                    int count = 0;
+                    while (submatch && (repetition.max == -1 || count < repetition.max))
                     {
-                        delete l;
-                        return nullptr;
+                        subgroup->append(submatch);
+                        count++;
+                        pattern = group_start;
+                        submatch = match_regex(s, pattern);
+                    }
+
+                    if (count < repetition.min)
+                    {
+                        // Restore stream snapshot
+                        ast::_b::stream_restore(s, group_sshot);
+                        delete subgroup;
+                        // Check for alternatives
+                        if (*pattern != '|')
+                        {
+                            delete l;
+                            return nullptr;
+                        }
+                        else
+                        {
+                            // Skip '|' and proceed
+                            pattern++;
+                            continue;
+                        }
                     }
                     else
                     {
-                        // Skip '|' and proceed
-                        pattern++;
-                        continue;
-                    }
-                }
-
-                int count = 0;
-                while (submatch && (repetition.max == -1 || count < repetition.max))
-                {
-                    subgroup->append(submatch);
-                    count++;
-                    pattern = group_start;
-                    submatch = match_regex(s, pattern);
-                }
-
-                if (count < repetition.min)
-                {
-                    // Restore stream snapshot
-                    ast::_b::stream_restore(s, group_sshot);
-                    delete subgroup;
-                    // Check for alternatives
-                    if (*pattern != '|')
-                    {
-                        delete l;
-                        return nullptr;
-                    }
-                    else
-                    {
-                        // Skip '|' and proceed
-                        pattern++;
-                        continue;
-                    }
-                }
-                else
-                {
-                    l->append(subgroup);
-                    //append all the contents to l->V[0]->v as well
-                    for (auto m = subgroup->V->begin(); m != subgroup->V->end(); m++)
-                    {
-                        if ((*m)->type == 'v')
-                            l->V[0]->append(*m);
-                        else if ((*m)->type == 'V')
-                            l->V[0]->append((*m)->V[0]);
+                        l->append(subgroup);
+                        //append all the contents to l->V->at(0)->v as well
+                        for (auto m = subgroup->V->begin(); m != subgroup->V->end(); m++)
+                        {
+                            if ((*m)->type == 'v')
+                                l->V->at(0)->append(*m);
+                            else if ((*m)->type == 'V')
+                                l->V->at(0)->append((*m)->V->at(0));
+                        }
                     }
                 }
             }
@@ -694,15 +703,16 @@ namespace ast_char
     public:
         match_method(s)
         {
-            return match_regex(s, arr);
+            const char *pattern = arr;
+            return match_regex(s, pattern);
         }
     };
 
     #define re_decl(_NAME_, _PATTERN_) \
-    char_array_decl(_NAME_##_pattern) = _PATTERN_; \
-    using _NAME_ = token_regex<_NAME_##_pattern>
+    char_array_decl(_NAME_##_pattern_) = _PATTERN_; \
+    using _NAME_ = token_regex<_NAME_##_pattern_>
 
     #define re_match(_NAME_, _PATTERN_) \
-    char_array_decl(_NAME_##_pattern) = _PATTERN_; \
-    using _NAME_ = ast::_d::dec<token_regex<_NAME_##_pattern>,ast::_f::select<0>>
+    char_array_decl(_NAME_##_pattern_) = _PATTERN_; \
+    using _NAME_ = ast::_d::dec<token_regex<_NAME_##_pattern_>,ast::_f::select<0>>
 };

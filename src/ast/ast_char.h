@@ -21,15 +21,21 @@ namespace ast_char
     using token_range = ast::_t::token_range<obj, start, end>;
     template<const obj *arr, std::size_t size>
     using token_choice = ast::_t::token_choice<obj, arr, size>;
+    template<const obj *arr, obj end = 0>
+    using token_choice_delimited = ast::_t::token_choice_delimited<obj, arr, end>;
     template<const obj *arr, std::size_t size>
     using token_string = ast::_t::token_string<obj, arr, size>;
+    template<const obj *arr, obj end = 0>
+    using token_string_delimited = ast::_t::token_string_delimited<obj, arr, end>;
+    template<obj start, obj escape = start, obj end = start>
+    using token_delimited = ast::_t::token_delimited<obj, start, escape, end>;
+
 
     //take care of the null terminator when using strings as char arrays
     #define char_array_decl(_NAME_) inline constexpr char _NAME_[]
-    #define char_array(arr) (arr), (ast::_h::getSize(arr)-1)
     #define str_decl(_NAME_, _VALUE_)\
-    char_array_decl(_NAME_##_str) = _VALUE_;\
-    using _NAME_ = token_string<char_array(_NAME_##_str)>
+    char_array_decl(_NAME_##_string_) = _VALUE_;\
+    using _NAME_ = token_string_delimited<_NAME_##_string_>
 
     //useful decorators
     class tolong : public dec_base
@@ -193,14 +199,14 @@ namespace ast_char
     // ast_rule(digit, (token_range<'0', '9'>));
     using digit = token_range<'0', '9'>;
 
-    inline constexpr obj whitespace_objs[] = " \t\n\r"; 
-    using whitespace = dec<some<token_choice<char_array(whitespace_objs)>>, concat>;
+    char_array_decl(whitespace_objs) = " \t\n\r"; 
+    using whitespace = dec<some<token_choice_delimited<whitespace_objs>>, concat>;
 
-    inline constexpr obj alpha_objs[] = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
-    using alpha = token_choice<char_array(alpha_objs)>;
+    char_array_decl(alpha_objs) = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    using alpha = token_choice_delimited<alpha_objs>;
 
-    inline constexpr obj identif_objs[] = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_";
-    using identifier = dec2<seq<alpha,any<token_choice<char_array(identif_objs)>>>,concat, tostring>;
+    char_array_decl(identif_objs) = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_";
+    using identifier = dec2<seq<alpha,any<token_choice_delimited<identif_objs>>>,concat, tostring>;
 
     using integer = dec<seq<opt<choice<token<'-'>, token<'+'>>>, some<digit>>, concat>;
 

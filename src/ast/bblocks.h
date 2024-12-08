@@ -76,27 +76,27 @@ namespace ast::_b
         //close the stream if we have to backtrack
         inline bool restore(void *snapshot)
         {
-            if (snapshot == cur)
+            if (snapshot == this->cur)
                 return true;
-            cur = nullptr;
-            return eof();
+            this->cur = nullptr;
+            return this->eof();
         }
     };
 
     template <typename S>
-    std::enable_if<std::is_pointer_v<S>, bool> default_eof(S &s)
+    typename std::enable_if<std::is_pointer_v<S>, bool>::type default_eof(S &s)
     {
         return !s || !(*s);
     }
 
     template <typename S>
-    std::enable_if<std::is_pointer_v<S>, void *> default_snapshot(S &s)
+    typename std::enable_if<std::is_pointer_v<S>, void *>::type default_snapshot(S &s)
     {
-        return s;
+        return (void *)s;
     }
 
     template <typename S>
-    std::enable_if<std::is_pointer_v<S>, bool> default_restore(S &s, void *snapshot)
+    typename std::enable_if<std::is_pointer_v<S>, bool>::type default_restore(S &s, void *snapshot)
     {
         s = (decltype(s))snapshot;
         return !s || !(*s);
@@ -289,4 +289,153 @@ namespace ast::_b
             type = 0;
         }
     };
+
+    template <typename O>
+    void print_lexeme_object(O o)
+    {
+        printf("??");
+    }
+
+    template <>
+    void print_lexeme_object(char o)
+    {
+        printf("'%c'", o);
+    }
+
+    template <>
+    void print_lexeme_object(const char *o)
+    {
+        printf("\"%s\"", o);
+    }
+
+    template <typename O>
+    void print_lexeme_array(std::vector<O> *v)
+    {
+            printf("[");
+            for (auto i = v->begin(); i != v->end(); i++)
+            {
+                print_lexeme_object(*i);
+                if (i + 1 != v->end())
+                    printf(", ");
+            }
+            printf("]");
+    }
+    
+    template <>
+    void print_lexeme_array(std::vector<char> *v)
+    {
+        printf("\"");
+        for (auto i = v->begin(); i != v->end(); i++)
+        {
+            printf("%c", *i);
+        }
+        printf("\"");
+    }
+
+
+    #define _indent_ printf("%*s", indent, "")
+
+    template <typename O>
+    void print_lexeme(lexeme<O> *l, int indent)
+    {
+        if (!l)
+        {
+            _indent_;
+            printf("nullptr");
+            return;
+        }
+        switch (l->type)
+        {
+        case 'o':
+            _indent_;
+            print_lexeme_object(l->o);
+            break;
+        case 'v':
+            _indent_;
+            print_lexeme_array(l->v);
+            break;
+        case 'V':
+            _indent_;
+            printf("{\n");
+            for (auto i = l->V->begin(); i != l->V->end(); i++)
+            {
+                print_lexeme(*i, indent + 1);
+                if (i + 1 != l->V->end())
+                    printf(",\n");
+            }
+            printf("\n");
+            _indent_;    
+            printf("}");
+            break;
+        case 's':
+            _indent_;
+            printf("\"%s\"", l->s);
+            break;
+        case 'p':
+            _indent_;
+            printf("'%.*s'", l->p->size, l->p->str);
+            break;
+        case 'P':
+            _indent_;
+            printf("*%p", l->P);
+            break;
+        case '0' ... '9':
+            _indent_;
+            printf("->%d\n", l->type - '0');
+            print_lexeme(l->lex, indent+1);
+            break;
+        case 'c':
+            _indent_;
+            printf("'%c'", l->c);
+            break;
+        case 'b':
+            _indent_;
+            printf("%d", l->b);
+            break;
+        case 'B':
+            _indent_;
+            printf("%u", l->B);
+            break;
+        case 'h':
+            _indent_;
+            printf("%d", l->h);
+            break;
+        case 'H':
+            _indent_;
+            printf("%u", l->H);
+            break;
+        case 'l':
+            _indent_;
+            printf("%d", l->l);
+            break;
+        case 'L':
+            _indent_;
+            printf("%u", l->L);
+            break;
+        case 'q':
+            _indent_;
+            printf("%ld", l->q);
+            break;
+        case 'Q':
+            _indent_;
+            printf("%lu", l->Q);
+            break;
+        case 'f':
+            _indent_;
+            printf("%f", l->f);
+            break;
+        case 'd':
+            _indent_;
+            printf("%f", l->d);
+            break;
+        case '?':
+            _indent_;
+            printf("%s", l->qm ? "true" : "false");
+            break;
+        default:
+            _indent_;
+            printf("??");
+            break;
+        }
+    }
 }
