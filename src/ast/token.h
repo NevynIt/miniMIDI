@@ -179,7 +179,7 @@ namespace ast::_t
             }
             else if (*s == arr[i])
             {
-                l->v->at(i) = *s;
+                l->v->push_back(*s);
                 s++;
             }
             else

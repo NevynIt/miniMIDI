@@ -39,7 +39,7 @@ re_pattern ::= delimited('/', '\\', '/');
     --parse and convert to string in the ast
     --the compiler will use ast_char::token_regex to match the string and select group 0
 
-name ::= /[a-zA-Z_][a-zA-Z0-9_]+(::[a-zA-Z_][a-zA-Z0-9_]+)*/;
+name ::= /[a-zA-Z_][a-zA-Z0-9_]*(::[a-zA-Z_][a-zA-Z0-9_]*)*/;
     --the compiler will use it as a class name
 
 positive_integer ::= /[0-9]+/;

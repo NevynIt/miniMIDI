@@ -518,10 +518,34 @@ namespace ast_char
                 void *group_sshot = ast::_b::stream_snapshot(s); // to be used if repetition count is not met
                 char_cptr group_start = pattern;
                 lexeme_S *submatch = match_regex(s, pattern);
+                //if *pattern is not ')' then the group is not closed
+                //skip until the end of the group, considering nested groups
+                if (*pattern != ')')
+                {
+                    int depth = 0;
+                    while ((*pattern != ')' || depth > 0) && *pattern != '\0')
+                    {
+                        if (*pattern == '(')
+                        {
+                            depth++;
+                        }
+                        else if (*pattern == ')')
+                        {
+                            depth--;
+                        }
+                        else if (*pattern == '\\')
+                        {
+                            pattern++;
+                        }
+                        pattern++;
+                    }
+                }
                 
                 pattern++;
                 // Set repetition if specified
                 repetition.set(pattern);
+                
+                char_cptr group_end = pattern;
 
                 lexeme_S *subgroup = nullptr;
 
@@ -565,6 +589,7 @@ namespace ast_char
                         pattern = group_start;
                         submatch = match_regex(s, pattern);
                     }
+                    pattern = group_end;
 
                     if (count < repetition.min)
                     {
@@ -621,6 +646,7 @@ namespace ast_char
                         {
                             l->V->at(0)->append(*s);
                         }
+                        s++;
                     }
                     else
                     {
@@ -714,5 +740,6 @@ namespace ast_char
 
     #define re_match(_NAME_, _PATTERN_) \
     char_array_decl(_NAME_##_pattern_) = _PATTERN_; \
-    using _NAME_ = ast::_d::dec<token_regex<_NAME_##_pattern_>,ast::_f::select<0>>
+    class _NAME_ : public ast::_d::dec<token_regex<_NAME_##_pattern_>,ast::_f::select<0>> {}; \
+    // using _NAME_ = ast::_d::dec<token_regex<_NAME_##_pattern_>,ast::_f::select<0>>
 };
