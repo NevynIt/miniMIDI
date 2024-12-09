@@ -11,6 +11,7 @@
 #include "sequence.h"
 #include "choice.h"
 #include "repeat.h"
+#include "regex.h"
 
 //parser of objects of type O
 
@@ -23,4 +24,5 @@ namespace ast
     using namespace ast::_s; //sequence
     using namespace ast::_c; //choice
     using namespace ast::_r; //repeat
+    using namespace ast::_re; //regex
 }

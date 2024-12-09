@@ -6,6 +6,7 @@
 namespace _detail
 {
     using namespace ast_char;
+    using namespace ast::_b;
 
     /*
         Grammar definition for format strings:
@@ -29,159 +30,100 @@ namespace _detail
             struct = { [ <whitespace> ] <field> } [ <whitespace> ]
     */
 
-    class make_bitfield : public dec_base
+    class lex_bitfield : public lexeme
     {
     public:
-        post_match_method(l)
+        signature_noargs(lex_bitfield)
+        lex_bitfield(std::vector<uint8_t> *bitfield) : bitfield(bitfield) {}
+        ~lex_bitfield() { if (bitfield) delete bitfield; }
+        std::vector<uint8_t> *bitfield = nullptr;
+    };
+
+    template <typename T0>
+    class make_bitfield : public rule_base
+    {
+    public:
+        signature_decl(make_bitfield, T0)
+
+        match_method(s)
         {
+            auto l = sub_match(T0, s);
+            if (!l)
+                return nullptr;
+            
             std::vector<uint8_t> *bitfield = new std::vector<uint8_t>();
-            if (!l->type == 'V')
+            lex_V *V = l->template as<lex_V>();
+            if (!V)
             {
                 delete l;
                 return nullptr;
             }
-            for (auto li : *l->V)
+            for (auto li : *V)
             {
-                if (li->type != 'l')
+                lex_l *lil = li->template as<lex_l>();
+                if (!lil)
                 {
                     delete l;
                     return nullptr;
                 }
-                int number = li->l;
+                int number = lil->l;
                 bitfield->push_back(number);
             }
-            delete l->V;
-            l->type = 'P';
-            l->P = bitfield;
-            l->invalidate_lambda(ll) {
-                delete (std::vector<uint8_t> *)ll->P;
-            };
-            return l;
+            delete l;
+            return new lex_bitfield(bitfield);
         }
     };
 
-    class make_format : public dec_base
+    class lex_field_info : public lexeme
     {
     public:
-        post_match_method(l)
-        {
-            //l is a choice between:
-            //  0 = type
-            //  1 = bitfield
-            //  2 = struct
-
-            field_info *f = new field_info();
-
-            if (l->type == '0') //type
-            {
-                if (l->lex->type != 'o')
-                {
-                    delete l;
-                    delete f;
-                    return nullptr;
-                }
-                f->type = l->lex->o;
-            }
-            else if (l->type == '1') //bitfield
-            {
-                if (l->lex->type != 'P')
-                {
-                    delete l;
-                    delete f;
-                    return nullptr;
-                }
-                f->type = 1;
-                f->bitfield = (std::vector<uint8_t> *)l->lex->P;
-                l->lex->P = nullptr;
-            }
-            else if (l->type == '2') //struct
-            {
-                if (l->lex->type != 'P')
-                {
-                    delete l;
-                    delete f;
-                    return nullptr;
-                }
-                f->type = 2;
-                f->fields = (std::vector<field_info *> *)l->lex->P;
-                l->lex->P = nullptr;
-            }
-            l->invalidate();
-            l->type = 'P';
-            l->P = f;
-            l->invalidate_lambda(ll) {
-                delete (field_info *)ll->P;
-            };
-            return l;
-        };
+        signature_noargs(lex_field_info)
+        lex_field_info(field_info *f) : f(f) {}
+        ~lex_field_info() { if (f) delete f; }
+        field_info *f = nullptr;
     };
 
-    class make_field : public dec_base
+    class lex_struct : public lexeme
     {
     public:
-        post_match_method(l)
+        signature_noargs(lex_struct)
+        lex_struct(std::vector<field_info *> *fields = nullptr) : fields(fields) {}
+        ~lex_struct()
         {
-            if (l->type != 'V' || l->V->size() != 3 || l->V->at(0)->type != 'V' || l->V->at(1)->type != 'P' || l->V->at(2)->type != 'V')
+            if (fields)
             {
-                delete l;
+                for (auto f : *fields)
+                {
+                    delete f;
+                }
+                delete fields;
+            }
+        }
+        std::vector<field_info *> *fields = nullptr;
+    };
+
+    template <typename T0>
+    class make_struct : public rule_base
+    {
+    public:
+        signature_decl(make_struct, T0)
+
+        match_method(s)
+        {
+            auto l = sub_match(T0, s);
+            if (!l)
                 return nullptr;
-            }
-            field_info *f = (field_info *)l->V->at(1)->P;
-            if (l->V->at(0)->V->size() == 1)
-            {
-                if (l->V->at(0)->V->at(0)->type == 'l')
-                    f->count = l->V->at(0)->V->at(0)->l;
-                else if (l->V->at(0)->V->at(0)->type == 's')
-                {
-                    f->field_name = l->V->at(0)->V->at(0)->s;
-                    l->V->at(0)->V->at(0)->s = nullptr;
-                }
-                else
-                {
-                    delete l;
-                    return nullptr;
-                }
-            }
-            if (l->V->at(2)->V->size() == 1)
-            {
-                if (l->V->at(2)->V->at(0)->type == 'l')
-                    f->array_size = l->V->at(2)->V->at(0)->l;
-                else if (l->V->at(2)->V->at(0)->type == 's')
-                {
-                    f->array_size_name = l->V->at(2)->V->at(0)->s;
-                    l->V->at(2)->V->at(0)->s = nullptr;
-                }
-                else
-                {
-                    delete l;
-                    return nullptr;
-                }
-            }
-            l->V->at(1)->P = nullptr;
-            l->invalidate();
-            l->type = 'P';
-            l->P = f;
-            l->invalidate_lambda(ll) {
-                delete (field_info *)ll->P;
-            };
-            return l;
-        }
-    };
-
-    class make_struct : public dec_base
-    {
-    public:
-        post_match_method(l)
-        {
-            if (l->type != 'V')
+            auto V = l->template as<lex_V>();
+            if (!V)
             {
                 delete l;
                 return nullptr;
             }
             std::vector<field_info *> *fields = new std::vector<field_info *>();
-            for (auto li : *l->V)
+            for (auto li : *V)
             {
-                if (li->type != 'P')
+                auto fi = li->template as<lex_field_info>();
+                if (!fi)
                 {
                     for (auto fi : *fields)
                     {
@@ -191,17 +133,157 @@ namespace _detail
                     delete l;
                     return nullptr;
                 }
-                fields->push_back((field_info *)li->P);
-                li->P = nullptr;
+                fields->push_back(fi->f);
+                fi->f = nullptr;
             }
-            l->invalidate();
-            l->type = 'P';
-            l->P = fields;
-            l->invalidate_lambda(ll) {
-                delete (std::vector<field_info *> *)ll->P;
-            };
-            return l;
+            delete l;
+            return new lex_struct(fields);
         };
+    };
+    
+    template <typename T0>
+    class make_format : public rule_base
+    {
+    public:
+        signature_decl(make_format, T0)
+
+        match_method(s)
+        {
+            auto l = sub_match(T0, s);
+            if (!l)
+                return nullptr;
+
+            //l is a choice between:
+            //  0 = type
+            //  1 = bitfield
+            //  2 = struct
+
+            lex_choice *lc = l->template as<lex_choice>();
+            if (!lc)
+            {
+                delete l;
+                return nullptr;
+            }
+
+            field_info *f = new field_info();
+            if (lc->choice == 0) //type
+            {
+                lex_o<char> *lo = lc->l->template as<lex_o<char>>();
+                if (!lo)
+                {
+                    delete l;
+                    delete f;
+                    return nullptr;
+                }
+                f->type = lo->o;
+            }
+            else if (lc->choice == 1) //bitfield
+            {
+                lex_bitfield *lb = lc->l->template as<lex_bitfield>();
+                if (!lb)
+                {
+                    delete l;
+                    delete f;
+                    return nullptr;
+                }
+                f->type = 1;
+                f->bitfield = lb->bitfield;
+                lb->bitfield = nullptr;
+            }
+            else if (lc->choice == 2) //struct
+            {
+                lex_struct *ls = lc->l->template as<lex_struct>();
+                if (!ls)
+                {
+                    delete l;
+                    delete f;
+                    return nullptr;
+                }
+                f->type = 2;
+                f->fields = ls->fields;
+                ls->fields = nullptr;
+            }
+            else
+            {
+                delete l;
+                delete f;
+                return nullptr;
+            }
+            delete l;
+            return new lex_field_info(f);
+        };
+    };
+
+    template <typename T0>
+    class make_field : public rule_base
+    {
+    public:
+        signature_decl(make_field, T0)
+
+        match_method(s)
+        {
+            auto l = sub_match(T0, s);
+            if (!l)
+                return nullptr;
+            auto V = l->template as<lex_V>();
+            if (!V || V->size() != 3)
+            {
+                delete l;
+                return nullptr;
+            }
+            lex_V *V0 = V->at(0)->template as<lex_V>();
+            lex_field_info *V1 = V->at(1)->template as<lex_field_info>();
+            lex_V *V2 = V->at(2)->template as<lex_V>();
+
+            field_info *f = V1->f;
+
+            if (V0->size() == 1)
+            {
+                auto V0l = V0->at(0)->template as<lex_l>();
+                if (V0l)
+                {
+                    f->count = V0l->l;
+                }
+                else
+                {
+                    lex_s *V0s = V0->at(0)->template as<lex_s>();
+                    if (V0s)
+                    {
+                        f->field_name = V0s->s;
+                        V0s->s = nullptr;
+                    }
+                    else
+                    {
+                        delete l;
+                        return nullptr;
+                    }
+                }
+            }
+            if (V2->size() == 1)
+            {
+                lex_l *V2l = V2->at(0)->template as<lex_l>();
+                if (V2l)
+                {
+                    f->array_size = V2l->l;
+                }
+                else
+                {
+                    lex_s *V2s = V2->at(0)->template as<lex_s>();
+                    if (V2s)
+                    {
+                        f->array_size_name = V2s->s;
+                        V2s->s = nullptr;
+                    }
+                    else
+                    {
+                        delete l;
+                        return nullptr;
+                    }
+                }
+            }
+            delete l;
+            return new lex_field_info(f);
+        }
     };
 
     //these are already defined in ast_char.hpp
@@ -209,46 +291,53 @@ namespace _detail
     // alpha = 'a' to 'z' | 'A' to 'Z'
     // identifier = <alpha> { <alpha> | <digit> | '_' }
     
-    // using quoted_name = dec<seq3<token<'\''>, identifier, token<'\''>>, select<1>>;
-    ast_rule(quoted_name, (dec<seq3<token<'\''>, identifier, token<'\''>>, select<1>>));
+    using quoted_name_decl = select<seq3<token<'\''>, identifier, token<'\''>>, 1>;
+    alias_declare(quoted_name);
+    alias_define(quoted_name, quoted_name_decl);
 
     using number = str2long;
-    // ast_rule(number, (str2long));
 
     char_array_decl(type_chars) = "xXcbB?hHiIlLqQnNfdspP";
-    using type = token_choice<char_array(type_chars)>;
+    using type_decl = token_choice<char_array(type_chars)>;
+    alias_declare(type);
+    alias_define(type, type_decl);
 
-    using bitfield_def = dec<rep<dec<seq<number, 
-                                    opt<token<':'>>>,
-                                    select<0>>, 0, -1>, make_bitfield>;
-    ast_rule(bitfield, bitfield_def);
+    using bitfield_decl = make_bitfield<rep<select<seq2<number,opt<token<':'>>>,0>, 0, -1>>;
+    alias_declare(bitfield);
+    alias_define(bitfield, bitfield_decl);
 
-    // using array_size = dec<seq3<token<'['>, choice<number,quoted_name>, token<']'>>, select<1>>;
-    ast_rule(array_size, (dec<seq3<token<'['>, choice<number,quoted_name>, token<']'>>, select<1>>));
+    using array_size_decl = select<seq3<token<'['>, choice2<number,quoted_name>, token<']'>>, 1>;
+    alias_declare(array_size);
+    alias_define(array_size, array_size_decl);
 
-    using field_count = choice<number,quoted_name>;
+    using field_count_decl = choice2<number,quoted_name>;
+    alias_declare(field_count);
+    alias_define(field_count, field_count_decl);
 
 
-    alias_declare(structure_alias);
+    alias_declare(structure);
 
-    using format = dec<choice3i<type,
-                            dec<seq3<token<'<'>, bitfield, token<'>'>>, select<1>>,
-                            dec<seq3<token<'{'>, structure_alias,  token<'}'>>, select<1>>>, 
-                            make_format>;
-    using field_def = dec<seq3<opt<field_count>, 
+    using format_impl = make_format<choice3i<type,
+                            select<seq3<token<'<'>, bitfield, token<'>'>>, 1>,
+                            select<seq3<token<'{'>, structure,  token<'}'>>, 1>>>;
+    alias_declare(format);
+    alias_define(format, format_impl);
+
+    using field_decl = make_field<seq3<opt<field_count>, 
                             format, 
-                            opt<array_size>>, 
-                            make_field>;
-    ast_rule(field, field_def);
-    
-    using structure = dec<seq<
-                            dec<some<dec<seq<opt<whitespace>,field>, select<1>>>, make_struct>,
-                            opt<whitespace>>,
-                        select<0>>;
+                            opt<array_size>>>;
+    alias_declare(field);
+    alias_define(field, field_decl);
 
-    alias_define(structure_alias, structure);
+    using structure_decl = select<seq2<
+                            make_struct<some<select<seq2<opt<whitespace>,field>, 1>>>,
+                            opt<whitespace>>, 0>;
 
-    using helper = dec<choice3i<fail_always, fail_always, structure>, make_format>;
+    alias_define(structure, structure_decl);
+
+    using helper_decl = trace_on<make_format<choice3i<fail_always, fail_always, structure>>>;
+    alias_declare(helper);
+    alias_define(helper, helper_decl);
 
 } // namespace _detail
 
@@ -260,8 +349,9 @@ field_info *field_info::parse(const char *fmt)
     {
         return nullptr;
     }
-    field_info *f = (field_info *)l->P;
-    l->P = nullptr;
+    auto lf = l->as<lex_field_info>();
+    field_info *f = lf->f;
+    lf->f = nullptr;
     delete l;
     return f;
 }

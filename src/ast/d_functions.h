@@ -9,59 +9,64 @@
 
 namespace ast::_f
 {
-    class dec_base
-    {
-    public:
-        //called before attempting the match
-        //return false to skip the match (no_match will not be called in this case)
-        //do any preparation here
-        pre_match_method(s)
-        {
-            return true;
-        }
+    using namespace ast::_b;
+    using namespace ast::_h;
 
-        //called to match the input, when the object is used as a rule, return nullptr to indicate no match
-        match_method(s)
-        {
+    // class dec_base
+    // {
+    // public:
+    //     //called before attempting the match
+    //     //return false to skip the match (no_match will not be called in this case)
+    //     //do any preparation here
+    //     pre_match_method(s)
+    //     {
+    //         return true;
+    //     }
+
+    //     //called to match the input, when the object is used as a rule, return nullptr to indicate no match
+    //     match_method(s)
+    //     {
+    //         return nullptr;
+    //     }
+
+    //     //called after a successful match
+    //     //do any post processing and cleanup here
+    //     //return the lexeme to be used in the parent rule
+    //     post_match_method(l)
+    //     {
+    //         return l;
+    //     }
+
+    //     //called after a failed match
+    //     //do any cleanup here
+    //     no_match_method(s)
+    //     {
+    //         //no op
+    //     }
+    // };
+
+    // using noop = dec_base;
+
+    static inline lexeme *select_decorator(lexeme *l, int n)
+    {
+        if (!l)
             return nullptr;
-        }
-
-        //called after a successful match
-        //do any post processing and cleanup here
-        //return the lexeme to be used in the parent rule
-        post_match_method(l)
-        {
-            return l;
-        }
-
-        //called after a failed match
-        //do any cleanup here
-        no_match_method(s)
-        {
-            //no op
-        }
-    };
-
-    using noop = dec_base;
-
-    template <typename O>
-    static inline ast::_b::lexeme<O> *select_post_match(ast::_b::lexeme<O> *l, int n)
-    {
-        if (l->type == 'V')
+        lex_V *tmp = l->as<lex_V>();
+        if (tmp)
         {
             if (n < 0)
             {
-                n = l->V->size() + n;
+                n = tmp->size() + n;
             }
-            if (n < 0 || n >= l->V->size())
+            if (n < 0 || n >= tmp->size())
             {
                 delete l;
                 return nullptr;
             }
-            auto tmp = l->V->at(n);
-            l->V->at(n) = nullptr;
+            auto tmp2 = tmp->at(n);
+            tmp->at(n) = nullptr;
             delete l;
-            return tmp;
+            return tmp2;
         }
         else if (n == 0)
         {
@@ -74,145 +79,137 @@ namespace ast::_f
         }
     }
 
-    template<int n> //todo: select from the end if n is negative, and separate impl on a helper fnc
-    class select : public dec_base
+    template<typename T0, int n>
+    class select : public rule_base
     {
     public:
-        post_match_method(l)
+        signature_decl(select, T0, signature_get_int<n>)
+        match_method(s)
         {
-            return select_post_match(l, n);
+            return select_decorator(sub_match(T0,s), n);
         }
     };
 
-    class concat : public dec_base
+    template<typename O>
+    lexeme *concat_decorator(lexeme *l)
     {
-    public:
-        template<typename O>
-        static inline bool append(ast::_b::lexeme<O> *l, typename ast::_b::lexeme<O>::v_t *v)
+        if (!l)
+            return nullptr;
+    
+        lex_V *tmp = l->as<lex_V>();
+        if (tmp)
         {
-            if (l->type == 'o')
+            lex_v<O> *v = new lex_v<O>();
+            for (auto i = tmp->begin(); i != tmp->end(); i++)
             {
-                v->push_back(l->o);
-            }
-            else if (l->type == 'v')
-            {
-                for (auto li : *l->v)
+                auto tmp = (*i)->as<lex_v<O>>();
+                if (tmp)
                 {
-                    v->push_back(li);
-                }
-            }
-            else if (l->type == 'V')
-            {
-                for (auto li : *l->V)
-                {
-                    if (!append(li, v))
+                    for (auto j = tmp->begin(); j != tmp->end(); j++)
                     {
-                        return false;
+                        v->push_back(*j);
                     }
                 }
             }
-            else
-            {
-                return false;
-            }
-            return true;
+            delete l;
+            return v;
         }
+        return l;
+    }
 
-        post_match_method(l)
-        {
-            auto tmp = l->new_lexeme();
-            tmp->type = 'v';
-            tmp->v = tmp->new_v();
-            if (append(l, tmp->v))
-            {
-                delete l;
-                return tmp;
-            }
-            else
-            {
-                delete l;
-                delete tmp;
-                return nullptr;
-            }
-        }
-    };
-
-    class fail_always : public dec_base
+    template<typename T0, typename O>
+    class concat: public rule_base
     {
     public:
-        pre_match_method(s)
-        {
-            return false;
-        }
-
-        post_match_method(l)
-        {
-            if (l)
-                delete l;
-            return nullptr;
-        }
+        signature_decl(concat, T0)
 
         match_method(s)
         {
-            return nullptr;
+            return concat_decorator<O>(sub_match(T0,s));
         }
     };
 
-    class pass_always : public dec_base
+    class fail_always: public rule_base
     {
     public:
-        pre_match_method(s)
-        {
-            return true;
-        }
+        signature_noargs(fail_always)
+    };
 
-        post_match_method(l)
-        {
-            return l;
-        }
+    class pass_always : public rule_base
+    {
+    public:
+        signature_noargs(pass_always)
 
         match_method(s)
         {
-            return new lexeme_S();
+            return new lexeme();
         }
     };
 
-    static int indent = 0;
-
-    template<typename O> void print_object(O o) { print_object_const(o); }
-    template<typename O> void print_object_const(const O o) {}
-    template<> void print_object_const(const char o) { printf("'%c'", o); }
-    template<> void print_object_const(const char *o) { printf("\"%s\"", o); }
-    template<> void print_object_const(const int o) { printf("%d", o); }
-    template<> void print_object_const(const unsigned int o) { printf("%u", o); }
-    template<> void print_object_const(const long o) { printf("%ld", o); }
-    template<> void print_object_const(const unsigned long o) { printf("%lu", o); }
-    template<> void print_object_const(const long long o) { printf("%lld", o); }
-    template<> void print_object_const(const unsigned long long o) { printf("%llu", o); }
-    template<> void print_object_const(const float o) { printf("%f", o); }
-    template<> void print_object_const(const double o) { printf("%f", o); }
-
-    template<typename T0, const char *name>
-    class trace
+    template<typename T0>
+    class trace_on : public rule_base
     {
     public:
+        signature_decl(trace_on, T0)
+
         match_method(s)
         {
-            printf("%*s%s {", indent*2, "", name);
-            print_object(*s);
-            printf("\n");
-            indent++;
-            lexeme_S *l = T0::match(s);
-            indent--;
-            if (l)
-            {
-                printf("%*s} PASS //%s\n", indent*2, "", name);
-            }
-            else
-            {
-                printf("%*s} FAIL //%s\n", indent*2, "", name);
-            }   
-            return l;
+            //special processing for trace:
+            _trace_ = _trace_ ? _trace_ : 1;
+            return sub_match(T0, s);
         }
     };
+
+    template<typename T0>
+    class trace_off : public rule_base
+    {
+    public:
+        signature_decl(trace_off, T0)
+
+        match_method(s)
+        {
+            //special processing for trace:
+            _trace_ = 0;
+            return sub_match(T0, s);
+        }
+    };
+
+    // static int indent = 0;
+
+    // template<typename O> void print_object(O o) { print_object_const(o); }
+    // template<typename O> void print_object_const(const O o) {}
+    // template<> void print_object_const(const char o) { printf("'%c'", o); }
+    // template<> void print_object_const(const char *o) { printf("\"%s\"", o); }
+    // template<> void print_object_const(const int o) { printf("%d", o); }
+    // template<> void print_object_const(const unsigned int o) { printf("%u", o); }
+    // template<> void print_object_const(const long o) { printf("%ld", o); }
+    // template<> void print_object_const(const unsigned long o) { printf("%lu", o); }
+    // template<> void print_object_const(const long long o) { printf("%lld", o); }
+    // template<> void print_object_const(const unsigned long long o) { printf("%llu", o); }
+    // template<> void print_object_const(const float o) { printf("%f", o); }
+    // template<> void print_object_const(const double o) { printf("%f", o); }
+
+    // template<typename T0, const char *name>
+    // class trace
+    // {
+    // public:
+    //     match_method(s)
+    //     {
+    //         printf("%*s%s {", indent*2, "", name);
+    //         print_object(*s);
+    //         printf("\n");
+    //         indent++;
+    //         lexeme_S *l = T0::match(s);
+    //         indent--;
+    //         if (l)
+    //         {
+    //             printf("%*s} PASS //%s\n", indent*2, "", name);
+    //         }
+    //         else
+    //         {
+    //             printf("%*s} FAIL //%s\n", indent*2, "", name);
+    //         }   
+    //         return l;
+    //     }
+    // };
 }

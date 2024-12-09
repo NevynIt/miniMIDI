@@ -2,11 +2,13 @@
 
 #include "deps.h"
 #include "helpers.h"
+#include "variant.h"
 
 //fundamental building blocks
 
 namespace ast::_b
 {
+    using namespace ast::_h;
     template <typename O>
     class stream
     {
@@ -35,6 +37,11 @@ namespace ast::_b
             stream s = *this;
             cur++;
             return s;
+        }
+
+        inline size_t operator -(const stream &s) const
+        {
+            return cur - s.cur;
         }
 
         inline stream &operator +=(size_t n)
@@ -83,359 +90,525 @@ namespace ast::_b
         }
     };
 
-    template <typename S>
-    typename std::enable_if<std::is_pointer_v<S>, bool>::type default_eof(S &s)
-    {
-        return !s || !(*s);
-    }
-
-    template <typename S>
-    typename std::enable_if<std::is_pointer_v<S>, void *>::type default_snapshot(S &s)
-    {
-        return (void *)s;
-    }
-
-    template <typename S>
-    typename std::enable_if<std::is_pointer_v<S>, bool>::type default_restore(S &s, void *snapshot)
-    {
-        s = (decltype(s))snapshot;
-        return !s || !(*s);
-    }
-
-    optional_call_decl(stream_eof, bool, eof, default_eof)
-    optional_call_decl(stream_snapshot, void *, snapshot, default_snapshot)
-    optional_call_decl_1(stream_restore, bool, restore, default_restore, void *)
-
-    template <typename O>
-    class lexeme
+    //lexemes print as:
+    //(rule) signature: value
+    class lexeme : public variant::variant
     {
     public:
+        signature_noargs(lexeme)
+
+        virtual void printvalue(int indent = 0) { printf("??"); };
+        virtual void print(int indent = 0)
+        {
+            print_ind(indent, "(%s) %s: ", rule ? rule : "", get_signature());
+            printvalue(indent);
+            printf("\n");
+        }
+        const char *rule = nullptr;
+    };
+    
+    template<typename O>
+    class lex_o : public lexeme
+    {
+    public:
+        signature_decl(lex_o, signature_get_type<O>)
         using object = O;
-        using o_t = typename std::remove_const_t<O>;
-        using v_t = std::vector<o_t>;
-        using V_t = std::vector<lexeme<O> *>;
+        O o;
+        void printvalue(int indent = 0) override;
 
-        lexeme(char type)
-        {
-            memset(this, 0, sizeof(lexeme));
-            this->type = type;
-            switch (type)
-            {
-            case 'v':
-                v = new_v();
-                break;
-            case 'V':
-                V = new_V();
-                break;
-            }
-        }
-
-        lexeme()
-        {
-            memset(this, 0, sizeof(lexeme));
-        }
-
-        lexeme(lexeme *l, char type = '*')
-        {
-            memset(this, 0, sizeof(lexeme));
-            this->type = type;
-            lex = l;
-        }
-
-        ~lexeme()
-        {
-            invalidate();
-        }
-
-        void (*invalidate_cb)(lexeme<O> *l) = nullptr;
-        
-        static inline v_t *new_v(size_t size)
-        {
-            return new v_t(size);
-        }
-        
-        static inline v_t *new_v()
-        {
-            return new v_t();
-        }
-
-        static inline lexeme<O> *new_lexeme()
-        {
-            return new lexeme<O>();
-        }
-
-        static inline std::vector<lexeme<O>*> *new_V()
-        {
-            return new std::vector<lexeme<O>*>();
-        }
-
-        bool append(O value)
-        {
-            if (type == 'o')
-            {
-                if (o == 0)
-                {
-                    o = value;
-                }
-                else
-                {
-                    type = 'v';
-                    v = new_v();
-                    v->push_back(o);
-                    v->push_back(value);
-                }
-            }
-            else if (type == 'v')
-            {
-                v->push_back(value);
-            }
-            else
-            {
-                return false;
-            }
-            return true;
-        }
-
-        bool append(lexeme<O> *l)
-        {
-            if (!l)
-                return false;
-            
-            if (type == 'V')
-            {
-                V->push_back(l);
-            }
-            else if (type == '*' || type >= '0' && type <= '9')
-            {
-                type = 'V';
-                V = new_V();
-                V->push_back(lex);
-                V->push_back(l);
-            }
-            else if (type == 'v' && l->type == 'v')
-            {
-                v->insert(v->end(), l->v->begin(), l->v->end());
-            }
-            else
-            {
-                return false;
-            }
-            return true;
-        }
-
-        struct pascal_string
-        {
-            uint8_t size;
-            char *str;
-        };
-
-        char type = 0;
-            // 0 invalid
-            // any of the single char variables below => the value is in that variable
-            // any value > 127 => the value is user defined
-        union
-        {
-            o_t o;                      // type 'o'
-            v_t *v;                     // type 'v' //used by token_repeat
-            V_t *V;                     // type 'V' //used by sequence and repeat
-            lexeme *lex;                // type '0' to '9', used by choice, or '*', as a reference to another lexeme
-            char c;
-            int8_t b;
-            uint8_t B;
-            bool qm;                    //question mark character '?'
-            int16_t h;
-            uint16_t H;
-            int32_t l;
-            uint32_t L;
-            int64_t q;
-            uint64_t Q;
-            float f;
-            double d;
-            char *s;
-            pascal_string *p;
-            void *P;
-        };
-
-        void invalidate()
-        {
-            if (type == 'v' && v)
-            {
-                delete v;
-            }
-            else if (type == 'V' && V)
-            {
-                for (auto lex : *V)
-                    if (lex)
-                        delete lex;
-                delete V;
-            }
-            else if (type >= '0' && type <= '9' && lex)
-            {
-                delete lex;
-            }
-            else if (type == 's' && s)
-            {
-                delete[] s;
-            }
-            else if (type == 'p' && p)
-            {
-                delete p->str;
-                delete p;
-            }
-            else if ((type > 127 || type == 'P') && invalidate_cb)
-            {
-                invalidate_cb(this);
-            }
-            type = 0;
-        }
+        lex_o() {}
+        lex_o(O o) : o(o) {}
     };
 
-    template <typename O>
-    void print_lexeme_object(O o)
-    {
-        printf("??");
-    }
-
-    template <>
-    void print_lexeme_object(char o)
+    template<>
+    inline void lex_o<char>::printvalue(int indent)
     {
         printf("'%c'", o);
     }
 
-    template <>
-    void print_lexeme_object(const char *o)
+    template<>
+    inline void lex_o<char const>::printvalue(int indent)
     {
-        printf("\"%s\"", o);
+        printf("'%c'", o);
     }
 
-    template <typename O>
-    void print_lexeme_array(std::vector<O> *v)
+    template<typename O>
+    class lex_v : public lexeme, public std::vector<O>
     {
-            printf("[");
-            for (auto i = v->begin(); i != v->end(); i++)
-            {
-                print_lexeme_object(*i);
-                if (i + 1 != v->end())
-                    printf(", ");
-            }
-            printf("]");
-    }
-    
+    public:
+        using object = O;
+        signature_decl(lex_v, signature_get_type<O>)
+
+        void printvalue(int indent = 0) override;
+    };
+
     template <>
-    void print_lexeme_array(std::vector<char> *v)
+    inline void lex_v<char>::printvalue(int indent)
     {
         printf("\"");
-        for (auto i = v->begin(); i != v->end(); i++)
+        for (auto i = this->begin(); i != this->end(); i++)
         {
             printf("%c", *i);
         }
         printf("\"");
     }
 
-
-    #define _indent_ printf("%*s", indent, "")
-
-    template <typename O>
-    void print_lexeme(lexeme<O> *l, int indent)
+    template<typename O>
+    inline void lex_v<O>::printvalue(int indent)
     {
-        if (!l)
+        printf("{\n");
+        for (auto i = this->begin(); i != this->end(); i++)
         {
-            _indent_;
-            printf("nullptr");
-            return;
+            lex_o<O>(*i).print(indent + 1);
+            if (i + 1 != this->end())
+                printf(",\n");
         }
-        switch (l->type)
+        printf("\n");
+        print_ind(indent, "}");
+    }
+
+    class lex_V : public lexeme, public std::vector<lexeme *>
+    {
+    public:
+        signature_noargs(lex_V)
+
+        void printvalue(int indent = 0) override
         {
-        case 'o':
-            _indent_;
-            print_lexeme_object(l->o);
-            break;
-        case 'v':
-            _indent_;
-            print_lexeme_array(l->v);
-            break;
-        case 'V':
-            _indent_;
             printf("{\n");
-            for (auto i = l->V->begin(); i != l->V->end(); i++)
+            for (auto i = this->begin(); i != this->end(); i++)
             {
-                print_lexeme(*i, indent + 1);
-                if (i + 1 != l->V->end())
+                (*i)->print(indent + 1);
+                if (i + 1 != this->end())
                     printf(",\n");
             }
             printf("\n");
-            _indent_;    
-            printf("}");
-            break;
-        case 's':
-            _indent_;
-            printf("\"%s\"", l->s);
-            break;
-        case 'p':
-            _indent_;
-            printf("'%.*s'", l->p->size, l->p->str);
-            break;
-        case 'P':
-            _indent_;
-            printf("*%p", l->P);
-            break;
-        case '0' ... '9':
-            _indent_;
-            printf("->%d\n", l->type - '0');
-            print_lexeme(l->lex, indent+1);
-            break;
-        case 'c':
-            _indent_;
-            printf("'%c'", l->c);
-            break;
-        case 'b':
-            _indent_;
-            printf("%d", l->b);
-            break;
-        case 'B':
-            _indent_;
-            printf("%u", l->B);
-            break;
-        case 'h':
-            _indent_;
-            printf("%d", l->h);
-            break;
-        case 'H':
-            _indent_;
-            printf("%u", l->H);
-            break;
-        case 'l':
-            _indent_;
-            printf("%d", l->l);
-            break;
-        case 'L':
-            _indent_;
-            printf("%u", l->L);
-            break;
-        case 'q':
-            _indent_;
-            printf("%ld", l->q);
-            break;
-        case 'Q':
-            _indent_;
-            printf("%lu", l->Q);
-            break;
-        case 'f':
-            _indent_;
-            printf("%f", l->f);
-            break;
-        case 'd':
-            _indent_;
-            printf("%f", l->d);
-            break;
-        case '?':
-            _indent_;
-            printf("%s", l->qm ? "true" : "false");
-            break;
-        default:
-            _indent_;
-            printf("??");
-            break;
+            print_ind(indent, "}");
         }
-    }
+
+        ~lex_V()
+        {
+            for (auto lex : *this)
+                if (lex)
+                    delete lex;
+        }
+    };
+
+    class lex_l : public lexeme
+    {
+    public:
+        signature_noargs(lex_l)
+        int32_t l = 0;
+        
+        lex_l(long l = 0) : l(l) {}
+
+        void printvalue(int indent = 0) override
+        {
+            print_ind(indent, "%ld", l);
+        }
+    };
+
+    class lex_f : public lexeme
+    {
+    public:
+        signature_noargs(lex_f)
+        float f = 0.0;
+
+        lex_f(float f = 0.0) : f(f) {}
+
+        void printvalue(int indent = 0) override
+        {
+            print_ind(indent, "%f", f);
+        }
+    };
+
+    class lex_s : public lexeme
+    {
+    public:
+        signature_noargs(lex_s)
+        char *s = nullptr;
+
+        lex_s(char *s = nullptr) : s(s) {}
+        ~lex_s() { if(s) delete[] s; }
+
+        void print(int indent = 0)
+        {
+            print_ind(indent, "\"%s\"", s);
+        }
+    };
+
+    class lex_p : public lex_s
+    {
+    public:
+        signature_noargs(lex_p)
+
+        lex_p(char *s = nullptr, int len = 0) : lex_s(s), len(len) {}
+        int len = 0;
+
+        void print(int indent = 0)
+        {
+            print_ind(indent, "'%.*s'", len, s);
+        }
+    };
+
+
+    class rule_base : public variant::variant
+    {
+    public:
+        signature_noargs(rule_base)
+
+        match_method(s)
+        {
+            return nullptr;
+        }
+    };
+
+            // char c;
+            // int8_t b;
+            // uint8_t B;
+            // bool qm;                    //question mark character '?'
+            // int16_t h;
+            // uint16_t H;
+            // int32_t l;
+            // uint32_t L;
+            // int64_t q;
+            // uint64_t Q;
+            // float f;
+            // double d;
+            // char *s;
+            // pascal_string *p;
+            // void *P;
+
+
+    // template <typename O>
+    // class lexeme_old
+    // {
+    // public:
+    //     using object = O;
+    //     using o_t = typename std::remove_const_t<O>;
+    //     using v_t = std::vector<o_t>;
+    //     using V_t = std::vector<lexeme<O> *>;
+
+    //     lexeme(char type)
+    //     {
+    //         memset(this, 0, sizeof(lexeme));
+    //         this->type = type;
+    //         switch (type)
+    //         {
+    //         case 'v':
+    //             v = new_v();
+    //             break;
+    //         case 'V':
+    //             V = new_V();
+    //             break;
+    //         }
+    //     }
+
+    //     lexeme()
+    //     {
+    //         memset(this, 0, sizeof(lexeme));
+    //     }
+
+    //     lexeme(lexeme *l, char type = '*')
+    //     {
+    //         memset(this, 0, sizeof(lexeme));
+    //         this->type = type;
+    //         lex = l;
+    //     }
+
+    //     ~lexeme()
+    //     {
+    //         invalidate();
+    //     }
+
+    //     void (*invalidate_cb)(lexeme<O> *l) = nullptr;
+        
+    //     static inline v_t *new_v(size_t size)
+    //     {
+    //         return new v_t(size);
+    //     }
+        
+    //     static inline v_t *new_v()
+    //     {
+    //         return new v_t();
+    //     }
+
+    //     static inline lexeme<O> *new_lexeme()
+    //     {
+    //         return new lexeme<O>();
+    //     }
+
+    //     static inline std::vector<lexeme<O>*> *new_V()
+    //     {
+    //         return new std::vector<lexeme<O>*>();
+    //     }
+
+    //     bool append(O value)
+    //     {
+    //         if (type == 'o')
+    //         {
+    //             if (o == 0)
+    //             {
+    //                 o = value;
+    //             }
+    //             else
+    //             {
+    //                 type = 'v';
+    //                 v = new_v();
+    //                 v->push_back(o);
+    //                 v->push_back(value);
+    //             }
+    //         }
+    //         else if (type == 'v')
+    //         {
+    //             v->push_back(value);
+    //         }
+    //         else
+    //         {
+    //             return false;
+    //         }
+    //         return true;
+    //     }
+
+    //     bool append(lexeme<O> *l)
+    //     {
+    //         if (!l)
+    //             return false;
+            
+    //         if (type == 'V')
+    //         {
+    //             V->push_back(l);
+    //         }
+    //         else if (type == '*' || type >= '0' && type <= '9')
+    //         {
+    //             type = 'V';
+    //             V = new_V();
+    //             V->push_back(lex);
+    //             V->push_back(l);
+    //         }
+    //         else if (type == 'v' && l->type == 'v')
+    //         {
+    //             v->insert(v->end(), l->v->begin(), l->v->end());
+    //         }
+    //         else
+    //         {
+    //             return false;
+    //         }
+    //         return true;
+    //     }
+
+    //     struct pascal_string
+    //     {
+    //         uint8_t size;
+    //         char *str;
+    //     };
+
+    //     char type = 0;
+    //         // 0 invalid
+    //         // any of the single char variables below => the value is in that variable
+    //         // any value > 127 => the value is user defined
+    //     union
+    //     {
+    //         o_t o;                      // type 'o'
+    //         v_t *v;                     // type 'v' //used by token_repeat
+    //         V_t *V;                     // type 'V' //used by sequence and repeat
+    //         lexeme *lex;                // type '0' to '9', used by choice, or '*', as a reference to another lexeme
+    //         char c;
+    //         int8_t b;
+    //         uint8_t B;
+    //         bool qm;                    //question mark character '?'
+    //         int16_t h;
+    //         uint16_t H;
+    //         int32_t l;
+    //         uint32_t L;
+    //         int64_t q;
+    //         uint64_t Q;
+    //         float f;
+    //         double d;
+    //         char *s;
+    //         pascal_string *p;
+    //         void *P;
+    //     };
+
+    //     void invalidate()
+    //     {
+    //         if (type == 'v' && v)
+    //         {
+    //             delete v;
+    //         }
+    //         else if (type == 'V' && V)
+    //         {
+    //             for (auto lex : *V)
+    //                 if (lex)
+    //                     delete lex;
+    //             delete V;
+    //         }
+    //         else if (type >= '0' && type <= '9' && lex)
+    //         {
+    //             delete lex;
+    //         }
+    //         else if (type == 's' && s)
+    //         {
+    //             delete[] s;
+    //         }
+    //         else if (type == 'p' && p)
+    //         {
+    //             delete p->str;
+    //             delete p;
+    //         }
+    //         else if ((type > 127 || type == 'P') && invalidate_cb)
+    //         {
+    //             invalidate_cb(this);
+    //         }
+    //         type = 0;
+    //     }
+    // };
+
+    // template <typename O>
+    // void print_lexeme_object(O o)
+    // {
+    //     printf("??");
+    // }
+
+    // template <>
+    // void print_lexeme_object(char o)
+    // {
+    //     printf("'%c'", o);
+    // }
+
+    // template <>
+    // void print_lexeme_object(const char *o)
+    // {
+    //     printf("\"%s\"", o);
+    // }
+
+    // template <typename O>
+    // void print_lexeme_array(std::vector<O> *v)
+    // {
+    //         printf("[");
+    //         for (auto i = v->begin(); i != v->end(); i++)
+    //         {
+    //             print_lexeme_object(*i);
+    //             if (i + 1 != v->end())
+    //                 printf(", ");
+    //         }
+    //         printf("]");
+    // }
+    
+    // template <>
+    // void print_lexeme_array(std::vector<char> *v)
+    // {
+    //     printf("\"");
+    //     for (auto i = v->begin(); i != v->end(); i++)
+    //     {
+    //         printf("%c", *i);
+    //     }
+    //     printf("\"");
+    // }
+
+
+    // #define _indent_ printf("%*s", indent, "")
+
+    // template <typename O>
+    // void print_lexeme(lexeme<O> *l, int indent)
+    // {
+    //     if (!l)
+    //     {
+    //         _indent_;
+    //         printf("nullptr");
+    //         return;
+    //     }
+    //     switch (l->type)
+    //     {
+    //     case 'o':
+    //         _indent_;
+    //         print_lexeme_object(l->o);
+    //         break;
+    //     case 'v':
+    //         _indent_;
+    //         print_lexeme_array(l->v);
+    //         break;
+    //     case 'V':
+    //         _indent_;
+    //         printf("{\n");
+    //         for (auto i = l->V->begin(); i != l->V->end(); i++)
+    //         {
+    //             print_lexeme(*i, indent + 1);
+    //             if (i + 1 != l->V->end())
+    //                 printf(",\n");
+    //         }
+    //         printf("\n");
+    //         _indent_;    
+    //         printf("}");
+    //         break;
+    //     case 's':
+    //         _indent_;
+    //         printf("\"%s\"", l->s);
+    //         break;
+    //     case 'p':
+    //         _indent_;
+    //         printf("'%.*s'", l->p->size, l->p->str);
+    //         break;
+    //     case 'P':
+    //         _indent_;
+    //         printf("*%p", l->P);
+    //         break;
+    //     case '0' ... '9':
+    //         _indent_;
+    //         printf("->%d\n", l->type - '0');
+    //         print_lexeme(l->lex, indent+1);
+    //         break;
+    //     case 'c':
+    //         _indent_;
+    //         printf("'%c'", l->c);
+    //         break;
+    //     case 'b':
+    //         _indent_;
+    //         printf("%d", l->b);
+    //         break;
+    //     case 'B':
+    //         _indent_;
+    //         printf("%u", l->B);
+    //         break;
+    //     case 'h':
+    //         _indent_;
+    //         printf("%d", l->h);
+    //         break;
+    //     case 'H':
+    //         _indent_;
+    //         printf("%u", l->H);
+    //         break;
+    //     case 'l':
+    //         _indent_;
+    //         printf("%d", l->l);
+    //         break;
+    //     case 'L':
+    //         _indent_;
+    //         printf("%u", l->L);
+    //         break;
+    //     case 'q':
+    //         _indent_;
+    //         printf("%ld", l->q);
+    //         break;
+    //     case 'Q':
+    //         _indent_;
+    //         printf("%lu", l->Q);
+    //         break;
+    //     case 'f':
+    //         _indent_;
+    //         printf("%f", l->f);
+    //         break;
+    //     case 'd':
+    //         _indent_;
+    //         printf("%f", l->d);
+    //         break;
+    //     case '?':
+    //         _indent_;
+    //         printf("%s", l->qm ? "true" : "false");
+    //         break;
+    //     default:
+    //         _indent_;
+    //         printf("??");
+    //         break;
+    //     }
+    // }
 }

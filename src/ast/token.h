@@ -5,27 +5,29 @@
 
 namespace ast::_t
 {
+    using namespace ast::_b;
+    using namespace ast::_h;
+
     template<typename _StreamType, typename _ValueType>
-    lexeme_S *base_token_match(_StreamType &s, _ValueType value)
+    lexeme *base_token_match(_StreamType &s, _ValueType value)
     {
-        if (ast::_b::stream_eof(s))
+        if (stream_eof(s))
             return nullptr;
 
         if (*s == value)
         {
-            lexeme_S *l = new lexeme_S();
-            l->type = 'o';
-            l->o = value;
             s++;
-            return l;
+            return new lex_o<_ValueType>(value);
         }
         return nullptr;
     }
 
     template<typename O, O value>
-    class token
+    class token : public rule_base
     {
     public:
+        signature_decl(token, signature_get_type<O>, signature_get_char<value>) //TODO FIXME: assuming obj == char
+
         match_method(s)
         {
             return base_token_match(s, value);
@@ -33,26 +35,26 @@ namespace ast::_t
     };
 
     template<typename _StreamType, typename _ValueType>
-    lexeme_S *token_range_match(_StreamType &s, _ValueType start, _ValueType end)
+    lexeme *token_range_match(_StreamType &s, _ValueType start, _ValueType end)
     {
-        if (ast::_b::stream_eof(s))
+        if (stream_eof(s))
             return nullptr;
 
         if (*s >= start && *s <= end)
         {
-            lexeme_S *l = new lexeme_S();
-            l->type = 'o';
-            l->o = *s;
+            auto value = *s;
             s++;
-            return l;
+            return new lex_o<_ValueType>(value);
         }
         return nullptr;
     }
 
     template<typename O, O start, O end>
-    class token_range
+    class token_range : public rule_base
     {
     public:
+        signature_decl(token_range, signature_get_type<O>, signature_get_char<start>, signature_get_char<end>) //very hacky, but it should work most of the time
+
         match_method(s)
         {
             return token_range_match(s, start, end);
@@ -60,30 +62,29 @@ namespace ast::_t
     };
 
     template<typename _StreamType, typename _ValueType>
-    lexeme_S *token_choice_match(_StreamType &s, const _ValueType *arr, std::size_t size)
+    lexeme *token_choice_match(_StreamType &s, const _ValueType *arr, std::size_t size)
     {
-        if (ast::_b::stream_eof(s))
+        if (stream_eof(s))
             return nullptr;
 
-        lexeme_S *l = new lexeme_S();
         for (size_t i = 0; i < size; i++)
         {
             if (*s == arr[i])
             {
-                l->type = 'o';
-                l->o = *s;
+                auto value = *s;
                 s++;
-                return l;
+                return new lex_o<_ValueType>(value);
             }
         }
-        delete l;
         return nullptr;
     }
 
-    template<typename O, const O *arr, std::size_t size>
-    class token_choice
+    template<typename O, const O *arr, int size>
+    class token_choice : public rule_base
     {
     public:
+        signature_decl(token_choice, signature_get_type<O>, signature_get_string<arr>, signature_get_int<size>) //FIX: assuming obj == char and arr is a string
+
         match_method(s)
         {
             return token_choice_match(s, arr, size);
@@ -91,30 +92,29 @@ namespace ast::_t
     };
 
     template<typename _StreamType, typename _ValueType>
-    lexeme_S *token_choice_delimited_match(_StreamType &s, const _ValueType *arr, _ValueType end)
+    lexeme *token_choice_delimited_match(_StreamType &s, const _ValueType *arr, _ValueType end)
     {
-        if (ast::_b::stream_eof(s))
+        if (stream_eof(s))
             return nullptr;
 
-        lexeme_S *l = new lexeme_S();
         for (size_t i = 0; arr[i] != end; i++)
         {
             if (*s == arr[i])
             {
-                l->type = 'o';
-                l->o = *s;
+                auto value = *s;
                 s++;
-                return l;
+                return new lex_o<_ValueType>(value);
             }
         }
-        delete l;
         return nullptr;
     }
 
     template<typename O, const O *arr, O end = 0>
-    class token_choice_delimited
+    class token_choice_delimited : public rule_base
     {
     public:
+        signature_decl(token_choice_delimited, signature_get_type<O>, signature_get_string<arr>, signature_get_int<end>) //FIX: assuming obj == char and arr is a string
+
         match_method(s)
         {
             return token_choice_delimited_match(s, arr, end);
@@ -122,24 +122,22 @@ namespace ast::_t
     };
 
     template<typename _StreamType, typename _ValueType>
-    lexeme_S *token_string_match(_StreamType &s, const _ValueType *arr, std::size_t size)
+    lexeme *token_string_match(_StreamType &s, const _ValueType *arr, std::size_t size)
     {
-        if (ast::_b::stream_eof(s))
+        if (stream_eof(s))
             return nullptr;
 
-        lexeme_S *l = new lexeme_S();
-        l->type = 'v';
-        l->v = l->new_v(size);
+        auto l = new lex_v<object_S>(size);
         for (size_t i = 0; i < size; i++)
         {
-            if (ast::_b::stream_eof(s))
+            if (stream_eof(s))
             {
                 delete l;
                 return nullptr;
             }
             else if (*s == arr[i])
             {
-                l->v->at(i) = *s;
+                l->at(i) = *s;
                 s++;
             }
             else
@@ -152,9 +150,11 @@ namespace ast::_t
     }
 
     template<typename O, const O *arr, std::size_t size>
-    class token_string
+    class token_string : public rule_base
     {
     public:
+        signature_decl(token_string, signature_get_type<O>, signature_get_string<arr>, signature_get_int<size>) //FIX: assuming obj == char and arr is a string
+
         match_method(s)
         {
             return token_string_match(s, arr, size);
@@ -162,24 +162,22 @@ namespace ast::_t
     };
 
     template<typename _StreamType, typename _ValueType>
-    lexeme_S *token_string_delimited_match(_StreamType &s, const _ValueType *arr, _ValueType end)
+    lexeme *token_string_delimited_match(_StreamType &s, const _ValueType *arr, _ValueType end)
     {
-        if (ast::_b::stream_eof(s))
+        if (stream_eof(s))
             return nullptr;
 
-        lexeme_S *l = new lexeme_S();
-        l->type = 'v';
-        l->v = l->new_v();
+        auto l = new lex_v<object_S>();
         for (size_t i = 0; arr[i] != end; i++)
         {
-            if (ast::_b::stream_eof(s))
+            if (stream_eof(s))
             {
                 delete l;
                 return nullptr;
             }
             else if (*s == arr[i])
             {
-                l->v->push_back(*s);
+                l->push_back(*s);
                 s++;
             }
             else
@@ -192,9 +190,11 @@ namespace ast::_t
     }
 
     template<typename O, const O *arr, O end = 0>
-    class token_string_delimited
+    class token_string_delimited : public rule_base
     {
     public:
+        signature_decl(token_string_delimited, signature_get_type<O>, signature_get_string<arr>, signature_get_int<end>) //FIX: assuming obj == char and arr is a string
+
         match_method(s)
         {
             return token_string_delimited_match(s, arr, end);
@@ -202,31 +202,29 @@ namespace ast::_t
     };
 
     template<typename _StreamType, typename _ValueType>
-    lexeme_S *token_delimited_match(_StreamType &s, _ValueType start, _ValueType escape, _ValueType end)
+    lexeme *token_delimited_match(_StreamType &s, _ValueType start, _ValueType escape, _ValueType end)
     {
-        if (ast::_b::stream_eof(s) || *s != start)
+        if (stream_eof(s) || *s != start)
             return nullptr;
         s++;
 
-        lexeme_S *l = new lexeme_S();
-        l->type = 'v';
-        l->v = l->new_v();
-        while (!ast::_b::stream_eof(s) && *s != end)
+        auto l = new lex_v<object_S>();
+        while (!stream_eof(s) && *s != end)
         {
             if (*s == escape)
             {
                 s++;
-                if (ast::_b::stream_eof(s))
+                if (stream_eof(s))
                 {
                     delete l;
                     return nullptr;
                 }
                 if (*s != escape && *s != end)
                 {
-                    l->v->push_back(escape);
+                    l->push_back(escape);
                 }
             }
-            l->v->push_back(*s);
+            l->push_back(*s);
             s++;
         }
         if (*s == end)
@@ -243,9 +241,11 @@ namespace ast::_t
 
     //make the escape equal to the end to disable it. escape skips the end or escape delimiters only, otherwise it's passed as literal, so that other decorators can handle it
     template<typename O, O start, O escape = start, O end = start>
-    class token_delimited
+    class token_delimited : public rule_base
     {
     public:
+        signature_decl(token_delimited, signature_get_type<O>, signature_get_int<start>, signature_get_int<escape>, signature_get_int<end>)
+
         match_method(s)
         {
             return token_delimited_match(s, start, escape, end);

@@ -76,8 +76,11 @@
  * '(ab|cd)+' Match one or more of 'ab' or 'cd'
 */
 
-namespace ast_char
+namespace ast::_re
 {
+    using namespace ast::_b;
+    using namespace ast::_h;
+
     struct regex_mask
     {
     public:
@@ -467,9 +470,10 @@ namespace ast_char
     //it's of type V otherwise, with a lexeme for each match inside
     //alternatives just return themselves, which could make the subgroup structure unpredictable
     template<typename _StreamType>
-    lexeme_S *match_regex(_StreamType &s, char_cptr &pattern)
+    lexeme *match_regex(_StreamType &s, char_cptr &pattern)
     {
-        lexeme_S *l = new lexeme_S('v');
+        lex_v<char> *l = new lex_v<char>();
+        lex_V *V = nullptr;
         void *sshot = ast::_b::stream_snapshot(s);
         regex_mask mask;
         regex_repetition repetition(1, 1);
@@ -480,7 +484,10 @@ namespace ast_char
             if (*pattern == '\0' || *pattern == ')')
             {
                 // Wrap up and return
-                return l;
+                if (V)
+                    return V;
+                else
+                    return l;
             }
             else if (*pattern == '|')
             {
@@ -507,17 +514,16 @@ namespace ast_char
             // Starting a group
             else if (*pattern == '(')
             {
-                if (l->type == 'v')
+                if (!V)
                 { //convert to V
-                    auto tmp = new lexeme_S('V');
-                    tmp->append(l);
-                    l = tmp;
+                    V = new lex_V();
+                    V->push_back(l);
                 }
 
                 pattern++;
                 void *group_sshot = ast::_b::stream_snapshot(s); // to be used if repetition count is not met
                 char_cptr group_start = pattern;
-                lexeme_S *submatch = match_regex(s, pattern);
+                lexeme *submatch = match_regex(s, pattern);
                 //if *pattern is not ')' then the group is not closed
                 //skip until the end of the group, considering nested groups
                 if (*pattern != ')')
@@ -547,18 +553,19 @@ namespace ast_char
                 
                 char_cptr group_end = pattern;
 
-                lexeme_S *subgroup = nullptr;
+                lex_V *subgroup = nullptr;
 
                 if (repetition.min == 1 && repetition.max == 1)
                 {
                     if (submatch)
                     {
-                        l->append(submatch);
-                        //append all the contents to l->V->at(0)->v as well
-                        if (submatch->type == 'v')
-                            l->V->at(0)->append(submatch);
-                        else if (submatch->type == 'V')
-                            l->V->at(0)->append(submatch->V->at(0));
+                        V->push_back(submatch);
+                        //append all the contents to l as well
+                        auto v_prime = submatch->as<lex_v<char>>();
+                        if (!v_prime)
+                            v_prime = submatch->as<lex_V>()->at(0)->as<lex_v<char>>();
+                        l->reserve(l->size() + distance(v_prime->begin(),v_prime->end()));
+                        l->insert(l->end(),v_prime->begin(),v_prime->end());
                     }
                     else
                     {
@@ -567,7 +574,7 @@ namespace ast_char
                         // Check for alternatives
                         if (*pattern != '|')
                         {
-                            delete l;
+                            delete V;
                             return nullptr;
                         }
                         else
@@ -580,11 +587,11 @@ namespace ast_char
                 }
                 else
                 {
-                    subgroup = new lexeme_S('V');
+                    subgroup = new lex_V();
                     int count = 0;
                     while (submatch && (repetition.max == -1 || count < repetition.max))
                     {
-                        subgroup->append(submatch);
+                        subgroup->push_back(submatch);
                         count++;
                         pattern = group_start;
                         submatch = match_regex(s, pattern);
@@ -599,7 +606,7 @@ namespace ast_char
                         // Check for alternatives
                         if (*pattern != '|')
                         {
-                            delete l;
+                            delete V;
                             return nullptr;
                         }
                         else
@@ -611,14 +618,16 @@ namespace ast_char
                     }
                     else
                     {
-                        l->append(subgroup);
-                        //append all the contents to l->V->at(0)->v as well
-                        for (auto m = subgroup->V->begin(); m != subgroup->V->end(); m++)
+
+                        V->push_back(subgroup);
+                        //append all the contents to l as well
+                        for (auto m = subgroup->begin(); m != subgroup->end(); m++)
                         {
-                            if ((*m)->type == 'v')
-                                l->V->at(0)->append(*m);
-                            else if ((*m)->type == 'V')
-                                l->V->at(0)->append((*m)->V->at(0));
+                            auto v_prime = (*m)->as<lex_v<char>>();
+                            if (!v_prime)
+                                v_prime = (*m)->as<lex_V>()->at(0)->as<lex_v<char>>();
+                            l->reserve(l->size() + distance(v_prime->begin(),v_prime->end()));
+                            l->insert(l->end(),v_prime->begin(),v_prime->end());
                         }
                     }
                 }
@@ -638,14 +647,7 @@ namespace ast_char
                 {
                     if (found)
                     {
-                        if (l->type == 'v')
-                        {
-                            l->append(*s);
-                        }
-                        else if (l->type == 'V')
-                        {
-                            l->V->at(0)->append(*s);
-                        }
+                        l->push_back(*s);
                         s++;
                     }
                     else
@@ -655,7 +657,10 @@ namespace ast_char
                         // Check for alternatives
                         if (*pattern != '|')
                         {
-                            delete l;
+                            if (V)
+                                delete V;
+                            else
+                                delete l;
                             return nullptr;
                         }
                         else
@@ -670,11 +675,11 @@ namespace ast_char
                 {
                     //create a temporary lexeme of type v, store the contents while matching
                     //if the count is met, append it to the main lexeme
-                    lexeme_S *subgroup = new lexeme_S('v');
+                    lex_v<char> *subgroup = new lex_v<char>();
                     int count = 0;
                     while (found && (repetition.max == -1 || count < repetition.max))
                     {
-                        subgroup->append(*s);
+                        subgroup->push_back(*s);
                         s++;
                         count++;
                         found = mask[*s];
@@ -687,7 +692,10 @@ namespace ast_char
                         // Check for alternatives
                         if (*pattern != '|')
                         {
-                            delete l;
+                            if (V)
+                                delete V;
+                            else
+                                delete l;
                             return nullptr;
                         }
                         else
@@ -699,14 +707,8 @@ namespace ast_char
                     }
                     else
                     {
-                        if (l->type == 'v')
-                        {
-                            l->append(subgroup);
-                        }
-                        else if (l->type == 'V')
-                        {
-                            l->V->at(0)->append(subgroup);
-                        }
+                        l->reserve(l->size() + distance(subgroup->begin(),subgroup->end()));
+                        l->insert(l->end(),subgroup->begin(),subgroup->end());
                     }
                 }
             }
@@ -715,18 +717,26 @@ namespace ast_char
         if (ast::_b::stream_eof(s) && *pattern == '\0')
         {
             // Wrap up and return
-            return l;
+            if (V)
+                return V;
+            else
+                return l;
         }
 
         // Cleanup and return nullptr
-        delete l;
+        if (V)
+            delete V;
+        else
+            delete l;
         return nullptr;
     }
 
     template<const char *arr>
-    class token_regex
+    class token_regex : public rule_base
     {
     public:
+        signature_decl(token_regex, signature_get_string<arr>)
+
         match_method(s)
         {
             const char *pattern = arr;
@@ -740,6 +750,6 @@ namespace ast_char
 
     #define re_match(_NAME_, _PATTERN_) \
     char_array_decl(_NAME_##_pattern_) = _PATTERN_; \
-    class _NAME_ : public ast::_d::dec<token_regex<_NAME_##_pattern_>,ast::_f::select<0>> {}; \
-    // using _NAME_ = ast::_d::dec<token_regex<_NAME_##_pattern_>,ast::_f::select<0>>
-};
+    class _NAME_ : public ast::_f::select<token_regex<_NAME_##_pattern_>,0> {};
+
+}
