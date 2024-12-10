@@ -61,7 +61,7 @@
  * 
  * Groups: ( ... ) define a group, which will act as a single unit
  * (p)        Group, match the pattern p
- * <not implemented yet> --> (?:p)      Non-capturing group, match the pattern but don't capture it
+ * (?:p)      Non-capturing group, match the pattern but don't capture it
  * 'a(bc)'    Match 'a' followed by 'bc'
  * 'a(?:bc)'  Match 'a' followed by 'bc' but don't capture 'bc'
  * 'a([bc])'   Match 'a' followed by 'b' or 'c'
@@ -80,6 +80,29 @@ namespace ast::_re
 {
     using namespace ast::_b;
     using namespace ast::_h;
+
+    class lex_re : public lex_v<char>
+    {
+    public:
+        signature_noargs(lex_re)
+        signature_inherit(lex_v<char>)
+
+        void printvalue(int indent = 0) override
+        {
+            printf("\"");
+            for (auto i = this->begin(); i != this->end(); i++)
+            {
+                printf("%c", *i);
+            }
+            printf("\"");
+        }
+        lex_V *groups = nullptr;
+        ~lex_re()
+        {
+            if (groups)
+                delete groups;
+        }
+    };
 
     struct regex_mask
     {
@@ -470,10 +493,9 @@ namespace ast::_re
     //it's of type V otherwise, with a lexeme for each match inside
     //alternatives just return themselves, which could make the subgroup structure unpredictable
     template<typename _StreamType>
-    lexeme *match_regex(_StreamType &s, char_cptr &pattern)
+    lex_re *match_regex(_StreamType &s, char_cptr &pattern)
     {
-        lex_v<char> *l = new lex_v<char>();
-        lex_V *V = nullptr;
+        lex_re *l = new lex_re();
         void *sshot = ast::_b::stream_snapshot(s);
         regex_mask mask;
         regex_repetition repetition(1, 1);
@@ -484,10 +506,7 @@ namespace ast::_re
             if (*pattern == '\0' || *pattern == ')')
             {
                 // Wrap up and return
-                if (V)
-                    return V;
-                else
-                    return l;
+                return l;
             }
             else if (*pattern == '|')
             {
@@ -514,16 +533,22 @@ namespace ast::_re
             // Starting a group
             else if (*pattern == '(')
             {
-                if (!V)
-                { //convert to V
-                    V = new lex_V();
-                    V->push_back(l);
+                bool capture = true;
+                if (*(pattern + 1) == '?' && *(pattern + 2) == ':')
+                {
+                    capture = false;
+                    pattern += 2;
+                }
+
+                if (capture && !l->groups)
+                { //prepare to capture the group
+                    l->groups = new lex_V();
                 }
 
                 pattern++;
                 void *group_sshot = ast::_b::stream_snapshot(s); // to be used if repetition count is not met
                 char_cptr group_start = pattern;
-                lexeme *submatch = match_regex(s, pattern);
+                lex_re *submatch = match_regex(s, pattern);
                 //if *pattern is not ')' then the group is not closed
                 //skip until the end of the group, considering nested groups
                 if (*pattern != ')')
@@ -559,13 +584,11 @@ namespace ast::_re
                 {
                     if (submatch)
                     {
-                        V->push_back(submatch);
+                        if (capture)
+                            l->groups->push_back(submatch);
                         //append all the contents to l as well
-                        auto v_prime = submatch->as<lex_v<char>>();
-                        if (!v_prime)
-                            v_prime = submatch->as<lex_V>()->at(0)->as<lex_v<char>>();
-                        l->reserve(l->size() + distance(v_prime->begin(),v_prime->end()));
-                        l->insert(l->end(),v_prime->begin(),v_prime->end());
+                        l->reserve(l->size() + distance(submatch->begin(),submatch->end()));
+                        l->insert(l->end(),submatch->begin(),submatch->end());
                     }
                     else
                     {
@@ -574,7 +597,7 @@ namespace ast::_re
                         // Check for alternatives
                         if (*pattern != '|')
                         {
-                            delete V;
+                            delete l;
                             return nullptr;
                         }
                         else
@@ -606,7 +629,7 @@ namespace ast::_re
                         // Check for alternatives
                         if (*pattern != '|')
                         {
-                            delete V;
+                            delete l;
                             return nullptr;
                         }
                         else
@@ -618,14 +641,12 @@ namespace ast::_re
                     }
                     else
                     {
-
-                        V->push_back(subgroup);
+                        if (capture)
+                            l->groups->push_back(subgroup);
                         //append all the contents to l as well
                         for (auto m = subgroup->begin(); m != subgroup->end(); m++)
                         {
-                            auto v_prime = (*m)->as<lex_v<char>>();
-                            if (!v_prime)
-                                v_prime = (*m)->as<lex_V>()->at(0)->as<lex_v<char>>();
+                            auto v_prime = (*m)->as<lex_re>();
                             l->reserve(l->size() + distance(v_prime->begin(),v_prime->end()));
                             l->insert(l->end(),v_prime->begin(),v_prime->end());
                         }
@@ -657,10 +678,7 @@ namespace ast::_re
                         // Check for alternatives
                         if (*pattern != '|')
                         {
-                            if (V)
-                                delete V;
-                            else
-                                delete l;
+                            delete l;
                             return nullptr;
                         }
                         else
@@ -692,10 +710,7 @@ namespace ast::_re
                         // Check for alternatives
                         if (*pattern != '|')
                         {
-                            if (V)
-                                delete V;
-                            else
-                                delete l;
+                            delete l;
                             return nullptr;
                         }
                         else
@@ -717,17 +732,11 @@ namespace ast::_re
         if (ast::_b::stream_eof(s) && *pattern == '\0')
         {
             // Wrap up and return
-            if (V)
-                return V;
-            else
-                return l;
+            return l;
         }
 
         // Cleanup and return nullptr
-        if (V)
-            delete V;
-        else
-            delete l;
+        delete l;
         return nullptr;
     }
 
@@ -743,13 +752,4 @@ namespace ast::_re
             return match_regex(s, pattern);
         }
     };
-
-    #define re_decl(_NAME_, _PATTERN_) \
-    char_array_decl(_NAME_##_pattern_) = _PATTERN_; \
-    using _NAME_ = token_regex<_NAME_##_pattern_>
-
-    #define re_match(_NAME_, _PATTERN_) \
-    char_array_decl(_NAME_##_pattern_) = _PATTERN_; \
-    class _NAME_ : public ast::_f::select<token_regex<_NAME_##_pattern_>,0> {};
-
 }

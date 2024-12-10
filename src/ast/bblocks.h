@@ -102,7 +102,6 @@ namespace ast::_b
         {
             print_ind(indent, "(%s) %s: ", rule ? rule : "", get_signature());
             printvalue(indent);
-            printf("\n");
         }
         const char *rule = nullptr;
     };
@@ -112,6 +111,7 @@ namespace ast::_b
     {
     public:
         signature_decl(lex_o, signature_get_type<O>)
+        signature_inherit(lexeme)
         using object = O;
         O o;
         void printvalue(int indent = 0) override;
@@ -138,6 +138,7 @@ namespace ast::_b
     public:
         using object = O;
         signature_decl(lex_v, signature_get_type<O>)
+        signature_inherit(lexeme)
 
         void printvalue(int indent = 0) override;
     };
@@ -171,6 +172,7 @@ namespace ast::_b
     {
     public:
         signature_noargs(lex_V)
+        signature_inherit(lexeme)
 
         void printvalue(int indent = 0) override
         {
@@ -197,6 +199,7 @@ namespace ast::_b
     {
     public:
         signature_noargs(lex_l)
+        signature_inherit(lexeme)
         int32_t l = 0;
         
         lex_l(long l = 0) : l(l) {}
@@ -211,6 +214,7 @@ namespace ast::_b
     {
     public:
         signature_noargs(lex_f)
+        signature_inherit(lexeme)
         float f = 0.0;
 
         lex_f(float f = 0.0) : f(f) {}
@@ -225,6 +229,7 @@ namespace ast::_b
     {
     public:
         signature_noargs(lex_s)
+        signature_inherit(lexeme)
         char *s = nullptr;
 
         lex_s(char *s = nullptr) : s(s) {}
@@ -240,6 +245,7 @@ namespace ast::_b
     {
     public:
         signature_noargs(lex_p)
+        signature_inherit(lexeme)
 
         lex_p(char *s = nullptr, int len = 0) : lex_s(s), len(len) {}
         int len = 0;

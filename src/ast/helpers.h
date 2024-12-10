@@ -75,18 +75,17 @@ namespace ast::_h
     optional_call_decl_1(stream_restore, bool, restore, default_restore, void *)
 //-------------------------------------------------------------------------------------------------
     //helpers to work with string constants
-    template <typename O, std::size_t N>
-    static constexpr int getSize(const O (&arr)[N])
-    {
-        return N;
-    }
 
-    #define token_array_decl(_TYPE_, _NAME_) inline constexpr _TYPE_ _NAME_[]
-    #define token_array(arr) (arr), ast::_h::getSize(arr)
+    // #define token_array_decl(_NAME_) inline constexpr _TYPE_ _NAME_[]
+    // #define token_array(arr) (arr), ast::_h::getSize(arr)
 
-    template<typename T> struct get_argument_type;
-    template<typename T, typename U> struct get_argument_type<T(U)> { typedef U type; };
+    // #define str_decl(_NAME_, _VALUE_)\
+    // char_array_decl(_NAME_##_string_) = _VALUE_;\
+    // using _NAME_ = token_string<char_array(_NAME_##_string_)>
+
 //-------------------------------------------------------------------------------------------------
+    // template<typename T> struct get_argument_type;
+    // template<typename T, typename U> struct get_argument_type<T(U)> { typedef U type; };
     // #ifdef AST_DEBUG
     //     #define ast_rule(_name_, _rule_) \
     //     static inline constexpr char _name_##_string_constant_[] = #_name_; \
@@ -137,8 +136,59 @@ namespace ast::_h
     inline lexeme *_NAME_::match_impl(_StreamType &_stream_, int _trace_, const char *_rule_name_) \
     { \
         _rule_name_ = signature.data(); \
-        return sub_match(_SRC_, _stream_);\
+        auto l = sub_match(_SRC_, _stream_);\
+        if (l) l->rule = _rule_name_;\
+        return l;\
     }
+
+    #define re_decl(_NAME_, _PATTERN_) \
+    class _NAME_ : public rule_base \
+    { \
+    public: \
+        signature_noargs(_NAME_) \
+        static inline constexpr char _NAME_##_pattern_[] = _PATTERN_; \
+        match_method(_stream_)\
+        { \
+            _rule_name_ = signature.data(); \
+            auto l = sub_match(token_regex<_NAME_##_pattern_>, _stream_);\
+            if (l) l->rule = _rule_name_;\
+            return l;\
+        } \
+    };
+
+    template <typename O, std::size_t N>
+    static constexpr int getSize(const O (&arr)[N])
+    {
+        return N;
+    }
+
+    //remove the null terminator if it is a string
+    template<char, std::size_t N>
+    static constexpr int getSize(const char (&arr)[N])
+    {
+        if (arr[N - 1] == 0)
+            return N - 1;
+        return N;
+    }
+
+    #define token_string_decl(_NAME_, _ARR_) \
+    class _NAME_ : public rule_base \
+    { \
+    public: \
+        signature_noargs(_NAME_) \
+        inline constexpr auto _NAME_##_array_[] = _ARR_; \
+        match_method(_stream_)\
+        { \
+            _rule_name_ = signature.data(); \
+            auto l = sub_match(token_string<_NAME_##_array_, getSize(_ARR_)>, _stream_);\
+            if (l) l->rule = _rule_name_;\
+            return l;\
+        } \
+    };
+
+    // #define re_match(_NAME_, _PATTERN_) \
+    // char_array_decl(_NAME_##_pattern_) = _PATTERN_; \
+    // class _NAME_ : public ast::_f::select<token_regex<_NAME_##_pattern_>,0> {};
 
 //-------------------------------------------------------------------------------------------------
     // Helper to print with indentation
@@ -160,14 +210,16 @@ namespace ast::_h
     { \
         if (_trace_) \
         { \
-            print_ind(_trace_, "(%s) %s: ", _rule_name_ ? _rule_name_ : "", signature.data());\
+            print_ind(_trace_, "");\
             lex_o<object_S>(*_stream_).printvalue();\
-            printf("\n");\
+            printf(" (%s) %s\n", _rule_name_ ? _rule_name_ : "", signature.data());\
         } \
         auto l = match_impl(_stream_, _trace_, _rule_name_); \
         if (_trace_) \
         { \
-            print_ind(_trace_, "(%s) %s: %s\n", _rule_name_ ? _rule_name_ : "", signature.data(), l ? "PASS" : "FAIL");\
+            print_ind(_trace_, "");\
+            lex_o<object_S>(*_stream_).printvalue();\
+            printf("(%s) %s: %s\n", _rule_name_ ? _rule_name_ : "", signature.data(), l ? "PASS" : "FAIL");\
         } \
         return l; \
     } \

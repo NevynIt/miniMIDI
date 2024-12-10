@@ -12,6 +12,7 @@ namespace ast::_c
     {
     public:
         signature_noargs(lex_choice)
+        signature_inherit(lexeme)
 
         lex_choice(lexeme *l = nullptr, int choice = 0) : l(l), choice(choice) {}
         ~lex_choice() { if (l) delete l; }

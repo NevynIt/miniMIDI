@@ -185,3 +185,6 @@ constexpr auto concat_signatures(const First& first, const Rest&... rest) {
         SIGNATURE_ARGS(__VA_ARGS__)); \
     virtual const char *get_signature() const override { return signature.data(); }
 
+#define signature_inherit(_NAME_) \
+    virtual bool is(const char *s) const override { return get_signature() == s || _NAME_::get_signature() == s; }
+

@@ -2,6 +2,7 @@
 
 #include "ast.h"
 #include <stdlib.h>
+#include "regex.h"
 
 namespace ast_char
 { //specializations for obj = const char
@@ -11,6 +12,7 @@ namespace ast_char
     using namespace ast::_r;
     using namespace ast::_d;
     using namespace ast::_f;
+    using namespace ast::_re;
 
     using obj = char;
 
@@ -30,13 +32,9 @@ namespace ast_char
     template<obj start, obj escape = start, obj end = start>
     using token_delimited = ast::_t::token_delimited<obj, start, escape, end>;
 
-    //take care of the null terminator when using strings as char arrays
-    #define char_array_decl(_NAME_) inline constexpr char _NAME_[]
-    #define char_array(arr) (arr), (ast::_h::getSize(arr)-1)
-
-    #define str_decl(_NAME_, _VALUE_)\
-    char_array_decl(_NAME_##_string_) = _VALUE_;\
-    using _NAME_ = token_string<char_array(_NAME_##_string_)>
+    // //take care of the null terminator when using strings as char arrays
+    // #define char_array_decl(_NAME_) inline constexpr char _NAME_[]
+    // #define char_array(arr) (arr), (ast::_h::getSize(arr)-1)
 
     lexeme *tolong_decorator(lexeme *l)
     {
@@ -214,29 +212,29 @@ namespace ast_char
     };
     //useful tokens and rules for char streams
 
-    // ast_rule(digit, (token_range<'0', '9'>));
-    using digit = token_range<'0', '9'>;
+    using digit_impl = token_range<'0', '9'>;
+    alias_declare(digit);
+    alias_define(digit, digit_impl);
 
-    char_array_decl(whitespace_objs) = " \t\n\r"; 
-    using whitespace = concat<some<token_choice<char_array(whitespace_objs)>>, obj>;
+    re_decl(whitespace, "[ \\t\\n\\r]+");
+    re_decl(alpha, "[a-zA-Z]");
+    re_decl(identifier, "[a-zA-Z_][a-zA-Z0-9_]*");
+    re_decl(integer, "[+-]?[0-9]+");
+    re_decl(fractional, "[+-]?[0-9]+(\\.[0-9]+)?");
 
-    char_array_decl(alpha_objs) = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
-    using alpha = token_choice<char_array(alpha_objs)>;
+    using str2long_impl =  tolong<integer>;
+    alias_declare(str2long);
+    alias_define(str2long, str2long_impl);
 
-    char_array_decl(identif_objs) = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_";
-    using identifier = tostring<concat<seq2<alpha,any<token_choice<char_array(identif_objs)>>>, obj>>;
-
-    using integer = concat<seq2<opt<choice2<token<'-'>, token<'+'>>>, some<digit>>, obj>;
-
-    using fractional = concat<seq3<opt<choice2<token<'-'>, token<'+'>>>,
-                            some<digit>,
-                            opt<seq2<token<'.'>, some<digit>>>>,
-                            obj>;
-
-    using str2long =  tolong<integer>;
-
-    using str2float = tofloat<fractional>;
+    using str2float_impl = tofloat<fractional>;
+    alias_declare(str2float);
+    alias_define(str2float, str2float_impl);
     
-    using dblQuote_str = tostring<stdEscape<ast::_t::token_delimited<obj, '"', '\\'>>>;
-    using sglQuote_str = tostring<stdEscape<ast::_t::token_delimited<obj, '\'', '\\'>>>;
+    using dblQuote_str_impl = tostring<stdEscape<ast::_t::token_delimited<obj, '"', '\\'>>>;
+    alias_declare(dblQuote_str);
+    alias_define(dblQuote_str, dblQuote_str_impl);
+
+    using sglQuote_str_impl = tostring<stdEscape<ast::_t::token_delimited<obj, '\'', '\\'>>>;
+    alias_declare(sglQuote_str);
+    alias_define(sglQuote_str, sglQuote_str_impl);
 }

@@ -34,6 +34,7 @@ namespace _detail
     {
     public:
         signature_noargs(lex_bitfield)
+        signature_inherit(lexeme)
         lex_bitfield(std::vector<uint8_t> *bitfield) : bitfield(bitfield) {}
         ~lex_bitfield() { if (bitfield) delete bitfield; }
         std::vector<uint8_t> *bitfield = nullptr;
@@ -168,14 +169,14 @@ namespace _detail
             field_info *f = new field_info();
             if (lc->choice == 0) //type
             {
-                lex_o<char> *lo = lc->l->template as<lex_o<char>>();
+                lex_re *lo = lc->l->template as<lex_re>();
                 if (!lo)
                 {
                     delete l;
                     delete f;
                     return nullptr;
                 }
-                f->type = lo->o;
+                f->type = lo->at(0);
             }
             else if (lc->choice == 1) //bitfield
             {
@@ -236,6 +237,7 @@ namespace _detail
             lex_V *V2 = V->at(2)->template as<lex_V>();
 
             field_info *f = V1->f;
+            V1->f = nullptr;
 
             if (V0->size() == 1)
             {
@@ -246,11 +248,16 @@ namespace _detail
                 }
                 else
                 {
-                    lex_s *V0s = V0->at(0)->template as<lex_s>();
+                    auto *V0s = V0->at(0)->template as<lex_re>();
                     if (V0s)
                     {
-                        f->field_name = V0s->s;
-                        V0s->s = nullptr;
+                        char *s = new char[V0s->size() + 1];
+                        for (size_t i = 0; i < V0s->size(); i++)
+                        {
+                            s[i] = V0s->at(i);
+                        }
+                        s[V0s->size()] = 0;
+                        f->field_name = s;
                     }
                     else
                     {
@@ -268,11 +275,16 @@ namespace _detail
                 }
                 else
                 {
-                    lex_s *V2s = V2->at(0)->template as<lex_s>();
-                    if (V2s)
+                    auto *V0s = V0->at(0)->template as<lex_re>();
+                    if (V0s)
                     {
-                        f->array_size_name = V2s->s;
-                        V2s->s = nullptr;
+                        char *s = new char[V0s->size() + 1];
+                        for (size_t i = 0; i < V0s->size(); i++)
+                        {
+                            s[i] = V0s->at(i);
+                        }
+                        s[V0s->size()] = 0;
+                        f->array_size_name = s;
                     }
                     else
                     {
@@ -297,10 +309,7 @@ namespace _detail
 
     using number = str2long;
 
-    char_array_decl(type_chars) = "xXcbB?hHiIlLqQnNfdspP";
-    using type_decl = token_choice<char_array(type_chars)>;
-    alias_declare(type);
-    alias_define(type, type_decl);
+    re_decl(type, "[xXcbB?hHiIlLqQnNfdspP]");
 
     using bitfield_decl = make_bitfield<rep<select<seq2<number,opt<token<':'>>>,0>, 0, -1>>;
     alias_declare(bitfield);
@@ -335,7 +344,7 @@ namespace _detail
 
     alias_define(structure, structure_decl);
 
-    using helper_decl = trace_on<make_format<choice3i<fail_always, fail_always, structure>>>;
+    using helper_decl = make_format<choice3i<fail_always, fail_always, structure>>;
     alias_declare(helper);
     alias_define(helper, helper_decl);
 
