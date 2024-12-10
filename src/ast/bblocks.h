@@ -235,7 +235,7 @@ namespace ast::_b
         lex_s(char *s = nullptr) : s(s) {}
         ~lex_s() { if(s) delete[] s; }
 
-        void print(int indent = 0)
+        void print(int indent = 0) override
         {
             print_ind(indent, "\"%s\"", s);
         }
@@ -250,7 +250,7 @@ namespace ast::_b
         lex_p(char *s = nullptr, int len = 0) : lex_s(s), len(len) {}
         int len = 0;
 
-        void print(int indent = 0)
+        void print(int indent = 0) override
         {
             print_ind(indent, "'%.*s'", len, s);
         }

@@ -95,6 +95,15 @@ namespace ast::_re
                 printf("%c", *i);
             }
             printf("\"");
+            if (groups)
+            {
+                for (int i = 0; i < groups->size(); i++)
+                {
+                    printf("\n");
+                    print_ind(indent, "Group %d: ", i);
+                    groups->at(i)->printvalue(indent + 1);
+                }
+            }
         }
         lex_V *groups = nullptr;
         ~lex_re()
@@ -444,6 +453,7 @@ namespace ast::_re
                         s++;
                         return;
                     }
+                    max = 0;
                     while (*s >= '0' && *s <= '9')
                     {
                         max = max * 10 + (*s - '0');
@@ -451,7 +461,10 @@ namespace ast::_re
                     }
                 }
                 if (*s == '}')
+                {
+                    s++;
                     return;
+                }
                 //error
             }
             else if (*s == '+')
@@ -484,6 +497,29 @@ namespace ast::_re
 
     typedef const char *char_cptr;
 
+    void skip_alternative(char_cptr &pattern)
+    {
+        int depth = 0;
+        while ((*pattern != '|' || depth > 0) && *pattern != '\0')
+        {
+            if (*pattern == '(')
+            {
+                depth++;
+            }
+            else if (*pattern == ')')
+            {
+                if (depth == 0)
+                    return;
+                depth--;
+            }
+            else if (*pattern == '\\')
+            {
+                pattern++;
+            }
+            pattern++;
+        }
+    }
+
     //the pattern is considered a group
     //if a group has no subgroups, it returns a lexeme of type v
     //if a group has subgroups, it returns a lexeme of type V
@@ -510,25 +546,8 @@ namespace ast::_re
             }
             else if (*pattern == '|')
             {
-                //todo skip the alternative and move on
-                int depth = 0;
-                while ((*pattern != '|' || depth > 0) && *pattern != '\0')
-                {
-                    if (*pattern == '(')
-                    {
-                        depth++;
-                    }
-                    else if (*pattern == ')')
-                    {
-                        depth--;
-                    }
-                    else if (*pattern == '\\')
-                    {
-                        pattern++;
-                    }
-                    pattern++;
-                }
-
+                pattern++;
+                skip_alternative(pattern);
             }
             // Starting a group
             else if (*pattern == '(')
@@ -728,8 +747,13 @@ namespace ast::_re
                 }
             }
         }
+        while (*pattern == '|')
+        {
+            pattern++;
+            skip_alternative(pattern);
+        }
 
-        if (ast::_b::stream_eof(s) && *pattern == '\0')
+        if (ast::_b::stream_eof(s) && (*pattern == '\0' || *pattern == ')'))
         {
             // Wrap up and return
             return l;

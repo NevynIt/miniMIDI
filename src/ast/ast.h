@@ -20,6 +20,7 @@ namespace ast
     using namespace ast::_h; //helpers
     using namespace ast::_b; //bblocks
     using namespace ast::_d; //decorators
+    using namespace ast::_f; //functions
     using namespace ast::_t; //token
     using namespace ast::_s; //sequence
     using namespace ast::_c; //choice
