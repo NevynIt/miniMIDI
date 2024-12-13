@@ -21,25 +21,17 @@ namespace ast_char
     using token = ast::_t::token<obj, value>;
     template<obj start, obj end>
     using token_range = ast::_t::token_range<obj, start, end>;
-    template<const obj *arr, std::size_t size>
-    using token_choice = ast::_t::token_choice<obj, arr, size>;
-    template<const obj *arr, obj end = 0>
-    using token_choice_delimited = ast::_t::token_choice_delimited<obj, arr, end>;
-    template<const obj *arr, std::size_t size>
-    using token_string = ast::_t::token_string<obj, arr, size>;
-    template<const obj *arr, obj end = 0>
-    using token_string_delimited = ast::_t::token_string_delimited<obj, arr, end>;
+    template<auto arr>
+    using token_choice = ast::_t::token_choice<obj, arr>;
+    template<auto arr>
+    using token_string = ast::_t::token_string<obj, arr>;
     template<obj start, obj escape = start, obj end = start>
     using token_delimited = ast::_t::token_delimited<obj, start, escape, end>;
-
-    // //take care of the null terminator when using strings as char arrays
-    // #define char_array_decl(_NAME_) inline constexpr char _NAME_[]
-    // #define char_array(arr) (arr), (ast::_h::getSize(arr)-1)
+    // template<typename T0>
+    // using concat = ast::_s::concat<T0, obj>;
 
     lexeme *tolong_decorator(lexeme *l)
     {
-        if (!l)
-            return nullptr;
         if (l->is<lex_l>())
             return l;
 
@@ -57,21 +49,21 @@ namespace ast_char
 
     //useful decorators
     template<typename T0>
-    class tolong : public rule_base
+    ast_internal_rule(tolong)
     {
     public:
-        signature_decl(tolong, T0)
+        ast_set_signature<ast_str("tolong"), ast_sig(T0)>;
+        ast_base_rule = T0;
 
-        match_method(s)
+        ast_decorator_implementation(l)
         {
-            return tolong_decorator(sub_match(T0, s));
+            return tolong_decorator(l);
         }
+
     };
 
     lexeme *tofloat_decorator(lexeme *l)
     {
-        if (!l)
-            return nullptr;
         if (l->is<lex_f>())
             return l;
 
@@ -84,25 +76,24 @@ namespace ast_char
         v->push_back(0);
         float number = atof(v->data());
         delete v;
-        return new lex_l(number);
+        return new lex_f(number);
     }
 
     template<typename T0>
-    class tofloat : public rule_base
+    ast_internal_rule(tofloat)
     {
     public:
-        signature_decl(todouble, T0)
+        ast_set_signature<ast_str("tofloat"), ast_sig(T0)>;
+        ast_base_rule = T0;
 
-        match_method(s)
+        ast_decorator_implementation(l)
         {
-            return tofloat_decorator(sub_match(T0, s));
+            return tofloat_decorator(l);
         }
     };
 
     lexeme *tostring_decorator(lexeme *l)
     {
-        if (!l)
-            return nullptr;
         if (l->is<lex_s>())
             return l;
         auto v = l->as<lex_v<char>>();
@@ -120,21 +111,20 @@ namespace ast_char
     }
 
     template<typename T0>
-    class tostring : public rule_base
+    ast_internal_rule(tostring)
     {
     public:
-        signature_decl(tostring, T0)
+        ast_set_signature<ast_str("tostring"), ast_sig(T0)>;
+        ast_base_rule = T0;
 
-        match_method(l)
+        ast_decorator_implementation(l)
         {
-            return tostring_decorator(sub_match(T0, l));
+            return tostring_decorator(l);
         }
     };
 
     lexeme *stdEscape_decorator(lexeme *l)
     {
-        if (!l)
-            return nullptr;
         lex_v<char> *lv = l->as<lex_v<char>>();
         if (!lv)
         {
@@ -200,41 +190,29 @@ namespace ast_char
     }
 
     template<typename T0>
-    class stdEscape : public rule_base
+    ast_internal_rule(stdEscape)
     { //standard escape sequences, including \n, \t, \r, \0, \\ and \xHH
     public:
-        signature_decl(stdEscape, T0)
+        ast_set_signature<ast_str("stdEscape"), ast_sig(T0)>;
+        ast_base_rule = T0;
 
-        match_method(s)
+        ast_decorator_implementation(l)
         {
-            return stdEscape_decorator(sub_match(T0, s));
+            return stdEscape_decorator(l);
         }
     };
     //useful tokens and rules for char streams
 
-    using digit_impl = token_range<'0', '9'>;
-    alias_declare(digit);
-    alias_define(digit, digit_impl);
+    ast_internal_alias(digit) = token_range<'0', '9'>; ast_alias_end;
+    ast_internal_regex(whitespace, "[ \\t\\n\\r]+");
+    ast_internal_regex(alpha, "[a-zA-Z]");
+    ast_internal_regex(identifier, "[a-zA-Z_][a-zA-Z0-9_]*");
+    ast_internal_regex(integer, "[+-]?[0-9]+");
+    ast_internal_regex(fractional, "[+-]?[0-9]+(\\.[0-9]+)?");
 
-    re_decl(whitespace, "[ \\t\\n\\r]+");
-    re_decl(alpha, "[a-zA-Z]");
-    re_decl(identifier, "[a-zA-Z_][a-zA-Z0-9_]*");
-    re_decl(integer, "[+-]?[0-9]+");
-    re_decl(fractional, "[+-]?[0-9]+(\\.[0-9]+)?");
-
-    using str2long_impl =  tolong<integer>;
-    alias_declare(str2long);
-    alias_define(str2long, str2long_impl);
-
-    using str2float_impl = tofloat<fractional>;
-    alias_declare(str2float);
-    alias_define(str2float, str2float_impl);
+    ast_internal_alias(str2long) =  tolong<integer>; ast_alias_end;
+    ast_internal_alias(str2float) = tofloat<fractional>; ast_alias_end;
     
-    using dblQuote_str_impl = tostring<stdEscape<ast::_t::token_delimited<obj, '"', '\\'>>>;
-    alias_declare(dblQuote_str);
-    alias_define(dblQuote_str, dblQuote_str_impl);
-
-    using sglQuote_str_impl = tostring<stdEscape<ast::_t::token_delimited<obj, '\'', '\\'>>>;
-    alias_declare(sglQuote_str);
-    alias_define(sglQuote_str, sglQuote_str_impl);
+    ast_internal_alias(dblQuote_str) = tostring<stdEscape<token_delimited<'"', '"', '\\'>>>; ast_alias_end;
+    ast_internal_alias(sglQuote_str) = tostring<stdEscape<token_delimited<'\'' , '\'', '\\'>>>; ast_alias_end;
 }

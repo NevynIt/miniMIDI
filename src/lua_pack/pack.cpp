@@ -33,25 +33,22 @@ namespace _detail
     class lex_bitfield : public lexeme
     {
     public:
-        signature_noargs(lex_bitfield)
-        signature_inherit(lexeme)
+        ast_set_signature<ast_str("lex_bitfield")>;
+        ast_variant_inherit(lexeme)
         lex_bitfield(std::vector<uint8_t> *bitfield) : bitfield(bitfield) {}
         ~lex_bitfield() { if (bitfield) delete bitfield; }
         std::vector<uint8_t> *bitfield = nullptr;
     };
 
     template <typename T0>
-    class make_bitfield : public rule_base
+    ast_define_rule(make_bitfield)
     {
     public:
-        signature_decl(make_bitfield, T0)
+        ast_set_signature<ast_str("make_bitfield")>;
+        ast_base_rule = T0;
 
-        match_method(s)
+        ast_decorator_implementation(l)
         {
-            auto l = sub_match(T0, s);
-            if (!l)
-                return nullptr;
-            
             std::vector<uint8_t> *bitfield = new std::vector<uint8_t>();
             lex_V *V = l->template as<lex_V>();
             if (!V)
@@ -78,7 +75,8 @@ namespace _detail
     class lex_field_info : public lexeme
     {
     public:
-        signature_noargs(lex_field_info)
+        ast_set_signature<ast_str("lex_field_info")>;
+        ast_variant_inherit(lexeme)
         lex_field_info(field_info *f) : f(f) {}
         ~lex_field_info() { if (f) delete f; }
         field_info *f = nullptr;
@@ -87,7 +85,8 @@ namespace _detail
     class lex_struct : public lexeme
     {
     public:
-        signature_noargs(lex_struct)
+        ast_set_signature<ast_str("lex_struct")>;
+        ast_variant_inherit(lexeme)
         lex_struct(std::vector<field_info *> *fields = nullptr) : fields(fields) {}
         ~lex_struct()
         {
@@ -104,16 +103,14 @@ namespace _detail
     };
 
     template <typename T0>
-    class make_struct : public rule_base
+    ast_define_rule(make_struct)
     {
     public:
-        signature_decl(make_struct, T0)
+        ast_set_signature<ast_str("make_struct")>;
+        ast_base_rule = T0;
 
-        match_method(s)
+        ast_decorator_implementation(l)
         {
-            auto l = sub_match(T0, s);
-            if (!l)
-                return nullptr;
             auto V = l->template as<lex_V>();
             if (!V)
             {
@@ -143,17 +140,14 @@ namespace _detail
     };
     
     template <typename T0>
-    class make_format : public rule_base
+    ast_define_rule(make_format)
     {
     public:
-        signature_decl(make_format, T0)
+        ast_set_signature<ast_str("make_format")>;
+        ast_base_rule = T0;
 
-        match_method(s)
+        ast_decorator_implementation(l)
         {
-            auto l = sub_match(T0, s);
-            if (!l)
-                return nullptr;
-
             //l is a choice between:
             //  0 = type
             //  1 = bitfield
@@ -216,16 +210,14 @@ namespace _detail
     };
 
     template <typename T0>
-    class make_field : public rule_base
+    ast_define_rule(make_field)
     {
     public:
-        signature_decl(make_field, T0)
+        ast_set_signature<ast_str("make_field")>;
+        ast_base_rule = T0;
 
-        match_method(s)
+        ast_decorator_implementation(l)
         {
-            auto l = sub_match(T0, s);
-            if (!l)
-                return nullptr;
             auto V = l->template as<lex_V>();
             if (!V || V->size() != 3)
             {
@@ -303,50 +295,33 @@ namespace _detail
     // alpha = 'a' to 'z' | 'A' to 'Z'
     // identifier = <alpha> { <alpha> | <digit> | '_' }
     
-    using quoted_name_decl = select<seq3<token<'\''>, identifier, token<'\''>>, 1>;
-    alias_declare(quoted_name);
-    alias_define(quoted_name, quoted_name_decl);
-
-    using number = str2long;
-
-    re_decl(type, "[xXcbB?hHiIlLqQnNfdspP]");
-
-    using bitfield_decl = make_bitfield<rep<select<seq2<number,opt<token<':'>>>,0>, 0, -1>>;
-    alias_declare(bitfield);
-    alias_define(bitfield, bitfield_decl);
-
-    using array_size_decl = select<seq3<token<'['>, choice2<number,quoted_name>, token<']'>>, 1>;
-    alias_declare(array_size);
-    alias_define(array_size, array_size_decl);
-
-    using field_count_decl = choice2<number,quoted_name>;
-    alias_declare(field_count);
-    alias_define(field_count, field_count_decl);
+    ast_alias(quoted_name) = select<seq<token<'\''>, identifier, token<'\''>>, 1>; ast_alias_end;
+    ast_alias(number) = str2long; ast_alias_end;
+    ast_regex_rule(type, "[xXcbB?hHiIlLqQnNfdspP]");
+    ast_alias(bitfield) = make_bitfield<rep<select<seq<number,opt<token<':'>>>,0>, 0, -1>>; ast_alias_end;
+    ast_alias(array_size) = select<seq<token<'['>, choice<number,quoted_name>, token<']'>>, 1>; ast_alias_end;
+    ast_alias(field_count) = choice<number,quoted_name>; ast_alias_end;
 
 
-    alias_declare(structure);
+    class structure;
 
-    using format_impl = make_format<choice3i<type,
-                            select<seq3<token<'<'>, bitfield, token<'>'>>, 1>,
-                            select<seq3<token<'{'>, structure,  token<'}'>>, 1>>>;
-    alias_declare(format);
-    alias_define(format, format_impl);
+    ast_alias(format) = make_format<choicei<type,
+                            select<seq<token<'<'>, bitfield, token<'>'>>, 1>,
+                            select<seq<token<'{'>, structure,  token<'}'>>, 1>>>;
+    ast_alias_end;
 
-    using field_decl = make_field<seq3<opt<field_count>, 
+    ast_alias(field) = make_field<seq<opt<field_count>, 
                             format, 
                             opt<array_size>>>;
-    alias_declare(field);
-    alias_define(field, field_decl);
-
-    using structure_decl = select<seq2<
-                            make_struct<some<select<seq2<opt<whitespace>,field>, 1>>>,
+    ast_alias_end;
+    
+    ast_alias(structure) = select<seq<
+                            make_struct<some<select<seq<opt<whitespace>,field>, 1>>>,
                             opt<whitespace>>, 0>;
+    ast_alias_end;
 
-    alias_define(structure, structure_decl);
-
-    using helper_decl = make_format<choice3i<fail_always, fail_always, structure>>;
-    alias_declare(helper);
-    alias_define(helper, helper_decl);
+    ast_alias(helper) = make_format<choicei<fail_always, fail_always, structure>>; ast_alias_end;
+    // ast_alias(helper) = trace_on<make_format<choicei<fail_always, fail_always, structure>>>; ast_alias_end;
 
 } // namespace _detail
 

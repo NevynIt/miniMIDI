@@ -84,8 +84,8 @@ namespace ast::_re
     class lex_re : public lex_v<char>
     {
     public:
-        signature_noargs(lex_re)
-        signature_inherit(lex_v<char>)
+        ast_set_signature<ast_str("lex_re")>;
+        ast_variant_inherit(lex_v<char>)
 
         void printvalue(int indent = 0) override
         {
@@ -232,7 +232,7 @@ namespace ast::_re
                     add(get_escape(s));
                     break;
             }
-            s++;
+            // s++;
         }
 
         void toggle_all()
@@ -316,6 +316,7 @@ namespace ast::_re
                     else if (c == '.')
                     {
                         add_all();
+                        return;
                     }
                     else if (c == '[')
                     {
@@ -486,13 +487,6 @@ namespace ast::_re
                 s++;
             }
         }
-    };
-
-    struct regex_group
-    {
-    public:
-        char *start = nullptr;
-        int rep_count = 0;
     };
 
     typedef const char *char_cptr;
@@ -764,15 +758,16 @@ namespace ast::_re
         return nullptr;
     }
 
-    template<const char *arr>
-    class token_regex : public rule_base
+    template<const auto arr>
+    ast_internal_rule(regex)
     {
+        static_assert(std::is_same_v<decltype(arr.data()), const char *>, "arr must be a char array");
     public:
-        signature_decl(token_regex, signature_get_string<arr>)
+        ast_set_signature<ast_str("regex"), arr>;
 
-        match_method(s)
+        ast_primary_implementation(s)
         {
-            const char *pattern = arr;
+            const char *pattern = arr.data();
             return match_regex(s, pattern);
         }
     };

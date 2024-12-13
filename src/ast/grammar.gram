@@ -9,33 +9,33 @@ $  using namespace ast_char;
 
 
 -- decorators
-rep(exp, int min, int max, sep) ::= ast_char::rep(exp, min, max, sep);
-delimited(char start, char escape,char end) ::= ast::_t::token_delimited(start, escape, end)
-list(exp, sep) ::= rep(exp,1,-1,sep);
-concat(exp) ::= ast::_f::concat(exp);
+rep<exp, int min, int max, sep> ::= ast_char::rep<exp, min, max, sep>;
+delimited<char start, char escape,char end> ::= ast::_t::token_delimited<start, escape, end>;
+list<exp, sep> ::= rep<exp,1,-1,sep>;
+concat<exp> ::= ast::_f::concat<exp>;
     --concatenate the string lexemes into a single string
 
-select(exp, int i) ::= ast::_f::select(exp, i);
+select<exp, int i> ::= ast::_f::select<exp, i>;
     --select the lexeme i from the list
 
-tolong(exp) ::= ast_char::tolong(exp);
+tolong<exp> ::= ast_char::tolong<exp>;
     --convert the string lexeme into a long number
 
-regex(string pattern) ::= ast::_t::token_regex(pattern);
+regex<string pattern> ::= ast::_t::token_regex<pattern>;
     --parse the string lexeme as a regex
     --return the whole set of groups and matches
 
 -- primary operators
-character ::= delimited('\'', '\\', '\'');
+character ::= delimited<'\'', '\\', '\''>;
     --should have length exactly 1
     --parse and convert to string in the ast
     --the compiler will use ast_char::token to match
 
-string ::= delimited('"', '\\', '"');
+string ::= delimited<'"', '\\', '"'>;
     --parse and convert to string in the ast
     --the compiler will use ast_char::token_string to match the string
 
-re_pattern ::= delimited('/', '\\', '/');
+re_pattern ::= delimited<'/', '\\', '/'>;
     --parse and convert to string in the ast
     --the compiler will use ast_char::token_regex to match the string and select group 0
 
@@ -45,39 +45,39 @@ name ::= /[a-zA-Z_][a-zA-Z0-9_]*(::[a-zA-Z_][a-zA-Z0-9_]*)*/;
 positive_integer ::= /[0-9]+/;
 integer ::= /[+-]?[0-9]+/;
 hex_number ::= /0x[0-9a-fA-F]+/;
-dec_number ::= /[+-]?[0-9]+(\.[0-9]+)?/;
+dec_number ::= /[+-]?[0-9]+\.([0-9]+)?/;
 number ::= (dec_number | hex_number).tolong;
-comment ::= regex("--([^n]*)\n").select(1);
+comment ::= regex<"--([^n]*)\n">.select<1>;
 S ::= ((/[ \t\n\r]+/ | comment)*).concat;
     -- whitespace and comments
     -- the compiler will ignore them
 
 -- rules
 primary ::= name | string | regex | '(' S expression S ')';
-argument ::= primary | number;
+argument ::= expression | number;
     --the compiler will use these as template arguments
 
-decorator ::= '.' name ( '(' S argument.list(S ',' S) ')' S )?;
+decorator ::= '.' name ( '<' S argument.list<(S ',' S)> '>' S )?;
 decorated ::= primary decorator*;
-    -- xxx.yyy(a,b,c) ==> yyy(xxx,a,b,c)
-    -- x.y.z          ==> z(y(x))
-    -- x(y) compiles as template instantiation x<y>
+    -- xxx.yyy<a,b,c> ==> yyy<xxx,a,b,c>
+    -- x.y.z          ==> z<y<x>>
+    -- x<y> compiles as template instantiation x<y>
 
 factor ::= decorated (/[*?+]/ | '{' S number? (S ',' S (number)?)? S '}')?;
-    -- xxx+     ==> xxx.rep(1,-1)
-    -- xxx*     ==> xxx.rep(0,-1)
-    -- xxx?     ==> xxx.rep(0,1)
-    -- xxx{n}   ==> xxx.rep(n,n)
-    -- xxx{n,}  ==> xxx.rep(n,-1)
-    -- xxx{n,m} ==> xxx.rep(n,m)
-    -- xxx{,m}  ==> xxx.rep(0,m)
+    -- xxx+     ==> xxx.rep<1,-1>
+    -- xxx*     ==> xxx.rep<0,-1>
+    -- xxx?     ==> xxx.rep<0,1>
+    -- xxx{n}   ==> xxx.rep<n,n>
+    -- xxx{n,}  ==> xxx.rep<n,-1>
+    -- xxx{n,m} ==> xxx.rep<n,m>
+    -- xxx{,m}  ==> xxx.rep<0,m>
 
-term ::= factor.list(S);
+term ::= factor.list<S>;
     -- the compiler will use ast::_s::seq to concatenate the factors
     -- x y       compiles as    seq<x,y>
     -- x y z     compiles as    seq<x,seq<y,z>>
 
-expression ::= term.list(S '|' S);
+expression ::= term.list<(S '|' S)>;
     -- the compiler will use ast::_c::choice to select the _first_successful_ term
     -- x | y     compiles as    choice<x,y>
     -- x | y | z compiles as    choice<x,choice<y,z>>
@@ -87,17 +87,15 @@ valid_type ::= /([a-zA-Z_][a-zA-Z0-9_]*\s*(<[^>]*>)?\s*(\*|\&|\[\])?)*/;
     -- the compiler will use the name as the type in the template
     -- it will use "typename" before if empty
 
-params ::= ( valid_type )? S name
-param_list ::= '(' S param.list(S ',' S) S ')';
+params ::= ( valid_type )? S name;
+param_list ::= '<' S param.list<(S ',' S)> S '>';
     -- the compiler will use these as template parameters
 
 rule ::= name ( param_list )? S "::=" S expression S ';';
     -- the compiler will use the name as the class name
-    -- x = y      compiles as    using x = y;
-    -- x(y) = z   compiles as    using x<y> = z;
 
-copyline ::= regex("$([^\n]*)\n").select(1);
-grammar ::= S (rule | copyline ).list(S);
+copyline ::= regex<"$([^\n]*)\n">.select<1>;
+grammar ::= S (rule | copyline ).list<S>;
 
 -- the grammar is self-contained, so it can be parsed by itself
 $}

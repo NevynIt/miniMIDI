@@ -10,12 +10,12 @@ namespace ast::_r
     using namespace ast::_h;
 
     template<typename T0, int min = 0, int max = -1, typename Sep = ast::_f::pass_always>
-    class rep : public rule_base
+    ast_internal_rule(rep)
     {
     public:
-        signature_decl(rep, T0, signature_get_int<min>, signature_get_int<max>, Sep)
+        ast_set_signature<ast_str("rep"), ast_sig(T0), min, max, ast_sig(Sep)>;
 
-        match_method(s)
+        ast_primary_implementation(s)
         {
             auto l = new lex_V();
             void *sshot = stream_snapshot(s);
@@ -58,15 +58,16 @@ namespace ast::_r
         }
     };
 
-    template<typename T0>
-    using opt = rep<T0, 0, 1>; //optional
 
     template<typename T0>
-    using any = rep<T0, 0, -1>; //any number of
+    using opt = rep<T0, 0, 1>;
 
     template<typename T0>
-    using some = rep<T0, 1, -1>; //at least one of
+    using any = rep<T0, 0, -1>;
+
+    template<typename T0>
+    using some = rep<T0, 1, -1>;
 
     template<typename T0, typename Sep>
-    using list = rep<T0, 1, -1, Sep>; //separated list of
+    using list = rep<T0, 0, -1, Sep>;
 }

@@ -80,13 +80,14 @@ namespace ast::_f
     }
 
     template<typename T0, int n>
-    class select : public rule_base
+    ast_internal_rule(select)
     {
     public:
-        signature_decl(select, T0, signature_get_int<n>)
-        match_method(s)
+        ast_base_rule = T0;
+        ast_set_signature<ast_str("select"), ast_sig(T0), n>;
+        ast_decorator_implementation(l)
         {
-            return select_decorator(sub_match(T0,s), n);
+            return select_decorator(l, n);
         }
     };
 
@@ -118,57 +119,58 @@ namespace ast::_f
     }
 
     template<typename T0, typename O>
-    class concat: public rule_base
+    ast_internal_rule(concat)
     {
     public:
-        signature_decl(concat, T0)
-
-        match_method(s)
+        ast_base_rule = T0;
+        ast_set_signature<ast_str("concat"), ast_sig(T0), ast_sig(O)>;
+        ast_decorator_implementation(l)
         {
-            return concat_decorator<O>(sub_match(T0,s));
+            return concat_decorator<O>(l);
         }
     };
 
-    class fail_always: public rule_base
+    ast_internal_rule(fail_always)
     {
     public:
-        signature_noargs(fail_always)
+        ast_set_signature<ast_str("fail_always")>;
+        ast_primary_implementation(s)
+        {
+            return nullptr;
+        }
     };
 
-    class pass_always : public rule_base
+    ast_internal_rule(pass_always)
     {
     public:
-        signature_noargs(pass_always)
-
-        match_method(s)
+        ast_set_signature<ast_str("pass_always")>;
+        ast_primary_implementation(s)
         {
             return new lexeme();
         }
     };
 
     template<typename T0>
-    class trace_on : public rule_base
+    ast_internal_rule(trace_on)
     {
     public:
-        signature_decl(trace_on, T0)
+        ast_set_signature<ast_str("trace_on"), ast_sig(T0)>;
 
-        match_method(s)
+        ast_primary_implementation(s)
         {
-            //special processing for trace:
             _trace_ = _trace_ ? _trace_ : 1;
             return sub_match(T0, s);
         }
     };
 
     template<typename T0>
-    class trace_off : public rule_base
+    ast_internal_rule(trace_off)
     {
     public:
-        signature_decl(trace_off, T0)
+        ast_set_signature<ast_str("trace_off"), ast_sig(T0)>;
 
-        match_method(s)
+        ast_primary_implementation(s)
         {
-            //special processing for trace:
             _trace_ = 0;
             return sub_match(T0, s);
         }
@@ -193,7 +195,7 @@ namespace ast::_f
     // class trace
     // {
     // public:
-    //     match_method(s)
+    //     internal_match_method(s)
     //     {
     //         printf("%*s%s {", indent*2, "", name);
     //         print_object(*s);

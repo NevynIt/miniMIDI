@@ -2,8 +2,6 @@
 
 //helpers
 #include "deps.h"
-#include <cstdarg>
-#include "../uti/signature.h"
 
 namespace ast::_h
 {
@@ -123,68 +121,120 @@ namespace ast::_h
 
 //-------------------------------------------------------------------------------------------------
     // Helper to define alias and have recursive rules
-    #define alias_declare(_NAME_) \
-    class _NAME_ : public rule_base \
-    { \
-    public: \
-        signature_noargs(_NAME_) \
-        match_method(s);\
-    }
+    // #define alias_declare(_NAME_) \
+    // class _NAME_ : public rule_base \
+    // { \
+    // public: \
+    //     signature_noargs(_NAME_) \
+    //     match_method(s);\
+    // }
 
-    #define alias_define(_NAME_, _SRC_) \
-    template <typename _StreamType>\
-    inline lexeme *_NAME_::match_impl(_StreamType &_stream_, int _trace_, const char *_rule_name_) \
-    { \
-        _rule_name_ = signature.data(); \
-        auto l = sub_match(_SRC_, _stream_);\
-        if (l) l->rule = _rule_name_;\
-        return l;\
-    }
+    // #define internal_alias_declare(_NAME_) \
+    // class _NAME_ : public rule_base \
+    // { \
+    // public: \
+    //     signature_noargs(_NAME_) \
+    //     internal_match_method(s);\
+    // }
 
-    #define re_decl(_NAME_, _PATTERN_) \
-    class _NAME_ : public rule_base \
-    { \
-    public: \
-        signature_noargs(_NAME_) \
-        static inline constexpr char _NAME_##_pattern_[] = _PATTERN_; \
-        match_method(_stream_)\
-        { \
-            _rule_name_ = signature.data(); \
-            auto l = sub_match(token_regex<_NAME_##_pattern_>, _stream_);\
-            if (l) l->rule = _rule_name_;\
-            return l;\
-        } \
-    };
+    // #define alias_define(_NAME_, _SRC_) \
+    // template <typename _StreamType>\
+    // inline lexeme *_NAME_::match_impl(_StreamType &_stream_, int _trace_, const char *_rule_name_, bool _internal_) \
+    // { \
+    //     return l = sub_match(_SRC_, _stream_);\
+    // }
 
-    template <typename O, std::size_t N>
-    static constexpr int getSize(const O (&arr)[N])
-    {
-        return N;
-    }
+    // #define rule_declare(_NAME_, _SRC_) \
+    // class _NAME_ : public rule_base \
+    // { \
+    // public: \
+    //     signature_noargs(_NAME_) \
+    //     match_method(_stream_) \
+    //     { \
+    //     _rule_name_ = signature.data(); \
+    //     auto l = sub_match(_SRC_, _stream_);\
+    //     if (l) l->rule = _rule_name_;\
+    //     return l;\
+    //     } \
+    // }
 
-    //remove the null terminator if it is a string
-    template<char, std::size_t N>
-    static constexpr int getSize(const char (&arr)[N])
-    {
-        if (arr[N - 1] == 0)
-            return N - 1;
-        return N;
-    }
+    // #define internal_rule_declare(_NAME_, _SRC_) \
+    // class _NAME_ : public rule_base \
+    // { \
+    // public: \
+    //     signature_noargs(_NAME_) \
+    //     internal_match_method(_stream_) \
+    //     { \
+    //     return sub_match(_SRC_, _stream_);\
+    //     } \
+    // }
 
-    #define token_string_decl(_NAME_, _ARR_) \
-    class _NAME_ : public rule_base \
-    { \
-    public: \
-        signature_noargs(_NAME_) \
-        inline constexpr auto _NAME_##_array_[] = _ARR_; \
-        match_method(_stream_)\
-        { \
-            _rule_name_ = signature.data(); \
-            auto l = sub_match(token_string<_NAME_##_array_, getSize(_ARR_)>, _stream_);\
-            if (l) l->rule = _rule_name_;\
-            return l;\
-        } \
-    };
+
+    // #define re_decl(_NAME_, _PATTERN_) \
+    // class _NAME_ : public rule_base \
+    // { \
+    // public: \
+    //     signature_noargs(_NAME_) \
+    //     static inline constexpr char _NAME_##_pattern_[] = _PATTERN_; \
+    //     match_method(_stream_)\
+    //     { \
+    //         return sub_match(token_regex<_NAME_##_pattern_>, _stream_);\
+    //     } \
+    // };
+
+    // #define internal_re_decl(_NAME_, _PATTERN_) \
+    // class _NAME_ : public rule_base \
+    // { \
+    // public: \
+    //     signature_noargs(_NAME_) \
+    //     static inline constexpr char _NAME_##_pattern_[] = _PATTERN_; \
+    //     internal_match_method(_stream_)\
+    //     { \
+    //         return sub_match(token_regex<_NAME_##_pattern_>, _stream_);\
+    //     } \
+    // };
+
+    // template <typename O, std::size_t N>
+    // static constexpr int getSize(const O (&arr)[N])
+    // {
+    //     return N;
+    // }
+
+    // #define string_decl(_NAME_, _ARR_) \
+    // class _NAME_ : public rule_base \
+    // { \
+    // public: \
+    //     signature_noargs(_NAME_) \
+    //     static inline constexpr auto _NAME_##_array_ = _ARR_; \
+    //     match_method(_stream_)\
+    //     { \
+    //         using T0 = token_string<_NAME_##_array_, getSize(_ARR_)-1>;\
+    //         return sub_match(T0, _stream_);\
+    //     } \
+    // };
+
+    // #define internal_string_decl(_NAME_, _ARR_) \
+    // class _NAME_ : public rule_base \
+    // { \
+    // public: \
+    //     signature_noargs(_NAME_) \
+    //     static inline constexpr char _NAME_##_array_[] = _ARR_; \
+    //     internal_match_method(_stream_)\
+    //     { \
+    //         using T0 = token_string<_NAME_##_array_, getSize(_ARR_)-1>;\
+    //         return sub_match(T0, _stream_);\
+    //     } \
+    // };
+
+    // //template<a,b,c> if needed
+    // #define rule_start(_NAME_) \
+    // class _NAME_ : public rule_base { \
+    // public: \
+    //     signature_noargs(_NAME_) \
+    //     using _rule_impl_ = 
+        
+    // #define rule_end(_NAME_) ; match_method(_stream_) { return _rule_impl_::match(_stream_, _trace_ ? _trace_ + (_internal_ ? 0 : 1) : 0, _rule_name_); }
+    // #define internal_rule_end(_NAME_) ; internal_match_method(_stream_) { return _rule_impl_::match(_stream_, _trace_ ? _trace_ + (_internal_ ? 0 : 1) : 0, _rule_name_); }
 
     // #define re_match(_NAME_, _PATTERN_) \
     // char_array_decl(_NAME_##_pattern_) = _PATTERN_; \
@@ -204,31 +254,247 @@ namespace ast::_h
     // Helper to define match functions and enable tracing and backtracking
     #define object_S ::std::remove_reference_t<decltype(*::std::declval<_StreamType>())>
 
-    #define match_method(_varname_)\
+    // #define match_method(_varname_)\
+    // template <typename _StreamType>\
+    // static inline lexeme *match(_StreamType &_stream_, int _trace_ = 0, const char *_rule_name_ = nullptr) \
+    // { \
+    //     if (_trace_) \
+    //     { \
+    //         print_ind(_trace_, "");\
+    //         lex_o<object_S>(*_stream_).printvalue();\
+    //         printf(" (%s) %s\n", _rule_name_ ? _rule_name_ : "", signature.data());\
+    //     } \
+    //     _rule_name_ = signature.data(); \
+    //     auto l = match_impl(_stream_, _trace_, _rule_name_, false); \
+    //     if (_trace_) \
+    //     { \
+    //         print_ind(_trace_, "");\
+    //         lex_o<object_S>(*_stream_).printvalue();\
+    //         printf("(%s) %s: %s\n", _rule_name_ ? _rule_name_ : "", signature.data(), l ? "PASS" : "FAIL");\
+    //     } \
+    //     if (l) \
+    //     { \
+    //         l->rule = _rule_name_;\
+    //     } \
+    //     return l; \
+    // } \
+    // template <typename _StreamType>\
+    // static inline lexeme *match_impl(_StreamType &_varname_, int _trace_ = 0, const char *_rule_name_ = nullptr, bool _internal_ = false)
+
+    // #define internal_match_method(_varname_)\
+    // template <typename _StreamType>\
+    // static inline lexeme *match(_StreamType &_stream_, int _trace_ = 0, const char *_rule_name_ = nullptr) \
+    // { \
+    //     auto l = match_impl(_stream_, _trace_, _rule_name_, true); \
+    //     return l; \
+    // } \
+    // template <typename _StreamType>\
+    // static inline lexeme *match_impl(_StreamType &_varname_, int _trace_ = 0, const char *_rule_name_ = nullptr, bool _internal_ = true)
+
+    // #define sub_match(_T0_, _varname_) _T0_::match(_varname_, _trace_ ? _trace_ + (_internal_ ? 0 : 1) : 0, _rule_name_)
+
+
+    template<typename T>
+    struct is_std_array : std::false_type {};
+
+    template<typename T, std::size_t N>
+    struct is_std_array<std::array<T, N>> : std::true_type {};
+
+    template<typename T, std::size_t N>
+    struct is_std_array<const std::array<T, N>> : std::true_type {};
+
+    //is_std_array_v
+    template<typename T>
+    inline constexpr bool is_std_array_v = is_std_array<T>::value;
+
+//-------------------------------------------------------------------------------------------------
+//inside the implementation: ast_sub_match(T, _stream_)
+
+
+//use:
+//template <x,y,z>
+//ast_define_rule(_NAME_) {
+//ast_base_rule = seq2<x,y>;
+//ast_set_signature<x,y,z>;
+//optionally: ast_set_internal
+//---one of:
+//ast_alias_implementation
+//ast_decorator_implementation(l) {×××}
+//aet_primary_implementation(s) {×××}
+//};
+
+//submatch calls T::match
+//in alias, T::match does all
+//in decorator, T::match calls l = T::match, then l = l->decorate(l) if l is not nullptr, then return l
+//in primary, T::match sets up and calls match_impl
+
+    template<size_t _Nm>
+    constexpr auto ast_str_remove_last_char(const char (&__a)[_Nm]) -> std::array<char, _Nm - 1>
+    {
+        std::array<char, _Nm - 1> __r{};
+        for (size_t __i = 0; __i < _Nm - 1; ++__i)
+        {
+            __r[__i] = __a[__i];
+        }
+        return __r;
+    }
+
+    #define ast_define_rule(_NAME_) class _NAME_ : public rule_base
+    // #define ast_internal_rule(_NAME_) class _NAME_ : public rule_base
+    #define ast_internal_rule(_NAME_) class _NAME_ : public rule_base_internal
+    #define ast_base_rule using _ast_rule_base_
+    #define ast_set_signature using signature = signing::sign
+    #define ast_str(_STR_) std::to_array(_STR_)
+    #define ast_str_arr(_STR_) ast::_h::ast_str_remove_last_char(_STR_)
+    
+    #define ast_sig(_TYPE_) signing::get_from<_TYPE_>{}
+    #define ast_base_signature _ast_rule_base_::signature
+    #define sub_match(_T0_, _varname_) _T0_::match(_varname_, _trace_ ? _trace_ + (_ast_internal_rule_ ? 0 : 1) : 0)
+    #define ast_variant_implementation \
+        static const signing::signature_id static_get_typeid() { return &signature::print; } \
+        virtual const signing::signature_id get_typeid() const override { return static_get_typeid(); } \
+        virtual bool is_same_as(signing::signature_id s) const override { return static_get_typeid() == s; }
+    #define ast_variant_inherit(_BASE_) \
+        static const signing::signature_id static_get_typeid() { return &signature::print; } \
+        virtual const signing::signature_id get_typeid() const override { return static_get_typeid(); } \
+        virtual bool is_same_as(signing::signature_id s) const override { return static_get_typeid() == s || _BASE_::is_same_as(s); }
+
+    #define ast_alias_implementation \
+    ast_variant_inherit(rule_base) \
     template <typename _StreamType>\
-    static inline lexeme *match(_StreamType &_stream_, int _trace_ = 0, const char *_rule_name_ = nullptr) \
+    static inline lexeme *match(_StreamType &_stream_, int _trace_ = 0) \
     { \
-        if (_trace_) \
+        if constexpr (_ast_internal_rule_) \
         { \
-            print_ind(_trace_, "");\
-            lex_o<object_S>(*_stream_).printvalue();\
-            printf(" (%s) %s\n", _rule_name_ ? _rule_name_ : "", signature.data());\
+            return _ast_rule_base_::match(_stream_, _trace_); \
         } \
-        auto l = match_impl(_stream_, _trace_, _rule_name_); \
-        if (_trace_) \
+        else \
         { \
-            print_ind(_trace_, "");\
-            lex_o<object_S>(*_stream_).printvalue();\
-            printf("(%s) %s: %s\n", _rule_name_ ? _rule_name_ : "", signature.data(), l ? "PASS" : "FAIL");\
+            if (_trace_) \
+            { \
+                print_ind(_trace_, "");\
+                lex_o<object_S>(*_stream_).printvalue();\
+                printf(" (");\
+                signature::print();\
+                printf(") : ");\
+                _ast_rule_base_::signature::print();\
+                printf("\n"); \
+            } \
+            auto l = _ast_rule_base_::match(_stream_, _trace_ ? _trace_ +  1 : 0); \
+            if (_trace_) \
+            { \
+                print_ind(_trace_, "");\
+                lex_o<object_S>(*_stream_).printvalue();\
+                printf(" (");\
+                signature::print();\
+                printf(") : %s\n", l ? "PASS" : "FAIL");\
+            } \
+            if (l) \
+            { \
+                l->rule = static_get_typeid();\
+            } \
+            return l; \
         } \
-        return l; \
+    } 
+
+    #define ast_decorator_implementation(_L_) \
+    ast_variant_inherit(rule_base) \
+    template <typename _StreamType>\
+    static inline lexeme *match(_StreamType &_stream_, int _trace_ = 0) \
+    { \
+        if constexpr (_ast_internal_rule_) \
+        { \
+            auto l = _ast_rule_base_::match(_stream_, _trace_); \
+            if (l) l = decorate(l); \
+            return l; \
+        } \
+        else \
+        { \
+            if (_trace_) \
+            { \
+                print_ind(_trace_, "");\
+                lex_o<object_S>(*_stream_).printvalue();\
+                printf(" (");\
+                signature::print();\
+                printf(") : ");\
+                _ast_rule_base_::signature::print();\
+                printf("\n"); \
+            } \
+            auto l = _ast_rule_base_::match(_stream_, _trace_ ? _trace_ +  1 : 0); \
+            if (l) l = decorate(l); \
+            if (_trace_) \
+            { \
+                print_ind(_trace_, "");\
+                lex_o<object_S>(*_stream_).printvalue();\
+                printf(" (");\
+                signature::print();\
+                printf(") : %s\n", l ? "PASS" : "FAIL");\
+            } \
+            if (l) \
+            { \
+                l->rule = static_get_typeid();\
+            } \
+            return l; \
+        } \
+    } \
+    static inline lexeme *decorate(lexeme *_L_)
+
+    #define ast_primary_implementation(_S_) \
+    ast_variant_inherit(rule_base) \
+    template <typename _StreamType>\
+    static inline lexeme *match(_StreamType &_stream_, int _trace_ = 0) \
+    { \
+        if constexpr (_ast_internal_rule_) \
+        { \
+            return match_impl(_stream_, _trace_); \
+        } \
+        else \
+        { \
+            if (_trace_) \
+            { \
+                print_ind(_trace_, "");\
+                lex_o<object_S>(*_stream_).printvalue();\
+                printf(" (");\
+                signature::print();\
+                printf(") \n");\
+            } \
+            auto l = match_impl(_stream_, _trace_); \
+            if (_trace_) \
+            { \
+                print_ind(_trace_, "");\
+                lex_o<object_S>(*_stream_).printvalue();\
+                printf(" (");\
+                signature::print();\
+                printf(") : %s\n", l ? "PASS" : "FAIL");\
+            } \
+            if (l) \
+            { \
+                l->rule = static_get_typeid();\
+            } \
+            return l; \
+        } \
     } \
     template <typename _StreamType>\
-    static inline lexeme *match_impl(_StreamType &_varname_, int _trace_ = 0, const char *_rule_name_ = nullptr)
-    //TODO: separate match and match impl, and add tracing and adding the rule name in match
-    //change the parameters to stream s, bool trace and const char* rule_name
+    static inline lexeme *match_impl(_StreamType &_S_, int _trace_)
 
-    #define sub_match(_T0_, _varname_) _T0_::match(_varname_, _trace_ ? _trace_ + 1 : 0, _rule_name_)
-    
-//-------------------------------------------------------------------------------------------------
+    #define ast_internal_alias(_NAME_) \
+    ast_internal_rule(_NAME_) { \
+    public: \
+    ast_set_signature<ast_str(#_NAME_)>; \
+    ast_base_rule
+
+    #define ast_alias(_NAME_) \
+    ast_define_rule(_NAME_) { \
+    public: \
+    ast_set_signature<ast_str(#_NAME_)>; \
+    ast_base_rule
+
+    #define ast_alias_end \
+    ast_alias_implementation \
+    }
+
+    #define ast_regex_rule(_NAME_, _PATTERN_) ast_alias(_NAME_) = regex<ast_str(_PATTERN_)>; ast_alias_end;
+    #define ast_internal_regex(_NAME_, _PATTERN_) ast_internal_alias(_NAME_) = regex<ast_str(_PATTERN_)>; ast_alias_end;
+    #define ast_string_rule(_NAME_, _STR_) ast_alias(_NAME_) = token_string<ast_str_arr(_STR_)>; ast_alias_end;
+    #define ast_internal_string(_NAME_, _STR_) ast_internal_alias(_NAME_) = token_string<ast_str_arr(_STR_)>; ast_alias_end;
 }

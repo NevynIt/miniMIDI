@@ -7,9 +7,10 @@ namespace variant
     class variant
     {
     public:
-        static constexpr auto signature = STR2A("variant");
-        virtual const char *get_signature() const { return signature.data(); }
-        virtual bool is(const char *s) const { return get_signature() == s; }
+        using signature = signing::sign<signing::cs("variant")>;
+        static const signing::signature_id static_get_typeid() { return &signature::print; }
+        virtual const signing::signature_id get_typeid() const { return static_get_typeid(); }
+        virtual bool is_same_as(signing::signature_id s) const { return get_typeid() == s; }
         virtual ~variant() {}
 
         template<typename T>
@@ -31,7 +32,7 @@ namespace variant
         template<typename T>
         bool is() const
         {
-            return this->is(T::signature.data());
+            return this->is_same_as(&T::signature::print);
         }
     };
 }
