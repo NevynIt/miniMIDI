@@ -4,5 +4,6 @@
 #include <cstring>
 #include <type_traits>
 #include "../uti/signature.h"
+#include "../uti/variant.h"
 #include <cstdarg>
 #include <vector>

@@ -7,11 +7,13 @@
 namespace dsp
 {
     template<typename opX = op0>
-    class logic_base
+    class logic_base : public uti::variant
     {
     public:
         logic_base() = default;
-        static constexpr auto signature = uti::STR2A("impl_logic<") + opX::signature + uti::STR2A(">");
+        set_signature<uti::str("logic_base"), sig_of(opX)>;
+        variant_implementation
+        
         static constexpr auto op_count = opX::op_count;
 
         inline void setup() // metaprogramming virtual function - "overload" in implementation

@@ -9,7 +9,8 @@ namespace dsp
     class RBJFilterWave : public Base, public RBJ
     {
     public:
-        static constexpr auto signature = uti::STR2A("RBJFilterWave<") + Base::signature + uti::STR2A(">");
+        set_signature<uti::str("RBJFilterWave"), sig_of(Base)>;
+        variant_inherit(Base)
         WAVE_OPERATOR_OVERRIDE
         RBJFilterWave() = default;
 

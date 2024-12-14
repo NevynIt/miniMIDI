@@ -5,11 +5,12 @@ namespace dsp
 {
     extern wave wave_dump;
 
-    class op0
+    class op0 : public uti::variant
     {
     public:
         static constexpr uint8_t op_count = 0;
-        static constexpr auto signature = uti::STR2A("<>");
+        set_signature<uti::str("op0")>;
+        variant_inherit(uti::variant)
         wave* get_wave(uint8_t index) { return nullptr; }
 
         template<int N>
@@ -17,12 +18,13 @@ namespace dsp
     };
 
     template <typename Base1 = wave>
-    class op1
+    class op1 : public uti::variant
     {
     public:
         static constexpr uint8_t op_count = 1;
         Base1 o1;
-        static constexpr auto signature = uti::STR2A("<") + Base1::signature + uti::STR2A(">");
+        set_signature<uti::str("op1"), sig_of(Base1)>;
+        variant_inherit(uti::variant)
         wave* get_wave(uint8_t index) { return index == 0 ? &o1 : nullptr; }
 
         template<int N>
@@ -30,13 +32,14 @@ namespace dsp
     };
 
     template <typename Base1 = wave, typename Base2 = wave>
-    class op2
+    class op2 : public uti::variant
     {
     public:
         static constexpr uint8_t op_count = 2;
         Base1 o1;
         Base2 o2;
-        static constexpr auto signature = uti::STR2A("<") + Base1::signature + uti::STR2A(", ") + Base2::signature + uti::STR2A(">");
+        set_signature<uti::str("op2"), sig_of(Base1), sig_of(Base2)>;
+        variant_inherit(uti::variant)
         wave* get_wave(uint8_t index) { return index == 0 ? &o1 : (index == 1 ? &o2 : nullptr); }
 
         template<int N>
@@ -44,14 +47,15 @@ namespace dsp
     };
 
     template <typename Base1 = wave, typename Base2 = wave, typename Base3 = wave>
-    class op3
+    class op3 : public uti::variant
     {
     public:
         static constexpr uint8_t op_count = 3;
         Base1 o1;
         Base2 o2;
         Base3 o3;
-        static constexpr auto signature = uti::STR2A("<") + Base1::signature + uti::STR2A(", ") + Base2::signature + uti::STR2A(", ") + Base3::signature + uti::STR2A(">");
+        set_signature<uti::str("op3"), sig_of(Base1), sig_of(Base2), sig_of(Base3)>;
+        variant_inherit(uti::variant)
         wave* get_wave(uint8_t index) { return index == 0 ? &o1 : (index == 1 ? &o2 : (index == 2 ? &o3 : nullptr)); }
 
         template<int N>
@@ -59,7 +63,7 @@ namespace dsp
     };
 
     template <typename Base1 = wave, typename Base2 = wave, typename Base3 = wave, typename Base4 = wave>
-    class op4
+    class op4 : public uti::variant
     {
     public:
         static constexpr uint8_t op_count = 4;
@@ -67,7 +71,8 @@ namespace dsp
         Base2 o2;
         Base3 o3;
         Base4 o4;
-        static constexpr auto signature = uti::STR2A("<") + Base1::signature + uti::STR2A(", ") + Base2::signature + uti::STR2A(", ") + Base3::signature + uti::STR2A(", ") + Base4::signature + uti::STR2A(">");
+        set_signature<uti::str("op4"), sig_of(Base1), sig_of(Base2), sig_of(Base3), sig_of(Base4)>;
+        variant_inherit(uti::variant)
         wave* get_wave(uint8_t index) { return index == 0 ? &o1 : (index == 1 ? &o2 : (index == 2 ? &o3 : (index == 3 ? &o4 : nullptr))); }
 
         template<int N>
@@ -75,7 +80,7 @@ namespace dsp
     };
 
     template <typename Base1 = wave, typename Base2 = wave, typename Base3 = wave, typename Base4 = wave, typename Base5 = wave>
-    class op5
+    class op5 : public uti::variant
     {
     public:
         static constexpr uint8_t op_count = 5;
@@ -84,7 +89,8 @@ namespace dsp
         Base3 o3;
         Base4 o4;
         Base5 o5;
-        static constexpr auto signature = uti::STR2A("<") + Base1::signature + uti::STR2A(", ") + Base2::signature + uti::STR2A(", ") + Base3::signature + uti::STR2A(", ") + Base4::signature + uti::STR2A(", ") + Base5::signature + uti::STR2A(">");
+        set_signature<uti::str("op5"), sig_of(Base1), sig_of(Base2), sig_of(Base3), sig_of(Base4), sig_of(Base5)>;
+        variant_inherit(uti::variant)
         wave* get_wave(uint8_t index) { return index == 0 ? &o1 : (index == 1 ? &o2 : (index == 2 ? &o3 : (index == 3 ? &o4 : (index == 4 ? &o5 : nullptr)))); }
 
         template<int N>
@@ -92,7 +98,7 @@ namespace dsp
     };
 
     template <typename Base1 = wave, typename Base2 = wave, typename Base3 = wave, typename Base4 = wave, typename Base5 = wave, typename Base6 = wave>
-    class op6
+    class op6 : public uti::variant
     {
     public:
         static constexpr uint8_t op_count = 6;
@@ -102,7 +108,8 @@ namespace dsp
         Base4 o4;
         Base5 o5;
         Base6 o6;
-        static constexpr auto signature = uti::STR2A("<") + Base1::signature + uti::STR2A(", ") + Base2::signature + uti::STR2A(", ") + Base3::signature + uti::STR2A(", ") + Base4::signature + uti::STR2A(", ") + Base5::signature + uti::STR2A(", ") + Base6::signature + uti::STR2A(">");
+        set_signature<uti::str("op6"), sig_of(Base1), sig_of(Base2), sig_of(Base3), sig_of(Base4), sig_of(Base5), sig_of(Base6)>;
+        variant_inherit(uti::variant)
         wave* get_wave(uint8_t index) { return index == 0 ? &o1 : (index == 1 ? &o2 : (index == 2 ? &o3 : (index == 3 ? &o4 : (index == 4 ? &o5 : (index == 5 ? &o6 : nullptr))))); }
 
         template<int N>
@@ -110,7 +117,7 @@ namespace dsp
     };
 
     template <typename Base1 = wave, typename Base2 = wave, typename Base3 = wave, typename Base4 = wave, typename Base5 = wave, typename Base6 = wave, typename Base7 = wave>
-    class op7
+    class op7 : public uti::variant
     {
     public:
         static constexpr uint8_t op_count = 7;
@@ -121,7 +128,8 @@ namespace dsp
         Base5 o5;
         Base6 o6;
         Base7 o7;
-        static constexpr auto signature = uti::STR2A("<") + Base1::signature + uti::STR2A(", ") + Base2::signature + uti::STR2A(", ") + Base3::signature + uti::STR2A(", ") + Base4::signature + uti::STR2A(", ") + Base5::signature + uti::STR2A(", ") + Base6::signature + uti::STR2A(", ") + Base7::signature + uti::STR2A(">");
+        set_signature<uti::str("op7"), sig_of(Base1), sig_of(Base2), sig_of(Base3), sig_of(Base4), sig_of(Base5), sig_of(Base6), sig_of(Base7)>;
+        variant_inherit(uti::variant)
         wave* get_wave(uint8_t index) { return index == 0 ? &o1 : (index == 1 ? &o2 : (index == 2 ? &o3 : (index == 3 ? &o4 : (index == 4 ? &o5 : (index == 5 ? &o6 : (index == 6 ? &o7 : nullptr)))))); }
 
         template<int N>
@@ -129,7 +137,7 @@ namespace dsp
     };
 
     template <typename Base1 = wave, typename Base2 = wave, typename Base3 = wave, typename Base4 = wave, typename Base5 = wave, typename Base6 = wave, typename Base7 = wave, typename Base8 = wave>
-    class op8
+    class op8 : public uti::variant
     {
     public:
         static constexpr uint8_t op_count = 8;
@@ -141,7 +149,8 @@ namespace dsp
         Base6 o6;
         Base7 o7;
         Base8 o8;
-        static constexpr auto signature = uti::STR2A("<") + Base1::signature + uti::STR2A(", ") + Base2::signature + uti::STR2A(", ") + Base3::signature + uti::STR2A(", ") + Base4::signature + uti::STR2A(", ") + Base5::signature + uti::STR2A(", ") + Base6::signature + uti::STR2A(", ") + Base7::signature + uti::STR2A(", ") + Base8::signature + uti::STR2A(">");
+        set_signature<uti::str("op8"), sig_of(Base1), sig_of(Base2), sig_of(Base3), sig_of(Base4), sig_of(Base5), sig_of(Base6), sig_of(Base7), sig_of(Base8)>;
+        variant_inherit(uti::variant)
         wave* get_wave(uint8_t index) { return index == 0 ? &o1 : (index == 1 ? &o2 : (index == 2 ? &o3 : (index == 3 ? &o4 : (index == 4 ? &o5 : (index == 5 ? &o6 : (index == 6 ? &o7 : (index == 7 ? &o8 : nullptr))))))); }
 
         template<int N>
@@ -149,7 +158,7 @@ namespace dsp
     };
 
     template <typename Base1 = wave, typename Base2 = wave, typename Base3 = wave, typename Base4 = wave, typename Base5 = wave, typename Base6 = wave, typename Base7 = wave, typename Base8 = wave, typename Base9 = wave>
-    class op9
+    class op9 : public uti::variant
     {
     public:
         static constexpr uint8_t op_count = 9;
@@ -162,7 +171,8 @@ namespace dsp
         Base7 o7;
         Base8 o8;
         Base9 o9;
-        static constexpr auto signature = uti::STR2A("<") + Base1::signature + uti::STR2A(", ") + Base2::signature + uti::STR2A(", ") + Base3::signature + uti::STR2A(", ") + Base4::signature + uti::STR2A(", ") + Base5::signature + uti::STR2A(", ") + Base6::signature + uti::STR2A(", ") + Base7::signature + uti::STR2A(", ") + Base8::signature + uti::STR2A(", ") + Base9::signature + uti::STR2A(">");
+        set_signature<uti::str("op9"), sig_of(Base1), sig_of(Base2), sig_of(Base3), sig_of(Base4), sig_of(Base5), sig_of(Base6), sig_of(Base7), sig_of(Base8), sig_of(Base9)>;
+        variant_inherit(uti::variant)
         wave* get_wave(uint8_t index) { return index == 0 ? &o1 : (index == 1 ? &o2 : (index == 2 ? &o3 : (index == 3 ? &o4 : (index == 4 ? &o5 : (index == 5 ? &o6 : (index == 6 ? &o7 : (index == 7 ? &o8 : (index == 8 ? &o9 : nullptr)))))))); }
 
         template<int N>
@@ -170,7 +180,7 @@ namespace dsp
     };
 
     template <typename Base1 = wave, typename Base2 = wave, typename Base3 = wave, typename Base4 = wave, typename Base5 = wave, typename Base6 = wave, typename Base7 = wave, typename Base8 = wave, typename Base9 = wave, typename Base10 = wave>
-    class op10
+    class op10 : public uti::variant
     {
     public:
         static constexpr uint8_t op_count = 10;
@@ -184,7 +194,8 @@ namespace dsp
         Base8 o8;
         Base9 o9;
         Base10 o10;
-        static constexpr auto signature = uti::STR2A("<") + Base1::signature + uti::STR2A(", ") + Base2::signature + uti::STR2A(", ") + Base3::signature + uti::STR2A(", ") + Base4::signature + uti::STR2A(", ") + Base5::signature + uti::STR2A(", ") + Base6::signature + uti::STR2A(", ") + Base7::signature + uti::STR2A(", ") + Base8::signature + uti::STR2A(", ") + Base9::signature + uti::STR2A(", ") + Base10::signature + uti::STR2A(">");
+        set_signature<uti::str("op10"), sig_of(Base1), sig_of(Base2), sig_of(Base3), sig_of(Base4), sig_of(Base5), sig_of(Base6), sig_of(Base7), sig_of(Base8), sig_of(Base9), sig_of(Base10)>;
+        variant_inherit(uti::variant)
         wave* get_wave(uint8_t index) { return index == 0 ? &o1 : (index == 1 ? &o2 : (index == 2 ? &o3 : (index == 3 ? &o4 : (index == 4 ? &o5 : (index == 5 ? &o6 : (index == 6 ? &o7 : (index == 7 ? &o8 : (index == 8 ? &o9 : (index == 9 ? &o10 : nullptr))))))))); }
 
         template<int N>
@@ -192,7 +203,7 @@ namespace dsp
     };
 
     template <typename Base1 = wave, typename Base2 = wave, typename Base3 = wave, typename Base4 = wave, typename Base5 = wave, typename Base6 = wave, typename Base7 = wave, typename Base8 = wave, typename Base9 = wave, typename Base10 = wave, typename Base11 = wave>
-    class op11
+    class op11 : public uti::variant
     {
     public:
         static constexpr uint8_t op_count = 11;
@@ -207,7 +218,8 @@ namespace dsp
         Base9 o9;
         Base10 o10;
         Base11 o11;
-        static constexpr auto signature = uti::STR2A("<") + Base1::signature + uti::STR2A(", ") + Base2::signature + uti::STR2A(", ") + Base3::signature + uti::STR2A(", ") + Base4::signature + uti::STR2A(", ") + Base5::signature + uti::STR2A(", ") + Base6::signature + uti::STR2A(", ") + Base7::signature + uti::STR2A(", ") + Base8::signature + uti::STR2A(", ") + Base9::signature + uti::STR2A(", ") + Base10::signature + uti::STR2A(", ") + Base11::signature + uti::STR2A(">");
+        set_signature<uti::str("op11"), sig_of(Base1), sig_of(Base2), sig_of(Base3), sig_of(Base4), sig_of(Base5), sig_of(Base6), sig_of(Base7), sig_of(Base8), sig_of(Base9), sig_of(Base10), sig_of(Base11)>;
+        variant_inherit(uti::variant)
         wave* get_wave(uint8_t index) { return index == 0 ? &o1 : (index == 1 ? &o2 : (index == 2 ? &o3 : (index == 3 ? &o4 : (index == 4 ? &o5 : (index == 5 ? &o6 : (index == 6 ? &o7 : (index == 7 ? &o8 : (index == 8 ? &o9 : (index == 9 ? &o10 : (index == 10 ? &o11 : nullptr)))))))))); }
 
         template<int N>
@@ -215,7 +227,7 @@ namespace dsp
     };
 
     template <typename Base1 = wave, typename Base2 = wave, typename Base3 = wave, typename Base4 = wave, typename Base5 = wave, typename Base6 = wave, typename Base7 = wave, typename Base8 = wave, typename Base9 = wave, typename Base10 = wave, typename Base11 = wave, typename Base12 = wave>
-    class op12
+    class op12 : public uti::variant
     {
     public:
         static constexpr uint8_t op_count = 12;
@@ -231,7 +243,8 @@ namespace dsp
         Base10 o10;
         Base11 o11;
         Base12 o12;
-        static constexpr auto signature = uti::STR2A("<") + Base1::signature + uti::STR2A(", ") + Base2::signature + uti::STR2A(", ") + Base3::signature + uti::STR2A(", ") + Base4::signature + uti::STR2A(", ") + Base5::signature + uti::STR2A(", ") + Base6::signature + uti::STR2A(", ") + Base7::signature + uti::STR2A(", ") + Base8::signature + uti::STR2A(", ") + Base9::signature + uti::STR2A(", ") + Base10::signature + uti::STR2A(", ") + Base11::signature + uti::STR2A(", ") + Base12::signature + uti::STR2A(">");
+        set_signature<uti::str("op12"), sig_of(Base1), sig_of(Base2), sig_of(Base3), sig_of(Base4), sig_of(Base5), sig_of(Base6), sig_of(Base7), sig_of(Base8), sig_of(Base9), sig_of(Base10), sig_of(Base11), sig_of(Base12)>;
+        variant_inherit(uti::variant)
         wave* get_wave(uint8_t index) { return index == 0 ? &o1 : (index == 1 ? &o2 : (index == 2 ? &o3 : (index == 3 ? &o4 : (index == 4 ? &o5 : (index == 5 ? &o6 : (index == 6 ? &o7 : (index == 7 ? &o8 : (index == 8 ? &o9 : (index == 9 ? &o10 : (index == 10 ? &o11 : (index == 11 ? &o12 : nullptr))))))))))); }
 
         template<int N>
@@ -239,7 +252,7 @@ namespace dsp
     };
 
     template <typename Base1 = wave, typename Base2 = wave, typename Base3 = wave, typename Base4 = wave, typename Base5 = wave, typename Base6 = wave, typename Base7 = wave, typename Base8 = wave, typename Base9 = wave, typename Base10 = wave, typename Base11 = wave, typename Base12 = wave, typename Base13 = wave>
-    class op13
+    class op13 : public uti::variant
     {
     public:
         static constexpr uint8_t op_count = 13;
@@ -256,7 +269,8 @@ namespace dsp
         Base11 o11;
         Base12 o12;
         Base13 o13;
-        static constexpr auto signature = uti::STR2A("<") + Base1::signature + uti::STR2A(", ") + Base2::signature + uti::STR2A(", ") + Base3::signature + uti::STR2A(", ") + Base4::signature + uti::STR2A(", ") + Base5::signature + uti::STR2A(", ") + Base6::signature + uti::STR2A(", ") + Base7::signature + uti::STR2A(", ") + Base8::signature + uti::STR2A(", ") + Base9::signature + uti::STR2A(", ") + Base10::signature + uti::STR2A(", ") + Base11::signature + uti::STR2A(", ") + Base12::signature + uti::STR2A(", ") + Base13::signature + uti::STR2A(">");
+        set_signature<uti::str("op13"), sig_of(Base1), sig_of(Base2), sig_of(Base3), sig_of(Base4), sig_of(Base5), sig_of(Base6), sig_of(Base7), sig_of(Base8), sig_of(Base9), sig_of(Base10), sig_of(Base11), sig_of(Base12), sig_of(Base13)>;
+        variant_inherit(uti::variant)
         wave* get_wave(uint8_t index) { return index == 0 ? &o1 : (index == 1 ? &o2 : (index == 2 ? &o3 : (index == 3 ? &o4 : (index == 4 ? &o5 : (index == 5 ? &o6 : (index == 6 ? &o7 : (index == 7 ? &o8 : (index == 8 ? &o9 : (index == 9 ? &o10 : (index == 10 ? &o11 : (index == 11 ? &o12 : (index == 12 ? &o13 : nullptr)))))))))))); }
 
         template<int N>
@@ -264,7 +278,7 @@ namespace dsp
     };
 
     template <typename Base1 = wave, typename Base2 = wave, typename Base3 = wave, typename Base4 = wave, typename Base5 = wave, typename Base6 = wave, typename Base7 = wave, typename Base8 = wave, typename Base9 = wave, typename Base10 = wave, typename Base11 = wave, typename Base12 = wave, typename Base13 = wave, typename Base14 = wave>
-    class op14
+    class op14 : public uti::variant
     {
     public:
         static constexpr uint8_t op_count = 14;
@@ -282,7 +296,8 @@ namespace dsp
         Base12 o12;
         Base13 o13;
         Base14 o14;
-        static constexpr auto signature = uti::STR2A("<") + Base1::signature + uti::STR2A(", ") + Base2::signature + uti::STR2A(", ") + Base3::signature + uti::STR2A(", ") + Base4::signature + uti::STR2A(", ") + Base5::signature + uti::STR2A(", ") + Base6::signature + uti::STR2A(", ") + Base7::signature + uti::STR2A(", ") + Base8::signature + uti::STR2A(", ") + Base9::signature + uti::STR2A(", ") + Base10::signature + uti::STR2A(", ") + Base11::signature + uti::STR2A(", ") + Base12::signature + uti::STR2A(", ") + Base13::signature + uti::STR2A(", ") + Base14::signature + uti::STR2A(">");
+        set_signature<uti::str("op14"), sig_of(Base1), sig_of(Base2), sig_of(Base3), sig_of(Base4), sig_of(Base5), sig_of(Base6), sig_of(Base7), sig_of(Base8), sig_of(Base9), sig_of(Base10), sig_of(Base11), sig_of(Base12), sig_of(Base13), sig_of(Base14)>;
+        variant_inherit(uti::variant)
         wave* get_wave(uint8_t index) { return index == 0 ? &o1 : (index == 1 ? &o2 : (index == 2 ? &o3 : (index == 3 ? &o4 : (index == 4 ? &o5 : (index == 5 ? &o6 : (index == 6 ? &o7 : (index == 7 ? &o8 : (index == 8 ? &o9 : (index == 9 ? &o10 : (index == 10 ? &o11 : (index == 11 ? &o12 : (index == 12 ? &o13 : (index == 13 ? &o14 : nullptr))))))))))))); }
 
         template<int N>
@@ -290,7 +305,7 @@ namespace dsp
     };
 
     template <typename Base1 = wave, typename Base2 = wave, typename Base3 = wave, typename Base4 = wave, typename Base5 = wave, typename Base6 = wave, typename Base7 = wave, typename Base8 = wave, typename Base9 = wave, typename Base10 = wave, typename Base11 = wave, typename Base12 = wave, typename Base13 = wave, typename Base14 = wave, typename Base15 = wave>
-    class op15
+    class op15 : public uti::variant
     {
     public:
         static constexpr uint8_t op_count = 15;
@@ -309,7 +324,8 @@ namespace dsp
         Base13 o13;
         Base14 o14;
         Base15 o15;
-        static constexpr auto signature = uti::STR2A("<") + Base1::signature + uti::STR2A(", ") + Base2::signature + uti::STR2A(", ") + Base3::signature + uti::STR2A(", ") + Base4::signature + uti::STR2A(", ") + Base5::signature + uti::STR2A(", ") + Base6::signature + uti::STR2A(", ") + Base7::signature + uti::STR2A(", ") + Base8::signature + uti::STR2A(", ") + Base9::signature + uti::STR2A(", ") + Base10::signature + uti::STR2A(", ") + Base11::signature + uti::STR2A(", ") + Base12::signature + uti::STR2A(", ") + Base13::signature + uti::STR2A(", ") + Base14::signature + uti::STR2A(", ") + Base15::signature + uti::STR2A(">");
+        set_signature<uti::str("op15"), sig_of(Base1), sig_of(Base2), sig_of(Base3), sig_of(Base4), sig_of(Base5), sig_of(Base6), sig_of(Base7), sig_of(Base8), sig_of(Base9), sig_of(Base10), sig_of(Base11), sig_of(Base12), sig_of(Base13), sig_of(Base14), sig_of(Base15)>;
+        variant_inherit(uti::variant)
         wave* get_wave(uint8_t index) { return index == 0 ? &o1 : (index == 1 ? &o2 : (index == 2 ? &o3 : (index == 3 ? &o4 : (index == 4 ? &o5 : (index == 5 ? &o6 : (index == 6 ? &o7 : (index == 7 ? &o8 : (index == 8 ? &o9 : (index == 9 ? &o10 : (index == 10 ? &o11 : (index == 11 ? &o12 : (index == 12 ? &o13 : (index == 13 ? &o14 : (index == 14 ? &o15 : nullptr)))))))))))))); }
 
         template<int N>
@@ -317,7 +333,7 @@ namespace dsp
     };
 
     template <typename Base1 = wave, typename Base2 = wave, typename Base3 = wave, typename Base4 = wave, typename Base5 = wave, typename Base6 = wave, typename Base7 = wave, typename Base8 = wave, typename Base9 = wave, typename Base10 = wave, typename Base11 = wave, typename Base12 = wave, typename Base13 = wave, typename Base14 = wave, typename Base15 = wave, typename Base16 = wave>
-    class op16
+    class op16 : public uti::variant
     {
     public:
         static constexpr uint8_t op_count = 16;
@@ -337,7 +353,8 @@ namespace dsp
         Base14 o14;
         Base15 o15;
         Base16 o16;
-        static constexpr auto signature = uti::STR2A("<") + Base1::signature + uti::STR2A(", ") + Base2::signature + uti::STR2A(", ") + Base3::signature + uti::STR2A(", ") + Base4::signature + uti::STR2A(", ") + Base5::signature + uti::STR2A(", ") + Base6::signature + uti::STR2A(", ") + Base7::signature + uti::STR2A(", ") + Base8::signature + uti::STR2A(", ") + Base9::signature + uti::STR2A(", ") + Base10::signature + uti::STR2A(", ") + Base11::signature + uti::STR2A(", ") + Base12::signature + uti::STR2A(", ") + Base13::signature + uti::STR2A(", ") + Base14::signature + uti::STR2A(", ") + Base15::signature + uti::STR2A(", ") + Base16::signature + uti::STR2A(">");
+        set_signature<uti::str("op16"), sig_of(Base1), sig_of(Base2), sig_of(Base3), sig_of(Base4), sig_of(Base5), sig_of(Base6), sig_of(Base7), sig_of(Base8), sig_of(Base9), sig_of(Base10), sig_of(Base11), sig_of(Base12), sig_of(Base13), sig_of(Base14), sig_of(Base15), sig_of(Base16)>;
+        variant_inherit(uti::variant)
         wave* get_wave(uint8_t index) { return index == 0 ? &o1 : (index == 1 ? &o2 : (index == 2 ? &o3 : (index == 3 ? &o4 : (index == 4 ? &o5 : (index == 5 ? &o6 : (index == 6 ? &o7 : (index == 7 ? &o8 : (index == 8 ? &o9 : (index == 9 ? &o10 : (index == 10 ? &o11 : (index == 11 ? &o12 : (index == 12 ? &o13 : (index == 13 ? &o14 : (index == 14 ? &o15 : (index == 15 ? &o16 : nullptr))))))))))))))); }
 
         template<int N>

@@ -12,41 +12,6 @@ namespace ast::_f
     using namespace ast::_b;
     using namespace ast::_h;
 
-    // class dec_base
-    // {
-    // public:
-    //     //called before attempting the match
-    //     //return false to skip the match (no_match will not be called in this case)
-    //     //do any preparation here
-    //     pre_match_method(s)
-    //     {
-    //         return true;
-    //     }
-
-    //     //called to match the input, when the object is used as a rule, return nullptr to indicate no match
-    //     match_method(s)
-    //     {
-    //         return nullptr;
-    //     }
-
-    //     //called after a successful match
-    //     //do any post processing and cleanup here
-    //     //return the lexeme to be used in the parent rule
-    //     post_match_method(l)
-    //     {
-    //         return l;
-    //     }
-
-    //     //called after a failed match
-    //     //do any cleanup here
-    //     no_match_method(s)
-    //     {
-    //         //no op
-    //     }
-    // };
-
-    // using noop = dec_base;
-
     static inline lexeme *select_decorator(lexeme *l, int n)
     {
         if (!l)
@@ -84,7 +49,7 @@ namespace ast::_f
     {
     public:
         ast_base_rule = T0;
-        ast_set_signature<ast_str("select"), ast_sig(T0), n>;
+        set_signature<ast_str("select"), sig_of(T0), n>;
         ast_decorator_implementation(l)
         {
             return select_decorator(l, n);
@@ -123,7 +88,7 @@ namespace ast::_f
     {
     public:
         ast_base_rule = T0;
-        ast_set_signature<ast_str("concat"), ast_sig(T0), ast_sig(O)>;
+        set_signature<ast_str("concat"), sig_of(T0), sig_of(O)>;
         ast_decorator_implementation(l)
         {
             return concat_decorator<O>(l);
@@ -133,7 +98,7 @@ namespace ast::_f
     ast_internal_rule(fail_always)
     {
     public:
-        ast_set_signature<ast_str("fail_always")>;
+        set_signature<ast_str("fail_always")>;
         ast_primary_implementation(s)
         {
             return nullptr;
@@ -143,7 +108,7 @@ namespace ast::_f
     ast_internal_rule(pass_always)
     {
     public:
-        ast_set_signature<ast_str("pass_always")>;
+        set_signature<ast_str("pass_always")>;
         ast_primary_implementation(s)
         {
             return new lexeme();
@@ -154,7 +119,7 @@ namespace ast::_f
     ast_internal_rule(trace_on)
     {
     public:
-        ast_set_signature<ast_str("trace_on"), ast_sig(T0)>;
+        set_signature<ast_str("trace_on"), sig_of(T0)>;
 
         ast_primary_implementation(s)
         {
@@ -167,7 +132,7 @@ namespace ast::_f
     ast_internal_rule(trace_off)
     {
     public:
-        ast_set_signature<ast_str("trace_off"), ast_sig(T0)>;
+        set_signature<ast_str("trace_off"), sig_of(T0)>;
 
         ast_primary_implementation(s)
         {
@@ -175,43 +140,4 @@ namespace ast::_f
             return sub_match(T0, s);
         }
     };
-
-    // static int indent = 0;
-
-    // template<typename O> void print_object(O o) { print_object_const(o); }
-    // template<typename O> void print_object_const(const O o) {}
-    // template<> void print_object_const(const char o) { printf("'%c'", o); }
-    // template<> void print_object_const(const char *o) { printf("\"%s\"", o); }
-    // template<> void print_object_const(const int o) { printf("%d", o); }
-    // template<> void print_object_const(const unsigned int o) { printf("%u", o); }
-    // template<> void print_object_const(const long o) { printf("%ld", o); }
-    // template<> void print_object_const(const unsigned long o) { printf("%lu", o); }
-    // template<> void print_object_const(const long long o) { printf("%lld", o); }
-    // template<> void print_object_const(const unsigned long long o) { printf("%llu", o); }
-    // template<> void print_object_const(const float o) { printf("%f", o); }
-    // template<> void print_object_const(const double o) { printf("%f", o); }
-
-    // template<typename T0, const char *name>
-    // class trace
-    // {
-    // public:
-    //     internal_match_method(s)
-    //     {
-    //         printf("%*s%s {", indent*2, "", name);
-    //         print_object(*s);
-    //         printf("\n");
-    //         indent++;
-    //         lexeme_S *l = T0::match(s);
-    //         indent--;
-    //         if (l)
-    //         {
-    //             printf("%*s} PASS //%s\n", indent*2, "", name);
-    //         }
-    //         else
-    //         {
-    //             printf("%*s} FAIL //%s\n", indent*2, "", name);
-    //         }   
-    //         return l;
-    //     }
-    // };
 }

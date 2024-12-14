@@ -9,7 +9,8 @@ namespace dsp
     class script_wave : public logic_wave<Logic>
     {
     public:
-        static constexpr auto signature = Logic::signature + uti::STR2A(" scriptable");
+        set_signature<uti::str("script_wave"), sig_of(Logic)>;
+        variant_inherit(logic_wave<Logic>)
 
         script_wave()
         {
@@ -31,7 +32,6 @@ namespace dsp
         }
 
         // wave overload
-        virtual const char *getSignature() const override { return signature.data(); }
 
         virtual SampleType operator()() override { return getSample(); }
         virtual void operator++() override { advance(); }

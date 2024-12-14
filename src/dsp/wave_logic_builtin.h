@@ -42,7 +42,8 @@ namespace dsp
     class noise_logic : public logic_base<op0>
     {
     public:
-        static constexpr auto signature = uti::STR2A("Noise");
+        set_signature<uti::str("Noise")>;
+        variant_inherit(logic_base<op0>)
         inline SampleType postSampling()
         {
             return (SampleType)rand();
@@ -54,7 +55,8 @@ namespace dsp
     class constant_logic : public logic_base<op0>
     {
     public:
-        static constexpr auto signature = uti::STR2A("Constant");
+        set_signature<uti::str("Constant")>;
+        variant_inherit(logic_base<op0>)
         inline SampleType getSample()
         {
             return S.level;
@@ -72,7 +74,8 @@ namespace dsp
     class square_logic : public logic_base<op0>
     {
     public:
-        static constexpr auto signature = uti::STR2A("Square");
+        set_signature<uti::str("Square")>;
+        variant_inherit(logic_base<op0>)
         inline SampleType getSample()
         {
             return (S.phase < S.duty) ? SampleMax : SampleMin;
@@ -102,7 +105,8 @@ namespace dsp
     class sawtooth_logic : public logic_base<op0>
     {
     public:
-        static constexpr auto signature = uti::STR2A("Sawtooth");
+        set_signature<uti::str("Sawtooth")>;
+        variant_inherit(logic_base<op0>)
         inline SampleType getSample()
         {
             return S.phase;
@@ -132,7 +136,8 @@ namespace dsp
     class buffer_logic : public logic_base<op0>
     {
     public:
-        static constexpr auto signature = uti::STR2A("Buffer");
+        set_signature<uti::str("Buffer")>;
+        variant_inherit(logic_base<op0>)
         inline SampleType getSample()
         {
             return I.buffer[upperBits<uint16_t, PhaseType, BufferBits>(S.phase)];
@@ -171,7 +176,8 @@ namespace dsp
     class formant_logic : public logic_base<op1<Base>>
     {
     public:
-        static constexpr auto signature = uti::STR2A("Formant") + op1<Base>::signature;
+        set_signature<uti::str("Formant"), sig_of(op1<Base>)>;
+        variant_inherit(logic_base<op1<Base>>)
 
         inline SampleType getSample()
         {

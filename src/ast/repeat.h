@@ -13,7 +13,7 @@ namespace ast::_r
     ast_internal_rule(rep)
     {
     public:
-        ast_set_signature<ast_str("rep"), ast_sig(T0), min, max, ast_sig(Sep)>;
+        set_signature<ast_str("rep"), sig_of(T0), min, max, sig_of(Sep)>;
 
         ast_primary_implementation(s)
         {

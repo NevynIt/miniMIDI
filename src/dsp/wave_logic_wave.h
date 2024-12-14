@@ -8,8 +8,7 @@ namespace dsp
     struct InspectOp {
         inline static void apply(Logic& logic, int indent) {
             InspectOp<N-1, Logic>::apply(logic, indent);
-            for (int i = 0; i < indent; ++i) std::cout << indent_str;
-            std::cout << "Wave " << N-1 << ":\n";
+            printf("%*sWave %d:\n", indent, "", N-1);
             logic.ops.template get<N-1>().inspect(indent + 1);
         }
     };
@@ -24,7 +23,8 @@ namespace dsp
     class logic_wave : public wave
     {
     public:
-        static constexpr auto signature = Logic::signature;
+        set_signature<uti::str("logic_wave"), sig_of(Logic)>;
+        variant_inherit(wave)
 
         logic_wave()
         {
@@ -32,8 +32,6 @@ namespace dsp
         }
         
         // wave overload
-        virtual const char *getSignature() const override { return signature.data(); }
-
         virtual SampleType operator()() override { return getSample(); }
         virtual void operator++() override { advance(); }
 

@@ -31,7 +31,7 @@ namespace ast::_s
     ast_internal_rule(seq)
     {
     public:
-        ast_set_signature<ast_str("seq"), signing::get_from<types...>{}>;
+        set_signature<ast_str("seq"), uti::get_from<types...>{}>;
 
         ast_primary_implementation(s)
         {
@@ -54,7 +54,7 @@ namespace ast::_s
     // ast_internal_rule(seq2)
     // {
     // public:
-    //     ast_set_signature<ast_str("seq2"), ast_sig(T0), ast_sig(T1)>;
+    //     set_signature<ast_str("seq2"), sig_of(T0), sig_of(T1)>;
 
     //     ast_primary_implementation(s)
     //     {
@@ -74,7 +74,7 @@ namespace ast::_s
     // ast_internal_rule(seq3)
     // {
     // public:
-    //     ast_set_signature<ast_str("seq3"), ast_sig(T0), ast_sig(T1), ast_sig(T2)>;
+    //     set_signature<ast_str("seq3"), sig_of(T0), sig_of(T1), sig_of(T2)>;
 
     //     ast_primary_implementation(s)
     //     {
@@ -95,7 +95,7 @@ namespace ast::_s
     // ast_internal_rule(seq4)
     // {
     // public:
-    //     ast_set_signature<ast_str("seq4"), ast_sig(T0), ast_sig(T1), ast_sig(T2), ast_sig(T3)>;
+    //     set_signature<ast_str("seq4"), sig_of(T0), sig_of(T1), sig_of(T2), sig_of(T3)>;
 
     //     ast_primary_implementation(s)
     //     {
@@ -117,7 +117,7 @@ namespace ast::_s
     // ast_internal_rule(seq5)
     // {
     // public:
-    //     ast_set_signature<ast_str("seq5"), ast_sig(T0), ast_sig(T1), ast_sig(T2), ast_sig(T3), ast_sig(T4)>;
+    //     set_signature<ast_str("seq5"), sig_of(T0), sig_of(T1), sig_of(T2), sig_of(T3), sig_of(T4)>;
 
     //     ast_primary_implementation(s)
     //     {
@@ -140,7 +140,7 @@ namespace ast::_s
     // ast_internal_rule(seq6)
     // {
     // public:
-    //     ast_set_signature<ast_str("seq6"), ast_sig(T0), ast_sig(T1), ast_sig(T2), ast_sig(T3), ast_sig(T4), ast_sig(T5)>;
+    //     set_signature<ast_str("seq6"), sig_of(T0), sig_of(T1), sig_of(T2), sig_of(T3), sig_of(T4), sig_of(T5)>;
 
     //     ast_primary_implementation(s)
     //     {
@@ -164,7 +164,7 @@ namespace ast::_s
     // ast_internal_rule(seq7)
     // {
     // public:
-    //     ast_set_signature<ast_str("seq7"), ast_sig(T0), ast_sig(T1), ast_sig(T2), ast_sig(T3), ast_sig(T4), ast_sig(T5), ast_sig(T6)>;
+    //     set_signature<ast_str("seq7"), sig_of(T0), sig_of(T1), sig_of(T2), sig_of(T3), sig_of(T4), sig_of(T5), sig_of(T6)>;
 
     //     ast_primary_implementation(s)
     //     {
@@ -189,7 +189,7 @@ namespace ast::_s
     // ast_internal_rule(seq8)
     // {
     // public:
-    //     ast_set_signature<ast_str("seq8"), ast_sig(T0), ast_sig(T1), ast_sig(T2), ast_sig(T3), ast_sig(T4), ast_sig(T5), ast_sig(T6), ast_sig(T7)>;
+    //     set_signature<ast_str("seq8"), sig_of(T0), sig_of(T1), sig_of(T2), sig_of(T3), sig_of(T4), sig_of(T5), sig_of(T6), sig_of(T7)>;
 
     //     ast_primary_implementation(s)
     //     {
@@ -215,7 +215,7 @@ namespace ast::_s
     // ast_internal_rule(seq9)
     // {
     // public:
-    //     ast_set_signature<ast_str("seq9"), ast_sig(T0), ast_sig(T1), ast_sig(T2), ast_sig(T3), ast_sig(T4), ast_sig(T5), ast_sig(T6), ast_sig(T7), ast_sig(T8)>;
+    //     set_signature<ast_str("seq9"), sig_of(T0), sig_of(T1), sig_of(T2), sig_of(T3), sig_of(T4), sig_of(T5), sig_of(T6), sig_of(T7), sig_of(T8)>;
 
     //     ast_primary_implementation(s)
     //     {
@@ -242,7 +242,7 @@ namespace ast::_s
     // ast_internal_rule(seq10)
     // {
     // public:
-    //     ast_set_signature<ast_str("seq10"), ast_sig(T0), ast_sig(T1), ast_sig(T2), ast_sig(T3), ast_sig(T4), ast_sig(T5), ast_sig(T6), ast_sig(T7), ast_sig(T8), ast_sig(T9)>;
+    //     set_signature<ast_str("seq10"), sig_of(T0), sig_of(T1), sig_of(T2), sig_of(T3), sig_of(T4), sig_of(T5), sig_of(T6), sig_of(T7), sig_of(T8), sig_of(T9)>;
 
     //     ast_primary_implementation(s)
     //     {

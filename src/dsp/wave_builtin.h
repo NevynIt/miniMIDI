@@ -6,8 +6,10 @@ namespace dsp
     class constantWave : public wave
     {
     public:
-        static constexpr auto signature = uti::STR2A("constantWave");
+        set_signature<uti::str("constantWave")>;
+        variant_inherit(wave)
         WAVE_OPERATOR_OVERRIDE
+
         constantWave(const SampleType level = SampleMax) : m_level(level) {}
 
         inline SampleType getSample() { return m_level; }
@@ -30,55 +32,56 @@ namespace dsp
         }
     };
 
-    #define FNC_WAVE(_name_, _fnc_, _N_params_, _signature_) \
-    class _name_##Wave : public wave \
-    { \
-    public: \
-        static constexpr auto signature = uti::STR2A(_signature_); \
-        static constexpr auto split_signature = uti::split(signature); \
-        WAVE_OPERATOR_OVERRIDE \
-        _name_##Wave() {} \
-        \
-        inline SampleType getSample() { return _fnc_(state); } \
-        inline void advance() {} \
-        \
-        int getParamCount() const override { return _N_params_; } \
-        SampleType* getParam(uint16_t index) override { \
-            if (index < _N_params_) \
-                return state + index; \
-            return nullptr; \
-        } \
-        const char* getParamName(uint16_t index) const override { \
-            if (index < _N_params_) \
-            { \
-                return uti::exectractParamName(index, split_signature); \
-            } \
-            return nullptr; \
-        } \
-        \
-        SampleType state[_N_params_] = {0}; \
-    };
+    // #define FNC_WAVE(_name_, _fnc_, _N_params_, _signature_) \
+    // class _name_##Wave : public wave \
+    // { \
+    // public: \
+    //     static constexpr auto signature = uti::STR2A(_signature_); \
+    //     static constexpr auto split_signature = uti::split(signature); \
+    //     WAVE_OPERATOR_OVERRIDE \
+    //     _name_##Wave() {} \
+    //     \
+    //     inline SampleType getSample() { return _fnc_(state); } \
+    //     inline void advance() {} \
+    //     \
+    //     int getParamCount() const override { return _N_params_; } \
+    //     SampleType* getParam(uint16_t index) override { \
+    //         if (index < _N_params_) \
+    //             return state + index; \
+    //         return nullptr; \
+    //     } \
+    //     const char* getParamName(uint16_t index) const override { \
+    //         if (index < _N_params_) \
+    //         { \
+    //             return uti::exectractParamName(index, split_signature); \
+    //         } \
+    //         return nullptr; \
+    //     } \
+    //     \
+    //     SampleType state[_N_params_] = {0}; \
+    // };
 
-    template<uint8_t N>
-    inline SampleType movingAverage(SampleType params[N])
-    {
-        SampleType acc = 0;
-        for (int i=N-1; i>=0; i--)
-        {
-            acc += params[i] / N;
-            if (i<N-1)
-                params[i] = params[i+1];
-        }
-        return acc;
-    }
+    // template<uint8_t N>
+    // inline SampleType movingAverage(SampleType params[N])
+    // {
+    //     SampleType acc = 0;
+    //     for (int i=N-1; i>=0; i--)
+    //     {
+    //         acc += params[i] / N;
+    //         if (i<N-1)
+    //             params[i] = params[i+1];
+    //     }
+    //     return acc;
+    // }
 
-    //Example of fncWave
-    FNC_WAVE(movAvg, movingAverage<5>, 5, "movingAverage(input, x[-1], x[-2], x[-3], x[-4]) -> output")
+    // //Example of fncWave
+    // FNC_WAVE(movAvg, movingAverage<5>, 5, "movingAverage(input, x[-1], x[-2], x[-3], x[-4]) -> output")
 
     class noiseWave : public wave
     {
     public:
-        static constexpr auto signature = uti::STR2A("noiseWave");
+        set_signature<uti::str("noiseWave")>;
+        variant_inherit(wave)
         WAVE_OPERATOR_OVERRIDE
         noiseWave() = default;
 
@@ -89,7 +92,8 @@ namespace dsp
     class periodicWave : public wave
     {
     public:
-        static constexpr auto signature = uti::STR2A("periodicWave");
+        set_signature<uti::str("periodicWave")>;
+        variant_inherit(wave)
         WAVE_OPERATOR_OVERRIDE
         periodicWave() = default;
         periodicWave(const PhaseType increment) : m_increment(increment) {}
@@ -124,7 +128,8 @@ namespace dsp
     class squareWave : public periodicWave
     {
     public:
-        static constexpr auto signature = uti::STR2A("squareWave");
+        set_signature<uti::str("squareWave")>;
+        variant_inherit(periodicWave)
         WAVE_OPERATOR_OVERRIDE
         squareWave() = default;
         squareWave(const PhaseType increment) : periodicWave(increment) {}
@@ -163,7 +168,8 @@ namespace dsp
     class sawtoothWave : public periodicWave
     {
     public:
-        static constexpr auto signature = uti::STR2A("sawtoothWave");
+        set_signature<uti::str("sawtoothWave")>;
+        variant_inherit(periodicWave)
         WAVE_OPERATOR_OVERRIDE
         sawtoothWave() = default;
         sawtoothWave(const PhaseType increment) : periodicWave(increment) {}
@@ -184,7 +190,8 @@ namespace dsp
         static_assert((count > 1) && ((count & (count - 1)) == 0), "count must be a power of 2");
         constexpr static int count_bits = log2(count);
     public:
-        static constexpr auto signature = uti::STR2A("bufferWave<") + uti::INT2A<count>() + uti::STR2A(">");
+        set_signature<uti::str("bufferWave"), count>;
+        variant_inherit(periodicWave)
         WAVE_OPERATOR_OVERRIDE
         bufferWave(const SampleType *buffer) : m_buffer(buffer) {}
         bufferWave(const SampleType *buffer, const PhaseType increment) : m_buffer(buffer) , periodicWave(increment) {}
@@ -210,7 +217,8 @@ namespace dsp
     class builtinWave : public bufferWave<tables::DSP_SIZE>
     {
     public:
-        static constexpr auto signature = uti::STR2A("builtinWave");
+        set_signature<uti::str("builtinWave")>;
+        variant_inherit(bufferWave<tables::DSP_SIZE>)
         WAVE_OPERATOR_OVERRIDE
         builtinWave() : bufferWave(tables::sinWave) {}
         builtinWave(const PhaseType increment) : bufferWave(tables::sinWave, increment) {}
@@ -221,7 +229,15 @@ namespace dsp
         void selectSquare() { bufferWave::setBuffer(tables::squareWave); }
     };
 
-    using sinWave = builtinWave;
+    class sinWave : public builtinWave
+    {
+    public:
+        set_signature<uti::str("sinWave")>;
+        variant_inherit(builtinWave)
+        WAVE_OPERATOR_OVERRIDE
+        sinWave() : builtinWave() {}
+        sinWave(const PhaseType increment) : builtinWave(increment) { selectSin(); }
+    };
 
     template <size_t harmonics = 5, typename Base = sinWave>
     class harmonicWave : public Base
@@ -229,7 +245,8 @@ namespace dsp
         static_assert(std::is_base_of<periodicWave, Base>::value, "Base must be derived from periodicWave");
 
     public:
-        static constexpr auto signature = uti::STR2A("harmonicWave<") + uti::INT2A<harmonics>() + uti::STR2A(", ") + Base::signature + uti::STR2A(">");
+        set_signature<uti::str("harmonicWave"), harmonics, sig_of(Base)>;
+        variant_inherit(Base)
         WAVE_OPERATOR_OVERRIDE
         harmonicWave() = default;
         harmonicWave(const PhaseType increment) : Base(increment) {}
@@ -301,7 +318,8 @@ namespace dsp
         static_assert(std::is_base_of<periodicWave, Base>::value, "Base must be derived from PeriodicWave");
 
         public:
-        static constexpr auto signature = uti::STR2A("inharmonicWave<") + uti::INT2A<harmonics>() + uti::STR2A(", ") + Base::signature + uti::STR2A(">");
+        set_signature<uti::str("inharmonicWave"), harmonics, sig_of(Base)>;
+        variant_inherit(Base)
         WAVE_OPERATOR_OVERRIDE
         inharmonicWave() = default;
         inharmonicWave(const PhaseType increment) : Base(increment) {}

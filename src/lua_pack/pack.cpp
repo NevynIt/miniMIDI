@@ -33,8 +33,8 @@ namespace _detail
     class lex_bitfield : public lexeme
     {
     public:
-        ast_set_signature<ast_str("lex_bitfield")>;
-        ast_variant_inherit(lexeme)
+        set_signature<ast_str("lex_bitfield")>;
+        variant_inherit(lexeme)
         lex_bitfield(std::vector<uint8_t> *bitfield) : bitfield(bitfield) {}
         ~lex_bitfield() { if (bitfield) delete bitfield; }
         std::vector<uint8_t> *bitfield = nullptr;
@@ -44,7 +44,7 @@ namespace _detail
     ast_define_rule(make_bitfield)
     {
     public:
-        ast_set_signature<ast_str("make_bitfield")>;
+        set_signature<ast_str("make_bitfield")>;
         ast_base_rule = T0;
 
         ast_decorator_implementation(l)
@@ -75,8 +75,8 @@ namespace _detail
     class lex_field_info : public lexeme
     {
     public:
-        ast_set_signature<ast_str("lex_field_info")>;
-        ast_variant_inherit(lexeme)
+        set_signature<ast_str("lex_field_info")>;
+        variant_inherit(lexeme)
         lex_field_info(field_info *f) : f(f) {}
         ~lex_field_info() { if (f) delete f; }
         field_info *f = nullptr;
@@ -85,8 +85,8 @@ namespace _detail
     class lex_struct : public lexeme
     {
     public:
-        ast_set_signature<ast_str("lex_struct")>;
-        ast_variant_inherit(lexeme)
+        set_signature<ast_str("lex_struct")>;
+        variant_inherit(lexeme)
         lex_struct(std::vector<field_info *> *fields = nullptr) : fields(fields) {}
         ~lex_struct()
         {
@@ -106,7 +106,7 @@ namespace _detail
     ast_define_rule(make_struct)
     {
     public:
-        ast_set_signature<ast_str("make_struct")>;
+        set_signature<ast_str("make_struct")>;
         ast_base_rule = T0;
 
         ast_decorator_implementation(l)
@@ -143,7 +143,7 @@ namespace _detail
     ast_define_rule(make_format)
     {
     public:
-        ast_set_signature<ast_str("make_format")>;
+        set_signature<ast_str("make_format")>;
         ast_base_rule = T0;
 
         ast_decorator_implementation(l)
@@ -213,7 +213,7 @@ namespace _detail
     ast_define_rule(make_field)
     {
     public:
-        ast_set_signature<ast_str("make_field")>;
+        set_signature<ast_str("make_field")>;
         ast_base_rule = T0;
 
         ast_decorator_implementation(l)

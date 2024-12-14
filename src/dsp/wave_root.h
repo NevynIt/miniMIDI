@@ -30,12 +30,13 @@ namespace dsp
 
     static constexpr auto indent_str = "|  ";
 
-    class wave
+    class wave : public uti::variant
     {
     public:
-        static constexpr auto signature = uti::STR2A(" ");
+        set_signature<uti::str("wave")>;
+        variant_implementation
+
         wave() = default;
-        virtual const char *getSignature() const { return signature.data(); }
 
         virtual SampleType operator()() { return 0; }
         virtual void operator++() { }
@@ -53,7 +54,8 @@ namespace dsp
         virtual void inspect(int indent = 0)
         {
             for (int i = 0; i < indent; ++i) printf(indent_str);
-            printf("%s\n", getSignature());
+            print_signature();
+            printf("\n");
             for (int i = 0; i < indent; ++i) printf(indent_str);
             printf("  Params (%d):\n", getParamCount());
             for (int i = 0; i < getParamCount(); i++)
@@ -91,6 +93,5 @@ namespace dsp
     #define WAVE_OPERATOR_OVERRIDE \
         inline SampleType operator()() override { return this->getSample(); } \
         inline void operator++() override { this->advance(); } \
-        const char *getSignature() const override { return signature.data(); } \
 
 }

@@ -9,7 +9,8 @@ namespace dsp
     class gainModWave : public Base
     {
     public:
-        static constexpr auto signature = uti::STR2A("gainModWave<") + Base::signature + uti::STR2A(">");
+        set_signature<uti::str("gainModWave"), sig_of(Base)>;
+        variant_inherit(Base)
         WAVE_OPERATOR_OVERRIDE
 
         gainModWave(const SampleType level = SampleMax) : m_level(level) {}
@@ -60,7 +61,8 @@ namespace dsp
     class amModWave : public wave
     {
     public:
-        static constexpr auto signature = uti::STR2A("amModWave<") + Carrier::signature + uti::STR2A(", ") + Modulator::signature + uti::STR2A(">");
+        set_signature<uti::str("amModWave"), sig_of(Carrier), sig_of(Modulator)>;
+        variant_inherit(wave)
         WAVE_OPERATOR_OVERRIDE
         amModWave() = default;
 
@@ -130,7 +132,8 @@ namespace dsp
     {
         static_assert(std::is_base_of<periodicWave, Carrier>::value, "Carrier must be derived from periodicWave");
     public:
-        static constexpr auto signature = uti::STR2A("pmModWave<") + Carrier::signature + uti::STR2A(", ") + Modulator::signature + uti::STR2A(">");
+        set_signature<uti::str("pmModWave"), sig_of(Carrier), sig_of(Modulator)>;
+        variant_inherit(wave)
         WAVE_OPERATOR_OVERRIDE
         pmModWave() = default;
 
@@ -205,7 +208,8 @@ namespace dsp
     class fmModWave : public wave
     {
     public:
-        static constexpr auto signature = uti::STR2A("fmModWave<") + Carrier::signature + uti::STR2A(", ") + Modulator::signature + uti::STR2A(">");
+        set_signature<uti::str("fmModWave"), sig_of(Carrier), sig_of(Modulator)>;
+        variant_inherit(wave)
         WAVE_OPERATOR_OVERRIDE
         fmModWave() = default;
 

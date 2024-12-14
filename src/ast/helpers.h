@@ -315,7 +315,7 @@ namespace ast::_h
 //template <x,y,z>
 //ast_define_rule(_NAME_) {
 //ast_base_rule = seq2<x,y>;
-//ast_set_signature<x,y,z>;
+//set_signature<x,y,z>;
 //optionally: ast_set_internal
 //---one of:
 //ast_alias_implementation
@@ -328,39 +328,18 @@ namespace ast::_h
 //in decorator, T::match calls l = T::match, then l = l->decorate(l) if l is not nullptr, then return l
 //in primary, T::match sets up and calls match_impl
 
-    template<size_t _Nm>
-    constexpr auto ast_str_remove_last_char(const char (&__a)[_Nm]) -> std::array<char, _Nm - 1>
-    {
-        std::array<char, _Nm - 1> __r{};
-        for (size_t __i = 0; __i < _Nm - 1; ++__i)
-        {
-            __r[__i] = __a[__i];
-        }
-        return __r;
-    }
-
     #define ast_define_rule(_NAME_) class _NAME_ : public rule_base
     // #define ast_internal_rule(_NAME_) class _NAME_ : public rule_base
     #define ast_internal_rule(_NAME_) class _NAME_ : public rule_base_internal
     #define ast_base_rule using _ast_rule_base_
-    #define ast_set_signature using signature = signing::sign
-    #define ast_str(_STR_) std::to_array(_STR_)
-    #define ast_str_arr(_STR_) ast::_h::ast_str_remove_last_char(_STR_)
+    #define ast_str(_STR_) uti::str(_STR_)
+    #define ast_str_arr(_STR_) uti::str_no0(_STR_)
     
-    #define ast_sig(_TYPE_) signing::get_from<_TYPE_>{}
     #define ast_base_signature _ast_rule_base_::signature
     #define sub_match(_T0_, _varname_) _T0_::match(_varname_, _trace_ ? _trace_ + (_ast_internal_rule_ ? 0 : 1) : 0)
-    #define ast_variant_implementation \
-        static const signing::signature_id static_get_typeid() { return &signature::print; } \
-        virtual const signing::signature_id get_typeid() const override { return static_get_typeid(); } \
-        virtual bool is_same_as(signing::signature_id s) const override { return static_get_typeid() == s; }
-    #define ast_variant_inherit(_BASE_) \
-        static const signing::signature_id static_get_typeid() { return &signature::print; } \
-        virtual const signing::signature_id get_typeid() const override { return static_get_typeid(); } \
-        virtual bool is_same_as(signing::signature_id s) const override { return static_get_typeid() == s || _BASE_::is_same_as(s); }
 
     #define ast_alias_implementation \
-    ast_variant_inherit(rule_base) \
+    variant_inherit(rule_base) \
     template <typename _StreamType>\
     static inline lexeme *match(_StreamType &_stream_, int _trace_ = 0) \
     { \
@@ -375,9 +354,9 @@ namespace ast::_h
                 print_ind(_trace_, "");\
                 lex_o<object_S>(*_stream_).printvalue();\
                 printf(" (");\
-                signature::print();\
+                print_signature_static();\
                 printf(") : ");\
-                _ast_rule_base_::signature::print();\
+                _ast_rule_base_::print_signature_static();\
                 printf("\n"); \
             } \
             auto l = _ast_rule_base_::match(_stream_, _trace_ ? _trace_ +  1 : 0); \
@@ -386,7 +365,7 @@ namespace ast::_h
                 print_ind(_trace_, "");\
                 lex_o<object_S>(*_stream_).printvalue();\
                 printf(" (");\
-                signature::print();\
+                print_signature_static();\
                 printf(") : %s\n", l ? "PASS" : "FAIL");\
             } \
             if (l) \
@@ -398,7 +377,7 @@ namespace ast::_h
     } 
 
     #define ast_decorator_implementation(_L_) \
-    ast_variant_inherit(rule_base) \
+    variant_inherit(rule_base) \
     template <typename _StreamType>\
     static inline lexeme *match(_StreamType &_stream_, int _trace_ = 0) \
     { \
@@ -415,9 +394,9 @@ namespace ast::_h
                 print_ind(_trace_, "");\
                 lex_o<object_S>(*_stream_).printvalue();\
                 printf(" (");\
-                signature::print();\
+                print_signature_static();\
                 printf(") : ");\
-                _ast_rule_base_::signature::print();\
+                _ast_rule_base_::print_signature_static();\
                 printf("\n"); \
             } \
             auto l = _ast_rule_base_::match(_stream_, _trace_ ? _trace_ +  1 : 0); \
@@ -427,7 +406,7 @@ namespace ast::_h
                 print_ind(_trace_, "");\
                 lex_o<object_S>(*_stream_).printvalue();\
                 printf(" (");\
-                signature::print();\
+                print_signature_static();\
                 printf(") : %s\n", l ? "PASS" : "FAIL");\
             } \
             if (l) \
@@ -440,7 +419,7 @@ namespace ast::_h
     static inline lexeme *decorate(lexeme *_L_)
 
     #define ast_primary_implementation(_S_) \
-    ast_variant_inherit(rule_base) \
+    variant_inherit(rule_base) \
     template <typename _StreamType>\
     static inline lexeme *match(_StreamType &_stream_, int _trace_ = 0) \
     { \
@@ -455,7 +434,7 @@ namespace ast::_h
                 print_ind(_trace_, "");\
                 lex_o<object_S>(*_stream_).printvalue();\
                 printf(" (");\
-                signature::print();\
+                print_signature_static();\
                 printf(") \n");\
             } \
             auto l = match_impl(_stream_, _trace_); \
@@ -464,7 +443,7 @@ namespace ast::_h
                 print_ind(_trace_, "");\
                 lex_o<object_S>(*_stream_).printvalue();\
                 printf(" (");\
-                signature::print();\
+                print_signature_static();\
                 printf(") : %s\n", l ? "PASS" : "FAIL");\
             } \
             if (l) \
@@ -480,13 +459,13 @@ namespace ast::_h
     #define ast_internal_alias(_NAME_) \
     ast_internal_rule(_NAME_) { \
     public: \
-    ast_set_signature<ast_str(#_NAME_)>; \
+    set_signature<ast_str(#_NAME_)>; \
     ast_base_rule
 
     #define ast_alias(_NAME_) \
     ast_define_rule(_NAME_) { \
     public: \
-    ast_set_signature<ast_str(#_NAME_)>; \
+    set_signature<ast_str(#_NAME_)>; \
     ast_base_rule
 
     #define ast_alias_end \

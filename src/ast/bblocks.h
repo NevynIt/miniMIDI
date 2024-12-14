@@ -2,7 +2,6 @@
 
 #include "deps.h"
 #include "helpers.h"
-#include "variant.h"
 
 //fundamental building blocks
 
@@ -92,12 +91,12 @@ namespace ast::_b
 
     //lexemes print as:
     //(rule) signature: value
-    class lexeme : public variant::variant
+    class lexeme : public uti::variant
     {
     public:
-        ast_set_signature<ast_str("lexeme")>;
-        ast_variant_implementation
-        signing::signature_id rule = nullptr;
+        set_signature<ast_str("lexeme")>;
+        variant_implementation
+        uti::signature_id rule = nullptr;
 
         virtual void printvalue(int indent = 0) { printf("??"); };
         virtual void print(int indent = 0)
@@ -116,8 +115,8 @@ namespace ast::_b
     class lex_o : public lexeme
     {
     public:
-        ast_set_signature<ast_str("lex_o"), ast_sig(O)>;
-        ast_variant_inherit(lexeme)
+        set_signature<ast_str("lex_o"), sig_of(O)>;
+        variant_inherit(lexeme)
         using object = O;
         O o;
         void printvalue(int indent = 0) override;
@@ -143,8 +142,8 @@ namespace ast::_b
     {
     public:
         using object = O;
-        ast_set_signature<ast_str("lex_v"), ast_sig(O)>;
-        ast_variant_inherit(lexeme)
+        set_signature<ast_str("lex_v"), sig_of(O)>;
+        variant_inherit(lexeme)
         
         void printvalue(int indent = 0) override;
     };
@@ -177,8 +176,8 @@ namespace ast::_b
     class lex_V : public lexeme, public std::vector<lexeme *>
     {
     public:
-        ast_set_signature<ast_str("lex_V")>;
-        ast_variant_inherit(lexeme)
+        set_signature<ast_str("lex_V")>;
+        variant_inherit(lexeme)
 
         void printvalue(int indent = 0) override
         {
@@ -204,8 +203,8 @@ namespace ast::_b
     class lex_l : public lexeme
     {
     public:
-        ast_set_signature<ast_str("lex_l")>;
-        ast_variant_inherit(lexeme)
+        set_signature<ast_str("lex_l")>;
+        variant_inherit(lexeme)
         int32_t l = 0;
         
         lex_l(long l = 0) : l(l) {}
@@ -219,8 +218,8 @@ namespace ast::_b
     class lex_f : public lexeme
     {
     public:
-        ast_set_signature<ast_str("lex_f")>;
-        ast_variant_inherit(lexeme)
+        set_signature<ast_str("lex_f")>;
+        variant_inherit(lexeme)
         float f = 0.0;
 
         lex_f(float f = 0.0) : f(f) {}
@@ -234,8 +233,8 @@ namespace ast::_b
     class lex_s : public lexeme
     {
     public:
-        ast_set_signature<ast_str("lex_s")>;
-        ast_variant_inherit(lexeme)
+        set_signature<ast_str("lex_s")>;
+        variant_inherit(lexeme)
         char *s = nullptr;
 
         lex_s(char *s = nullptr) : s(s) {}
@@ -250,8 +249,8 @@ namespace ast::_b
     class lex_p : public lex_s
     {
     public:
-        ast_set_signature<ast_str("lex_s")>;
-        ast_variant_inherit(lex_s)
+        set_signature<ast_str("lex_s")>;
+        variant_inherit(lex_s)
 
         lex_p(char *s = nullptr, int len = 0) : lex_s(s), len(len) {}
         int len = 0;
@@ -262,11 +261,11 @@ namespace ast::_b
         }
     };
 
-    class rule_base : public variant::variant
+    class rule_base : public uti::variant
     {
     public:
-        ast_set_signature<ast_str("rule_base")>;
-        ast_variant_implementation
+        set_signature<ast_str("rule_base")>;
+        variant_implementation
 
         static constexpr bool _ast_internal_rule_ = false;
     };
@@ -275,8 +274,8 @@ namespace ast::_b
     class rule_base_internal : public rule_base
     {
     public:
-        ast_set_signature<ast_str("rule_base_internal")>;
-        ast_variant_inherit(rule_base)
+        set_signature<ast_str("rule_base_internal")>;
+        variant_inherit(rule_base)
 
         static constexpr bool _ast_internal_rule_ = true;
     };

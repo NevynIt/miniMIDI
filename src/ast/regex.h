@@ -76,6 +76,30 @@
  * '(ab|cd)+' Match one or more of 'ab' or 'cd'
 */
 
+/* regex replace function
+ * replacement string sintax:
+ * \x           normal escape sequences
+ * \\           literal backslash
+ * \$           literal dollar sign
+ * $n[x]        Replace with the xth match of the nth group (0 is the whole pattern, in that case, x can only be 0 or -1)
+ * $n           Equivalent to $n[-1] (the last match)
+ * $n.m         Replace with the mth subgroup of the nth group
+ * $n[x].m[y]   Replace with the yth match of the mth subgroup of the xth match of the nth group (and so on)
+ * $$n          Replace with the concatenation of all the matches of the nth group, equivalent to $$n[0:-1] or $$n[:]
+ * $$n[a:b]     Replace with the concatenation of the matches identified by n[a], n[a+1], ..., n[b]
+ * $$n[a:b](, ) Replace with the concatenation of the matches identified by n[a], n[a+1], ..., n[b] separated by ', '
+ * $$n[a,b,c,d] Replace with the concatenation of the matches identified by n[a], n[b], n[c], n[d]
+ * $$n[a,b,c,d](, ) Replace with the concatenation of the matches identified by n[a], n[b], n[c], n[d] separated by ', '
+ * $$n[a:b,c:d] Replace with the concatenation of the matches identified by n[a], n[a+1], ..., n[b] and n[c], n[c+1], ..., n[d]
+ * 
+ * the selection of matches is recursive, so one can do:
+ * $$n[0:1].m[2:4,8:9](|)   to obtain a string with the matches 2, 3, 4, 8, and 9 of the subgroup m,
+ *                          taken only from the matches 0 and 1 of group n, separated by '|'
+ *                          assuming that each match is 1 char long, the result would be something like:
+ *                          "2|3|4|8|9|b|c|d|h|i"
+ *                          if any match is empty, it will be replaced by an empty string
+*/
+
 namespace ast::_re
 {
     using namespace ast::_b;
@@ -84,8 +108,8 @@ namespace ast::_re
     class lex_re : public lex_v<char>
     {
     public:
-        ast_set_signature<ast_str("lex_re")>;
-        ast_variant_inherit(lex_v<char>)
+        set_signature<ast_str("lex_re")>;
+        variant_inherit(lex_v<char>)
 
         void printvalue(int indent = 0) override
         {
@@ -763,7 +787,7 @@ namespace ast::_re
     {
         static_assert(std::is_same_v<decltype(arr.data()), const char *>, "arr must be a char array");
     public:
-        ast_set_signature<ast_str("regex"), arr>;
+        set_signature<ast_str("regex"), arr>;
 
         ast_primary_implementation(s)
         {

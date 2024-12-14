@@ -9,7 +9,8 @@ namespace dsp
     class envelope : public wave
     {
     public:
-        static constexpr auto signature = uti::STR2A("envelope");
+        set_signature<uti::str("envelope")>;
+        variant_inherit(wave)
         WAVE_OPERATOR_OVERRIDE
         enum class State
         {
@@ -36,7 +37,8 @@ namespace dsp
     class envelopeBase : public envelope
     {
     public:
-        static constexpr auto signature = uti::STR2A("envelopeBase");
+        set_signature<uti::str("envelopeBase")>;
+        variant_inherit(envelope)
         WAVE_OPERATOR_OVERRIDE
         envelopeBase() = default;
 
