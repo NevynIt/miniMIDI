@@ -49,7 +49,31 @@ public:
     };
     int array_size = 0; //0 = not an array, >0 = array size
     char *array_size_name = nullptr;
-
+    field_info() {}
+    field_info(const field_info &f)
+    {
+        count = f.count;
+        if (f.field_name)
+        {
+            field_name = new char[strlen(f.field_name) + 1];
+            strcpy(field_name, f.field_name);
+        }
+        type = f.type;
+        if (type == 1)
+        {
+            bitfield = new std::vector<uint8_t>(*f.bitfield);
+        }
+        else if (type == 2)
+        {
+            fields = new std::vector<field_info *>(*f.fields);
+        }
+        array_size = f.array_size;
+        if (f.array_size_name)
+        {
+            array_size_name = new char[strlen(f.array_size_name) + 1];
+            strcpy(array_size_name, f.array_size_name);
+        }
+    }
     ~field_info()
     {
         if (type == 1)

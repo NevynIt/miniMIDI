@@ -39,7 +39,8 @@ namespace ast::_r
                 auto li = sub_match(T0, s);
                 if (li)
                 {
-                    l->push_back(li);
+                    if (!li->template is<_f::lex_drop>())
+                        l->push_back(li);
                     count++;
                 }
                 else

@@ -56,31 +56,77 @@ namespace ast::_f
         }
     };
 
+    class lex_drop : public lexeme
+    {
+    public:
+        set_signature<ast_str("drop")>;
+        variant_inherit(lexeme)
+    };
+
+    template<typename T0>
+    ast_internal_rule(drop)
+    {
+    public:
+        ast_base_rule = T0;
+        set_signature<ast_str("drop"), sig_of(T0)>;
+        ast_decorator_implementation(l)
+        {
+            delete l;
+            return new lex_drop();
+        }
+    };
+
+    template<typename O>
+    void concat_into(lex_V *V, lex_v<O> *v)
+    {
+        for (auto i = V->begin(); i != V->end(); i++)
+        {
+            auto tmp_V = (*i)->as<lex_V>();
+            if (tmp_V)
+            {
+                concat_into<O>(tmp_V, v);
+                continue;
+            }
+
+            auto *tmp = (*i)->as<lex_v<O>>();
+            if (tmp)
+            {
+                for (auto j = tmp->begin(); j != tmp->end(); j++)
+                {
+                    v->push_back(*j);
+                }
+                continue;
+            }
+
+            auto *tmp_o = (*i)->as<lex_o<O>>();
+            if (tmp_o)
+            {
+                v->push_back(tmp_o->o);
+                continue;
+            }
+        }
+    }
+
     template<typename O>
     lexeme *concat_decorator(lexeme *l)
     {
         if (!l)
             return nullptr;
     
-        lex_V *tmp = l->as<lex_V>();
-        if (tmp)
+        lex_V *tmp1 = l->as<lex_V>();
+        if (tmp1)
         {
             lex_v<O> *v = new lex_v<O>();
-            for (auto i = tmp->begin(); i != tmp->end(); i++)
-            {
-                auto tmp = (*i)->as<lex_v<O>>();
-                if (tmp)
-                {
-                    for (auto j = tmp->begin(); j != tmp->end(); j++)
-                    {
-                        v->push_back(*j);
-                    }
-                }
-            }
+            concat_into<O>(tmp1, v);
             delete l;
             return v;
         }
-        return l;
+        lex_v<O> *tmp2 = l->as<lex_v<O>>();
+        if (tmp2)
+        {
+            return tmp2;
+        }
+        return nullptr;
     }
 
     template<typename T0, typename O>
@@ -138,6 +184,50 @@ namespace ast::_f
         {
             _trace_ = 0;
             return sub_match(T0, s);
+        }
+    };
+
+    typedef void (*out_func_t)(const lexeme *l);
+
+    void base_out_func(const lexeme *l)
+    {
+        if (l)
+        {
+            lex_v<char> *ll = concat_decorator<char>((lexeme *)l->clone())->as<lex_v<char>>();
+            if (ll)
+            {
+                for (auto i = ll->begin(); i != ll->end(); i++)
+                {
+                    printf("%c", *i);
+                }
+                delete ll;
+            }
+            printf("\n");
+        }
+        else
+        {
+            printf("nullptr\n");
+        }
+    }
+
+    out_func_t cur_out_func(out_func_t f = nullptr)
+    {
+        static out_func_t _f = base_out_func;
+        if (f)
+            _f = f;
+        return _f;
+    }
+
+    template<typename T0>
+    ast_internal_rule(out)
+    {
+        public:
+        set_signature<ast_str("out")>;
+        ast_base_rule = T0;
+        ast_decorator_implementation(l)
+        {
+            cur_out_func()(l);
+            return l;
         }
     };
 }

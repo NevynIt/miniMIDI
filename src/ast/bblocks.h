@@ -98,8 +98,8 @@ namespace ast::_b
         variant_implementation
         uti::signature_id rule = nullptr;
 
-        virtual void printvalue(int indent = 0) { printf("??"); };
-        virtual void print(int indent = 0)
+        virtual void printvalue(int indent = 0) const { printf("??"); };
+        virtual void print(int indent = 0) const
         {
             print_ind(indent, "(");
             if (rule)
@@ -119,20 +119,20 @@ namespace ast::_b
         variant_inherit(lexeme)
         using object = O;
         O o;
-        void printvalue(int indent = 0) override;
+        void printvalue(int indent = 0) const override;
 
         lex_o() {}
         lex_o(O o) : o(o) {}
     };
 
     template<>
-    inline void lex_o<char>::printvalue(int indent)
+    inline void lex_o<char>::printvalue(int indent) const
     {
         printf("'%c'", o);
     }
 
     template<>
-    inline void lex_o<char const>::printvalue(int indent)
+    inline void lex_o<char const>::printvalue(int indent) const
     {
         printf("'%c'", o);
     }
@@ -145,11 +145,11 @@ namespace ast::_b
         set_signature<ast_str("lex_v"), sig_of(O)>;
         variant_inherit(lexeme)
         
-        void printvalue(int indent = 0) override;
+        void printvalue(int indent = 0) const override;
     };
 
     template <>
-    inline void lex_v<char>::printvalue(int indent)
+    inline void lex_v<char>::printvalue(int indent) const
     {
         printf("\"");
         for (auto i = this->begin(); i != this->end(); i++)
@@ -160,7 +160,7 @@ namespace ast::_b
     }
 
     template<typename O>
-    inline void lex_v<O>::printvalue(int indent)
+    inline void lex_v<O>::printvalue(int indent) const
     {
         printf("{\n");
         for (auto i = this->begin(); i != this->end(); i++)
@@ -179,8 +179,21 @@ namespace ast::_b
         set_signature<ast_str("lex_V")>;
         variant_inherit(lexeme)
 
-        void printvalue(int indent = 0) override
+        lex_V() {}
+        
+        lex_V(const lex_V &V) : std::vector<lexeme *>(V.size())
         {
+            for (size_t i = 0; i < V.size(); i++)
+                (*this)[i] = (lexeme *)V[i]->clone();
+        }
+
+        void printvalue(int indent = 0) const override
+        {
+            if (this->size() == 0)
+            {
+                printf("{}");
+                return;
+            }
             printf("{\n");
             for (auto i = this->begin(); i != this->end(); i++)
             {
@@ -189,7 +202,10 @@ namespace ast::_b
                     printf(",\n");
             }
             printf("\n");
-            print_ind(indent, "}");
+            print_ind(indent, "} (");
+            if (rule)
+                rule(); //print the signature of the rule
+            printf(")");
         }
 
         ~lex_V()
@@ -209,7 +225,7 @@ namespace ast::_b
         
         lex_l(long l = 0) : l(l) {}
 
-        void printvalue(int indent = 0) override
+        void printvalue(int indent = 0) const override
         {
             print_ind(indent, "%ld", l);
         }
@@ -224,7 +240,7 @@ namespace ast::_b
 
         lex_f(float f = 0.0) : f(f) {}
 
-        void printvalue(int indent = 0) override
+        void printvalue(int indent = 0) const override
         {
             print_ind(indent, "%f", f);
         }
@@ -240,7 +256,7 @@ namespace ast::_b
         lex_s(char *s = nullptr) : s(s) {}
         ~lex_s() { if(s) delete[] s; }
 
-        void print(int indent = 0) override
+        void print(int indent = 0) const override
         {
             print_ind(indent, "\"%s\"", s);
         }
@@ -255,7 +271,7 @@ namespace ast::_b
         lex_p(char *s = nullptr, int len = 0) : lex_s(s), len(len) {}
         int len = 0;
 
-        void print(int indent = 0) override
+        void print(int indent = 0) const override
         {
             print_ind(indent, "'%.*s'", len, s);
         }

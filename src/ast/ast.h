@@ -5,13 +5,13 @@
 #include "deps.h"
 #include "helpers.h"
 #include "bblocks.h"
-// #include "decorator.h"
 #include "d_functions.h"
 #include "token.h"
 #include "sequence.h"
 #include "choice.h"
 #include "repeat.h"
 #include "regex.h"
+#include "replace.h"
 
 //parser of objects of type O
 
@@ -26,4 +26,5 @@ namespace ast
     using namespace ast::_c; //choice
     using namespace ast::_r; //repeat
     using namespace ast::_re; //regex
+    using namespace ast::_rp; //replace
 }

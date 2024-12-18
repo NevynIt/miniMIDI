@@ -76,30 +76,6 @@
  * '(ab|cd)+' Match one or more of 'ab' or 'cd'
 */
 
-/* regex replace function
- * replacement string sintax:
- * \x           normal escape sequences
- * \\           literal backslash
- * \$           literal dollar sign
- * $n[x]        Replace with the xth match of the nth group (0 is the whole pattern, in that case, x can only be 0 or -1)
- * $n           Equivalent to $n[-1] (the last match)
- * $n.m         Replace with the mth subgroup of the nth group
- * $n[x].m[y]   Replace with the yth match of the mth subgroup of the xth match of the nth group (and so on)
- * $$n          Replace with the concatenation of all the matches of the nth group, equivalent to $$n[0:-1] or $$n[:]
- * $$n[a:b]     Replace with the concatenation of the matches identified by n[a], n[a+1], ..., n[b]
- * $$n[a:b](, ) Replace with the concatenation of the matches identified by n[a], n[a+1], ..., n[b] separated by ', '
- * $$n[a,b,c,d] Replace with the concatenation of the matches identified by n[a], n[b], n[c], n[d]
- * $$n[a,b,c,d](, ) Replace with the concatenation of the matches identified by n[a], n[b], n[c], n[d] separated by ', '
- * $$n[a:b,c:d] Replace with the concatenation of the matches identified by n[a], n[a+1], ..., n[b] and n[c], n[c+1], ..., n[d]
- * 
- * the selection of matches is recursive, so one can do:
- * $$n[0:1].m[2:4,8:9](|)   to obtain a string with the matches 2, 3, 4, 8, and 9 of the subgroup m,
- *                          taken only from the matches 0 and 1 of group n, separated by '|'
- *                          assuming that each match is 1 char long, the result would be something like:
- *                          "2|3|4|8|9|b|c|d|h|i"
- *                          if any match is empty, it will be replaced by an empty string
-*/
-
 namespace ast::_re
 {
     using namespace ast::_b;
@@ -111,7 +87,9 @@ namespace ast::_re
         set_signature<ast_str("lex_re")>;
         variant_inherit(lex_v<char>)
 
-        void printvalue(int indent = 0) override
+        lex_re() {}
+        lex_re(const lex_re &r) : lex_v<char>(r) { if (r.groups) groups = (lex_V *)r.groups->clone(); }
+        void printvalue(int indent = 0) const override
         {
             printf("\"");
             for (auto i = this->begin(); i != this->end(); i++)
@@ -119,16 +97,17 @@ namespace ast::_re
                 printf("%c", *i);
             }
             printf("\"");
-            if (groups)
-            {
-                for (int i = 0; i < groups->size(); i++)
-                {
-                    printf("\n");
-                    print_ind(indent, "Group %d: ", i);
-                    groups->at(i)->printvalue(indent + 1);
-                }
-            }
+            // if (groups)
+            // {
+            //     for (int i = 0; i < groups->size(); i++)
+            //     {
+            //         printf("\n");
+            //         print_ind(indent, "Group %d: ", i);
+            //         groups->at(i)->printvalue(indent + 1);
+            //     }
+            // }
         }
+        lexeme *operator[](int i) { return groups ? groups->at(i) : nullptr; }
         lex_V *groups = nullptr;
         ~lex_re()
         {
@@ -554,7 +533,8 @@ namespace ast::_re
         regex_mask mask;
         regex_repetition repetition(1, 1);
 
-        while (!ast::_b::stream_eof(s))
+        // while (!ast::_b::stream_eof(s))
+        while (true)
         {
             // Ending the pattern or a group
             if (*pattern == '\0' || *pattern == ')')
@@ -649,10 +629,12 @@ namespace ast::_re
                 {
                     subgroup = new lex_V();
                     int count = 0;
-                    while (submatch && (repetition.max == -1 || count < repetition.max))
+                    while (submatch && submatch->size() > 0)
                     {
                         subgroup->push_back(submatch);
                         count++;
+                        if (ast::_b::stream_eof(s) || (repetition.max != -1 && count >= repetition.max))
+                            break;
                         pattern = group_start;
                         submatch = match_regex(s, pattern);
                     }
@@ -678,8 +660,6 @@ namespace ast::_re
                     }
                     else
                     {
-                        if (capture)
-                            l->groups->push_back(subgroup);
                         //append all the contents to l as well
                         for (auto m = subgroup->begin(); m != subgroup->end(); m++)
                         {
@@ -687,6 +667,10 @@ namespace ast::_re
                             l->reserve(l->size() + distance(v_prime->begin(),v_prime->end()));
                             l->insert(l->end(),v_prime->begin(),v_prime->end());
                         }
+                        if (capture)
+                            l->groups->push_back(subgroup);
+                        else
+                            delete subgroup;
                     }
                 }
             }
@@ -732,11 +716,13 @@ namespace ast::_re
                     //if the count is met, append it to the main lexeme
                     lex_v<char> *subgroup = new lex_v<char>();
                     int count = 0;
-                    while (found && (repetition.max == -1 || count < repetition.max))
+                    while (found)
                     {
                         subgroup->push_back(*s);
                         s++;
                         count++;
+                        if  (ast::_b::stream_eof(s) || (repetition.max != -1 && count >= repetition.max))
+                            break;
                         found = mask[*s];
                     }
                     if (count < repetition.min)
@@ -761,6 +747,8 @@ namespace ast::_re
                     {
                         l->reserve(l->size() + distance(subgroup->begin(),subgroup->end()));
                         l->insert(l->end(),subgroup->begin(),subgroup->end());
+                        subgroup->clear();
+                        delete subgroup;
                     }
                 }
             }
@@ -795,4 +783,5 @@ namespace ast::_re
             return match_regex(s, pattern);
         }
     };
+
 }

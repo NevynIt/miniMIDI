@@ -18,12 +18,18 @@ concat<exp> ::= ast::_f::concat<exp>;
 select<exp, int i> ::= ast::_f::select<exp, i>;
     --select the lexeme i from the list
 
-tolong<exp> ::= ast_char::tolong<exp>;
-    --convert the string lexeme into a long number
-
 regex<string pattern> ::= ast::_t::token_regex<pattern>;
     --parse the string lexeme as a regex
     --return the whole set of groups and matches
+
+drop<exp> ::= ast::_f::drop<exp>;
+    --drop the lexeme from the ast as soon as it's included in a seq
+
+out<exp> ::= ast::_f::out<exp>;
+    --pass the lexeme to the current output function
+
+outfnc<exp, fnc> ::= ast::_f::outfnc<exp, fnc>;
+    --set the output function to use while processing exp
 
 -- primary operators
 character ::= delimited<'\'', '\\', '\''>;
@@ -37,7 +43,11 @@ string ::= delimited<'"', '\\', '"'>;
 
 re_pattern ::= delimited<'/', '\\', '/'>;
     --parse and convert to string in the ast
-    --the compiler will use ast_char::token_regex to match the string and select group 0
+    --the compiler will use ast::_re::regex to match the string and select group 0
+
+replace_pattern ::= delimited<'/', '\\', '/'>;
+    --parse and convert to string in the ast
+    --the compiler will use ast::_rp::replace to perform the replacement
 
 name ::= /[a-zA-Z_][a-zA-Z0-9_]*(::[a-zA-Z_][a-zA-Z0-9_]*)*/;
     --the compiler will use it as a class name
@@ -46,9 +56,9 @@ positive_integer ::= /[0-9]+/;
 integer ::= /[+-]?[0-9]+/;
 hex_number ::= /0x[0-9a-fA-F]+/;
 dec_number ::= /[+-]?[0-9]+\.([0-9]+)?/;
-number ::= (dec_number | hex_number).tolong;
-comment ::= regex<"--([^n]*)\n">.select<1>;
-S ::= ((/[ \t\n\r]+/ | comment)*).concat;
+number ::= dec_number | hex_number;
+comment ::= /--([^\n]*)\n/./$1/;
+S ::= ((/[ \t\n\r]+/ | comment)*).drop;
     -- whitespace and comments
     -- the compiler will ignore them
 
@@ -57,7 +67,7 @@ primary ::= name | string | regex | '(' S expression S ')';
 argument ::= expression | number;
     --the compiler will use these as template arguments
 
-decorator ::= '.' name ( '<' S argument.list<(S ',' S)> '>' S )?;
+decorator ::= '.' (name ( '<' S argument.list<(S ',' S)> '>' S )?) | replace_pattern;
 decorated ::= primary decorator*;
     -- xxx.yyy<a,b,c> ==> yyy<xxx,a,b,c>
     -- x.y.z          ==> z<y<x>>
@@ -94,7 +104,7 @@ param_list ::= '<' S param.list<(S ',' S)> S '>';
 rule ::= name ( param_list )? S "::=" S expression S ';';
     -- the compiler will use the name as the class name
 
-copyline ::= regex<"$([^\n]*)\n">.select<1>;
+copyline ::= /$([^\n]*)\n/./$1/.out.drop;
 grammar ::= S (rule | copyline ).list<S>;
 
 -- the grammar is self-contained, so it can be parsed by itself

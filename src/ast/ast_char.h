@@ -13,6 +13,7 @@ namespace ast_char
     using namespace ast::_d;
     using namespace ast::_f;
     using namespace ast::_re;
+    using namespace ast::_rp;
 
     using obj = char;
 

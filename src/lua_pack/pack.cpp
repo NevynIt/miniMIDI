@@ -35,6 +35,8 @@ namespace _detail
     public:
         set_signature<ast_str("lex_bitfield")>;
         variant_inherit(lexeme)
+        lex_bitfield() {}
+        lex_bitfield(const lex_bitfield &b) { if (b.bitfield) bitfield = new std::vector<uint8_t>(*b.bitfield); }
         lex_bitfield(std::vector<uint8_t> *bitfield) : bitfield(bitfield) {}
         ~lex_bitfield() { if (bitfield) delete bitfield; }
         std::vector<uint8_t> *bitfield = nullptr;
@@ -77,7 +79,9 @@ namespace _detail
     public:
         set_signature<ast_str("lex_field_info")>;
         variant_inherit(lexeme)
-        lex_field_info(field_info *f) : f(f) {}
+        lex_field_info() {}
+        lex_field_info(const lex_field_info &ff) { if (ff.f) f = new field_info(*ff.f); }
+        lex_field_info(field_info *ff) : f(ff) {}
         ~lex_field_info() { if (f) delete f; }
         field_info *f = nullptr;
     };
@@ -87,6 +91,19 @@ namespace _detail
     public:
         set_signature<ast_str("lex_struct")>;
         variant_inherit(lexeme)
+
+        lex_struct() {}
+        lex_struct(const lex_struct &s)
+        {
+            if (s.fields) 
+            {
+                fields = new std::vector<field_info *>(s.fields->size());
+                for (size_t i = 0; i < s.fields->size(); i++)
+                {
+                    fields->at(i) = new field_info(*s.fields->at(i));
+                }
+            }
+        }
         lex_struct(std::vector<field_info *> *fields = nullptr) : fields(fields) {}
         ~lex_struct()
         {

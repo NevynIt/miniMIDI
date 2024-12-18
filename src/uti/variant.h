@@ -11,6 +11,7 @@ namespace uti
         static const uti::signature_id static_get_typeid() { return &signature::print; }
         virtual const uti::signature_id get_typeid() const { return static_get_typeid(); }
         virtual bool is_same_as(uti::signature_id s) const { return get_typeid() == s; }
+        virtual uti::variant *clone() const { return nullptr; }
         virtual ~variant() {}
 
         template<typename T>
@@ -49,10 +50,12 @@ namespace uti
     #define variant_implementation \
         static const uti::signature_id static_get_typeid() { return &signature::print; } \
         virtual const uti::signature_id get_typeid() const override { return static_get_typeid(); } \
+        virtual uti::variant *clone() const override { return (uti::variant *)(new std::remove_pointer_t<decltype(this)>(*this)); } \
         virtual bool is_same_as(uti::signature_id s) const override { return static_get_typeid() == s; }
     #define variant_inherit(_BASE_) \
         static const uti::signature_id static_get_typeid() { return &signature::print; } \
         virtual const uti::signature_id get_typeid() const override { return static_get_typeid(); } \
+        virtual uti::variant *clone() const override { return (uti::variant *)(new std::remove_pointer_t<decltype(this)>(*this)); } \
         virtual bool is_same_as(uti::signature_id s) const override { return static_get_typeid() == s || _BASE_::is_same_as(s); }
 
 }
