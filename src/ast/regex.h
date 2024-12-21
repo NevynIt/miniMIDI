@@ -494,7 +494,7 @@ namespace ast::_re
 
     typedef const char *char_cptr;
 
-    void skip_alternative(char_cptr &pattern)
+    inline void skip_alternative(char_cptr &pattern)
     {
         int depth = 0;
         while ((*pattern != '|' || depth > 0) && *pattern != '\0')
@@ -609,16 +609,18 @@ namespace ast::_re
                     }
                     else
                     {
-                        // Restore stream snapshot
-                        ast::_b::stream_restore(s, group_sshot);
                         // Check for alternatives
                         if (*pattern != '|')
                         {
+                            // Restore stream snapshot
+                            ast::_b::stream_restore(s, sshot);
                             delete l;
                             return nullptr;
                         }
                         else
                         {
+                            // Restore stream snapshot
+                            ast::_b::stream_restore(s, group_sshot);
                             // Skip '|' and proceed
                             pattern++;
                             continue;
@@ -642,17 +644,18 @@ namespace ast::_re
 
                     if (count < repetition.min)
                     {
-                        // Restore stream snapshot
-                        ast::_b::stream_restore(s, group_sshot);
-                        delete subgroup;
                         // Check for alternatives
                         if (*pattern != '|')
                         {
+                            // Restore stream snapshot
+                            ast::_b::stream_restore(s, sshot);
                             delete l;
                             return nullptr;
                         }
                         else
                         {
+                            // Restore stream snapshot
+                            ast::_b::stream_restore(s, group_sshot);
                             // Skip '|' and proceed
                             pattern++;
                             continue;
@@ -694,16 +697,18 @@ namespace ast::_re
                     }
                     else
                     {
-                        // Restore stream snapshot
-                        ast::_b::stream_restore(s, char_sshot);
                         // Check for alternatives
                         if (*pattern != '|')
                         {
+                            // Restore stream snapshot
+                            ast::_b::stream_restore(s, sshot);
                             delete l;
                             return nullptr;
                         }
                         else
                         {
+                            // Restore stream snapshot
+                            ast::_b::stream_restore(s, char_sshot);
                             // Skip '|' and proceed
                             pattern++;
                             continue;
@@ -727,17 +732,18 @@ namespace ast::_re
                     }
                     if (count < repetition.min)
                     {
-                        // Restore stream snapshot
-                        ast::_b::stream_restore(s, char_sshot);
-                        delete subgroup;
                         // Check for alternatives
                         if (*pattern != '|')
                         {
+                            // Restore stream snapshot
+                            ast::_b::stream_restore(s, sshot);
                             delete l;
                             return nullptr;
                         }
                         else
                         {
+                            // Restore stream snapshot
+                            ast::_b::stream_restore(s, char_sshot);
                             // Skip '|' and proceed
                             pattern++;
                             continue;
@@ -766,6 +772,7 @@ namespace ast::_re
         }
 
         // Cleanup and return nullptr
+        stream_restore(s, sshot);
         delete l;
         return nullptr;
     }

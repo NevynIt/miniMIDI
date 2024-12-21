@@ -43,6 +43,7 @@ add_executable(miniMIDI
     mod_Synth.cpp
     mod_Stdio.cpp
     mod_Lua.cpp
+    ast/ast.cpp
     embedded-cli/lib/src/embedded_cli.c
 
     # wavetables/WT_BASE.cpp

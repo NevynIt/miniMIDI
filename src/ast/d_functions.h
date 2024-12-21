@@ -189,34 +189,7 @@ namespace ast::_f
 
     typedef void (*out_func_t)(const lexeme *l);
 
-    void base_out_func(const lexeme *l)
-    {
-        if (l)
-        {
-            lex_v<char> *ll = concat_decorator<char>((lexeme *)l->clone())->as<lex_v<char>>();
-            if (ll)
-            {
-                for (auto i = ll->begin(); i != ll->end(); i++)
-                {
-                    printf("%c", *i);
-                }
-                delete ll;
-            }
-            printf("\n");
-        }
-        else
-        {
-            printf("nullptr\n");
-        }
-    }
-
-    out_func_t cur_out_func(out_func_t f = nullptr)
-    {
-        static out_func_t _f = base_out_func;
-        if (f)
-            _f = f;
-        return _f;
-    }
+    out_func_t cur_out_func(out_func_t f = nullptr);
 
     template<typename T0>
     ast_internal_rule(out)
@@ -230,4 +203,5 @@ namespace ast::_f
             return l;
         }
     };
+    
 }

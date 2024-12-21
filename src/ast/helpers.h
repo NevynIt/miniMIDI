@@ -165,6 +165,7 @@ namespace ast::_h
     #define ast_base_rule using _ast_rule_base_
     #define ast_str(_STR_) uti::str(_STR_)
     #define ast_str_arr(_STR_) uti::str_no0(_STR_)
+    #define ast_id(_RULE_) (&_RULE_::signature::print)
     
     #define ast_base_signature _ast_rule_base_::signature
     #define sub_match(_T0_, _varname_) _T0_::match(_varname_, _trace_ ? _trace_ + (_ast_internal_rule_ ? 0 : 1) : 0)
@@ -201,6 +202,8 @@ namespace ast::_h
             } \
             if (l) \
             { \
+                if constexpr (std::is_same_v<decltype(decorate(l)), lexeme *>) \
+                    l = decorate(l); \
                 l->rule = static_get_typeid();\
             } \
             return l; \
@@ -298,6 +301,9 @@ namespace ast::_h
     public: \
     set_signature<ast_str(#_NAME_)>; \
     ast_base_rule
+
+    #define ast_alias_decorator(_NAME_) \
+    static lexeme *decorate(lexeme *_NAME_)
 
     #define ast_alias_end \
     ast_alias_implementation \

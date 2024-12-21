@@ -1,7 +1,6 @@
 #pragma once
 
 #include "ast.h"
-#include <stdlib.h>
 #include "regex.h"
 
 namespace ast_char

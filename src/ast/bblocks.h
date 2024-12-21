@@ -109,6 +109,14 @@ namespace ast::_b
             printf(": ");
             printvalue(indent);
         }
+
+        template<typename R>
+        bool rule_is() const
+        {
+            return rule == R::static_get_typeid();
+        }
+
+        lexeme *operator[](const char *p) const;
     };
     
     template<typename O>
@@ -187,6 +195,32 @@ namespace ast::_b
                 (*this)[i] = (lexeme *)V[i]->clone();
         }
 
+        inline lexeme *operator[](int i) const
+        {
+            const std::vector<lexeme *> &svT = *this;
+            return svT[i];
+        }
+
+        inline lexeme *&operator[](int i)
+        {
+            std::vector<lexeme *> &svT = *this;
+            return svT[i];
+        }
+
+        lexeme *operator[](const char *p) const
+        {
+            return lexeme::operator[](p);
+        }
+
+        lexeme *take(int i)
+        {
+            lexeme *l = (*this)[i];
+            (*this)[i] = nullptr;
+            return l;
+        }
+
+        void replace(int i, const char *pattern);
+
         void printvalue(int indent = 0) const override
         {
             if (this->size() == 0)
@@ -195,9 +229,11 @@ namespace ast::_b
                 return;
             }
             printf("{\n");
+            int c = 0;
             for (auto i = this->begin(); i != this->end(); i++)
             {
-                (*i)->print(indent + 1);
+                print_ind(indent, "[%d]: ", c++);
+                (*i)->printvalue(indent + 1);
                 if (i + 1 != this->end())
                     printf(",\n");
             }
@@ -284,6 +320,7 @@ namespace ast::_b
         variant_implementation
 
         static constexpr bool _ast_internal_rule_ = false;
+        static void decorate(lexeme *l) {}
     };
 
 
