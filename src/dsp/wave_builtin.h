@@ -6,7 +6,7 @@ namespace dsp
     class constantWave : public wave
     {
     public:
-        set_signature<uti::str("constantWave")>;
+        set_signature<uti::str("constantWave")>();
         variant_inherit(wave)
         WAVE_OPERATOR_OVERRIDE
 
@@ -80,7 +80,7 @@ namespace dsp
     class noiseWave : public wave
     {
     public:
-        set_signature<uti::str("noiseWave")>;
+        set_signature<uti::str("noiseWave")>();
         variant_inherit(wave)
         WAVE_OPERATOR_OVERRIDE
         noiseWave() = default;
@@ -92,7 +92,7 @@ namespace dsp
     class periodicWave : public wave
     {
     public:
-        set_signature<uti::str("periodicWave")>;
+        set_signature<uti::str("periodicWave")>();
         variant_inherit(wave)
         WAVE_OPERATOR_OVERRIDE
         periodicWave() = default;
@@ -128,7 +128,7 @@ namespace dsp
     class squareWave : public periodicWave
     {
     public:
-        set_signature<uti::str("squareWave")>;
+        set_signature<uti::str("squareWave")>();
         variant_inherit(periodicWave)
         WAVE_OPERATOR_OVERRIDE
         squareWave() = default;
@@ -168,7 +168,7 @@ namespace dsp
     class sawtoothWave : public periodicWave
     {
     public:
-        set_signature<uti::str("sawtoothWave")>;
+        set_signature<uti::str("sawtoothWave")>();
         variant_inherit(periodicWave)
         WAVE_OPERATOR_OVERRIDE
         sawtoothWave() = default;
@@ -190,7 +190,7 @@ namespace dsp
         static_assert((count > 1) && ((count & (count - 1)) == 0), "count must be a power of 2");
         constexpr static int count_bits = log2(count);
     public:
-        set_signature<uti::str("bufferWave"), count>;
+        set_signature<uti::str("bufferWave"), count>();
         variant_inherit(periodicWave)
         WAVE_OPERATOR_OVERRIDE
         bufferWave(const SampleType *buffer) : m_buffer(buffer) {}
@@ -217,7 +217,7 @@ namespace dsp
     class builtinWave : public bufferWave<tables::DSP_SIZE>
     {
     public:
-        set_signature<uti::str("builtinWave")>;
+        set_signature<uti::str("builtinWave")>();
         variant_inherit(bufferWave<tables::DSP_SIZE>)
         WAVE_OPERATOR_OVERRIDE
         builtinWave() : bufferWave(tables::sinWave) {}
@@ -232,7 +232,7 @@ namespace dsp
     class sinWave : public builtinWave
     {
     public:
-        set_signature<uti::str("sinWave")>;
+        set_signature<uti::str("sinWave")>();
         variant_inherit(builtinWave)
         WAVE_OPERATOR_OVERRIDE
         sinWave() : builtinWave() {}
@@ -245,7 +245,7 @@ namespace dsp
         static_assert(std::is_base_of<periodicWave, Base>::value, "Base must be derived from periodicWave");
 
     public:
-        set_signature<uti::str("harmonicWave"), harmonics, sig_of(Base)>;
+        set_signature<uti::str("harmonicWave"), harmonics, uti::sig_of<Base>()>();
         variant_inherit(Base)
         WAVE_OPERATOR_OVERRIDE
         harmonicWave() = default;
@@ -318,7 +318,7 @@ namespace dsp
         static_assert(std::is_base_of<periodicWave, Base>::value, "Base must be derived from PeriodicWave");
 
         public:
-        set_signature<uti::str("inharmonicWave"), harmonics, sig_of(Base)>;
+        set_signature<uti::str("inharmonicWave"), harmonics, uti::sig_of<Base>()>();
         variant_inherit(Base)
         WAVE_OPERATOR_OVERRIDE
         inharmonicWave() = default;

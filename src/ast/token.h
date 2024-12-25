@@ -26,7 +26,7 @@ namespace ast::_t
     ast_internal_rule(token)
     {
     public:
-        set_signature<ast_str("token"), sig_of(O), value>;
+        set_signature<ast_str("token"), uti::sig_of<O>(), value>();
 
         ast_primary_implementation(s)
         {
@@ -53,7 +53,7 @@ namespace ast::_t
     ast_internal_rule(token_range)
     {
     public:
-        set_signature<ast_str("token_range"), sig_of(O), start, end>;
+        set_signature<ast_str("token_range"), uti::sig_of<O>(), start, end>();
 
         ast_primary_implementation(s)
         {
@@ -84,7 +84,7 @@ namespace ast::_t
     {
         static_assert(is_std_array_v<decltype(arr)>, "arr must be an array");
     public:
-        set_signature<ast_str("token_choice"), sig_of(O), arr>;
+        set_signature<ast_str("token_choice"), uti::sig_of<O>(), arr>();
 
         ast_primary_implementation(s)
         {
@@ -126,7 +126,7 @@ namespace ast::_t
         //assert that arr is std::array
         static_assert(is_std_array_v<decltype(arr)>, "arr must be an array");
     public:
-        set_signature<ast_str("token_string"), sig_of(O), arr>;
+        set_signature<ast_str("token_string"), uti::sig_of<O>(), arr>();
 
         ast_primary_implementation(s)
         {
@@ -177,7 +177,7 @@ namespace ast::_t
     ast_internal_rule(token_delimited)
     {
     public:
-        set_signature<ast_str("token_delimited"), sig_of(O), start, escape, end>;
+        set_signature<ast_str("token_delimited"), uti::sig_of<O>(), start, escape, end>();
 
         ast_primary_implementation(s)
         {

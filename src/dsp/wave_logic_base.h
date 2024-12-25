@@ -11,7 +11,7 @@ namespace dsp
     {
     public:
         logic_base() = default;
-        set_signature<uti::str("logic_base"), sig_of(opX)>;
+        set_signature<uti::str("logic_base"), uti::sig_of<opX>()>();
         variant_implementation
         
         static constexpr auto op_count = opX::op_count;

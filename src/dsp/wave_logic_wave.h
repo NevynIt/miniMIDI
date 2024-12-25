@@ -23,7 +23,7 @@ namespace dsp
     class logic_wave : public wave
     {
     public:
-        set_signature<uti::str("logic_wave"), sig_of(Logic)>;
+        set_signature<uti::str("logic_wave"), uti::sig_of<Logic>()>();
         variant_inherit(wave)
 
         logic_wave()

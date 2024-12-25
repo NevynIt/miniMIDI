@@ -9,7 +9,7 @@ namespace dsp
     class gainModWave : public Base
     {
     public:
-        set_signature<uti::str("gainModWave"), sig_of(Base)>;
+        set_signature<uti::str("gainModWave"), uti::sig_of<Base>()>();
         variant_inherit(Base)
         WAVE_OPERATOR_OVERRIDE
 
@@ -61,7 +61,7 @@ namespace dsp
     class amModWave : public wave
     {
     public:
-        set_signature<uti::str("amModWave"), sig_of(Carrier), sig_of(Modulator)>;
+        set_signature<uti::str("amModWave"), uti::sig_of<Carrier>(), uti::sig_of<Modulator>()>();
         variant_inherit(wave)
         WAVE_OPERATOR_OVERRIDE
         amModWave() = default;
@@ -132,7 +132,7 @@ namespace dsp
     {
         static_assert(std::is_base_of<periodicWave, Carrier>::value, "Carrier must be derived from periodicWave");
     public:
-        set_signature<uti::str("pmModWave"), sig_of(Carrier), sig_of(Modulator)>;
+        set_signature<uti::str("pmModWave"), uti::sig_of<Carrier>(), uti::sig_of<Modulator>()>();
         variant_inherit(wave)
         WAVE_OPERATOR_OVERRIDE
         pmModWave() = default;
@@ -208,7 +208,7 @@ namespace dsp
     class fmModWave : public wave
     {
     public:
-        set_signature<uti::str("fmModWave"), sig_of(Carrier), sig_of(Modulator)>;
+        set_signature<uti::str("fmModWave"), uti::sig_of<Carrier>(), uti::sig_of<Modulator>()>();
         variant_inherit(wave)
         WAVE_OPERATOR_OVERRIDE
         fmModWave() = default;

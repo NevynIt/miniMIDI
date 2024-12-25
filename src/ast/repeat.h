@@ -13,7 +13,7 @@ namespace ast::_r
     ast_internal_rule(rep)
     {
     public:
-        set_signature<ast_str("rep"), sig_of(T0), min, max, sig_of(Sep)>;
+        set_signature<ast_str("rep"), uti::sig_of<T0>(), min, max, uti::sig_of<Sep>()>();
 
         ast_primary_implementation(s)
         {
@@ -26,7 +26,7 @@ namespace ast::_r
                 if (count > 0)
                 {
                     void *sshot2 = stream_snapshot(s);
-                    auto ls = sub_match(Sep, s);
+                    auto ls = ast_sub_match(Sep, s);
                     if (ls)
                         delete ls;
                     else
@@ -36,11 +36,28 @@ namespace ast::_r
                     }
                 }
 
-                auto li = sub_match(T0, s);
+                auto li = ast_sub_match(T0, s);
                 if (li)
                 {
-                    if (!li->template is<_f::lex_drop>())
-                        l->push_back(li);
+                    if (li->template is<_f::lex_drop>())
+                        delete li;
+                    else
+                    {
+                        auto V = li->template as<lex_V>();
+                        if (V && V->rule == nullptr)
+                        {
+                            for (auto &v : *V)
+                            {
+                                l->push_back(v);
+                            }
+                            V->clear();
+                            delete li;
+                        }
+                        else
+                        {
+                            l->push_back(li);
+                        }
+                    }
                     count++;
                 }
                 else

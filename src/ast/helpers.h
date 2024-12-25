@@ -81,6 +81,25 @@ namespace ast::_h
         vprintf(fmt, args);
         va_end(args);
     }
+
+    inline const char *strdup(const char *s)
+    {
+        if (!s)
+            return nullptr;
+        char *d = new char[strlen(s) + 1];
+        strcpy(d, s);
+        return d;
+    }
+
+    inline const char *strdup(const char *s, int len)
+    {
+        if (!s)
+            return nullptr;
+        char *d = new char[len + 1];
+        strncpy(d, s, len);
+        d[len] = '\0';
+        return d;
+    }
 //-------------------------------------------------------------------------------------------------
     // Helper to define match functions and enable tracing and backtracking
     #define object_S ::std::remove_reference_t<decltype(*::std::declval<_StreamType>())>
@@ -122,7 +141,7 @@ namespace ast::_h
     // template <typename _StreamType>\
     // static inline lexeme *match_impl(_StreamType &_varname_, int _trace_ = 0, const char *_rule_name_ = nullptr, bool _internal_ = true)
 
-    // #define sub_match(_T0_, _varname_) _T0_::match(_varname_, _trace_ ? _trace_ + (_internal_ ? 0 : 1) : 0, _rule_name_)
+    // #define ast_sub_match(_T0_, _varname_) _T0_::match(_varname_, _trace_ ? _trace_ + (_internal_ ? 0 : 1) : 0, _rule_name_)
 
 
     template<typename T>
@@ -146,7 +165,7 @@ namespace ast::_h
 //template <x,y,z>
 //ast_define_rule(_NAME_) {
 //ast_base_rule = seq2<x,y>;
-//set_signature<x,y,z>;
+//set_signature<x,y,z>();
 //optionally: ast_set_internal
 //---one of:
 //ast_alias_implementation
@@ -162,13 +181,14 @@ namespace ast::_h
     #define ast_define_rule(_NAME_) class _NAME_ : public rule_base
     // #define ast_internal_rule(_NAME_) class _NAME_ : public rule_base
     #define ast_internal_rule(_NAME_) class _NAME_ : public rule_base_internal
+    #define ast_set_internal static constexpr bool _ast_internal_rule_ = true
     #define ast_base_rule using _ast_rule_base_
     #define ast_str(_STR_) uti::str(_STR_)
     #define ast_str_arr(_STR_) uti::str_no0(_STR_)
-    #define ast_id(_RULE_) (&_RULE_::signature::print)
+    #define ast_id(_RULE_) (_RULE_::static_get_typeid())
     
     #define ast_base_signature _ast_rule_base_::signature
-    #define sub_match(_T0_, _varname_) _T0_::match(_varname_, _trace_ ? _trace_ + (_ast_internal_rule_ ? 0 : 1) : 0)
+    #define ast_sub_match(_T0_, _varname_) _T0_::match(_varname_, _trace_ ? _trace_ + (_ast_internal_rule_ ? 0 : 1) : 0)
 
     #define ast_alias_implementation \
     variant_inherit(rule_base) \
@@ -185,26 +205,20 @@ namespace ast::_h
             { \
                 print_ind(_trace_, "");\
                 lex_o<object_S>(*_stream_).printvalue();\
-                printf(" (");\
-                print_signature_static();\
-                printf(") : ");\
-                _ast_rule_base_::print_signature_static();\
-                printf("\n"); \
+                printf(" (%s) : %s\n", static_get_typeid(), _ast_rule_base_::static_get_typeid());\
             } \
             auto l = _ast_rule_base_::match(_stream_, _trace_ ? _trace_ +  1 : 0); \
             if (_trace_) \
             { \
                 print_ind(_trace_, "");\
                 lex_o<object_S>(*_stream_).printvalue();\
-                printf(" (");\
-                print_signature_static();\
-                printf(") : %s\n", l ? "PASS" : "FAIL");\
+                printf(" (%s) : %s\n", static_get_typeid(), l ? "PASS" : "FAIL");\
             } \
             if (l) \
             { \
                 if constexpr (std::is_same_v<decltype(decorate(l)), lexeme *>) \
                     l = decorate(l); \
-                l->rule = static_get_typeid();\
+                if (!l->rule) l->rule = static_get_typeid();\
             } \
             return l; \
         } \
@@ -227,11 +241,7 @@ namespace ast::_h
             { \
                 print_ind(_trace_, "");\
                 lex_o<object_S>(*_stream_).printvalue();\
-                printf(" (");\
-                print_signature_static();\
-                printf(") : ");\
-                _ast_rule_base_::print_signature_static();\
-                printf("\n"); \
+                printf(" (%s) : %s\n", static_get_typeid(), _ast_rule_base_::static_get_typeid());\
             } \
             auto l = _ast_rule_base_::match(_stream_, _trace_ ? _trace_ +  1 : 0); \
             if (l) l = decorate(l); \
@@ -239,13 +249,11 @@ namespace ast::_h
             { \
                 print_ind(_trace_, "");\
                 lex_o<object_S>(*_stream_).printvalue();\
-                printf(" (");\
-                print_signature_static();\
-                printf(") : %s\n", l ? "PASS" : "FAIL");\
+                printf(" (%s) : %s\n", static_get_typeid(), l ? "PASS" : "FAIL");\
             } \
             if (l) \
             { \
-                l->rule = static_get_typeid();\
+                if (!l->rule) l->rule = static_get_typeid();\
             } \
             return l; \
         } \
@@ -267,22 +275,18 @@ namespace ast::_h
             { \
                 print_ind(_trace_, "");\
                 lex_o<object_S>(*_stream_).printvalue();\
-                printf(" (");\
-                print_signature_static();\
-                printf(") \n");\
+                printf(" (%s)\n", static_get_typeid());\
             } \
             auto l = match_impl(_stream_, _trace_); \
             if (_trace_) \
             { \
                 print_ind(_trace_, "");\
                 lex_o<object_S>(*_stream_).printvalue();\
-                printf(" (");\
-                print_signature_static();\
-                printf(") : %s\n", l ? "PASS" : "FAIL");\
+                printf(" (%s) : %s\n", static_get_typeid(), l ? "PASS" : "FAIL");\
             } \
             if (l) \
             { \
-                l->rule = static_get_typeid();\
+                if (!l->rule) l->rule = static_get_typeid();\
             } \
             return l; \
         } \
@@ -293,13 +297,13 @@ namespace ast::_h
     #define ast_internal_alias(_NAME_) \
     ast_internal_rule(_NAME_) { \
     public: \
-    set_signature<ast_str(#_NAME_)>; \
+    set_signature<ast_str(#_NAME_)>(); \
     ast_base_rule
 
     #define ast_alias(_NAME_) \
     ast_define_rule(_NAME_) { \
     public: \
-    set_signature<ast_str(#_NAME_)>; \
+    set_signature<ast_str(#_NAME_)>(); \
     ast_base_rule
 
     #define ast_alias_decorator(_NAME_) \
@@ -308,6 +312,54 @@ namespace ast::_h
     #define ast_alias_end \
     ast_alias_implementation \
     }
+
+    #define ast_alias_declare(_NAME_) \
+    template<typename T> lexeme *_ast_##_NAME_##_splt_decorator_(lexeme *l) {  return l; } \
+    ast_define_rule(_NAME_) { \
+    public: \
+    set_signature<ast_str(#_NAME_)>(); \
+    variant_inherit(rule_base) \
+    template <typename _StreamType>\
+    static inline lexeme *match(_StreamType &_stream_, int _trace_ = 0); \
+    }
+
+    #define ast_alias_define(_NAME_) \
+    using _NAME_##_ast_rule_base_
+
+    #define ast_alias_define_decorator(_NAME_, _LEX_) \
+    template<> lexeme *_ast_##_NAME_##_splt_decorator_<_NAME_>(lexeme *l)
+
+    #define ast_alias_define_end(_NAME_) \
+    template <typename _StreamType>\
+    inline lexeme *_NAME_::match(_StreamType &_stream_, int _trace_) \
+    { \
+        if constexpr (_ast_internal_rule_) \
+        { \
+            return _NAME_##_ast_rule_base_::match(_stream_, _trace_); \
+        } \
+        else \
+        { \
+            if (_trace_) \
+            { \
+                print_ind(_trace_, "");\
+                lex_o<object_S>(*_stream_).printvalue();\
+                printf(" (%s) : %s\n", static_get_typeid(), _NAME_##_ast_rule_base_::static_get_typeid());\
+            } \
+            auto l = _NAME_##_ast_rule_base_::match(_stream_, _trace_ ? _trace_ +  1 : 0); \
+            if (_trace_) \
+            { \
+                print_ind(_trace_, "");\
+                lex_o<object_S>(*_stream_).printvalue();\
+                printf(" (%s) : %s\n", static_get_typeid(), l ? "PASS" : "FAIL");\
+            } \
+            if (l) \
+            { \
+                l = _ast_##_NAME_##_splt_decorator_<_NAME_>(l); \
+                if (l && !l->rule) l->rule = static_get_typeid();\
+            } \
+            return l; \
+        } \
+    } 
 
     #define ast_regex_rule(_NAME_, _PATTERN_) ast_alias(_NAME_) = regex<ast_str(_PATTERN_)>; ast_alias_end;
     #define ast_internal_regex(_NAME_, _PATTERN_) ast_internal_alias(_NAME_) = regex<ast_str(_PATTERN_)>; ast_alias_end;

@@ -9,7 +9,7 @@ namespace dsp
     class script_wave : public logic_wave<Logic>
     {
     public:
-        set_signature<uti::str("script_wave"), sig_of(Logic)>;
+        set_signature<uti::str("script_wave"), uti::sig_of<Logic>()>();
         variant_inherit(logic_wave<Logic>)
 
         script_wave()

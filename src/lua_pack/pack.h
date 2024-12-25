@@ -2,6 +2,7 @@
 #include <vector>
 #include <cstdint>
 #include "lua/lua.hpp"
+#include <cstring>
 
     /*
     format string: { [ <count> | '\'' <name> '\'' ]<type>["[" <arraysize> | '\'' <name> '\'' "]"] }

@@ -23,7 +23,20 @@ namespace ast::_s
         }
         else
         {
-            l->push_back(ll);
+            auto V = ll->as<lex_V>();
+            if (V && V->rule == nullptr)
+            {
+                for (auto &v : *V)
+                {
+                    l->push_back(v);
+                }
+                V->clear();
+                delete ll;
+            }
+            else
+            {
+                l->push_back(ll);
+            }
         }
         if constexpr (sizeof...(types) == 0)
         {
@@ -39,7 +52,7 @@ namespace ast::_s
     ast_internal_rule(seq)
     {
     public:
-        set_signature<ast_str("seq"), uti::get_from<types...>{}>;
+        set_signature<ast_str("seq"), uti::sig_of<types...>()>();
 
         ast_primary_implementation(s)
         {

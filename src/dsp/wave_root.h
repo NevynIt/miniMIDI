@@ -33,7 +33,7 @@ namespace dsp
     class wave : public uti::variant
     {
     public:
-        set_signature<uti::str("wave")>;
+        set_signature<uti::str("wave")>();
         variant_implementation
 
         wave() = default;
@@ -54,8 +54,7 @@ namespace dsp
         virtual void inspect(int indent = 0)
         {
             for (int i = 0; i < indent; ++i) printf(indent_str);
-            print_signature();
-            printf("\n");
+            printf("%s\n", static_get_typeid());
             for (int i = 0; i < indent; ++i) printf(indent_str);
             printf("  Params (%d):\n", getParamCount());
             for (int i = 0; i < getParamCount(); i++)

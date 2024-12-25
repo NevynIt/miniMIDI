@@ -53,7 +53,7 @@ replace_pattern ::= delimited<'/', '\\', '/'>;
 name ::= /[a-zA-Z_][a-zA-Z0-9_]*(::[a-zA-Z_][a-zA-Z0-9_]*)*/;
     --the compiler will use it as a class name
 
-positive_integer ::= /[0-9]+/{4 , 54};
+positive_integer ::= /[0-9]+/;
 integer ::= /[+-]?[0-9]+/;
 hex_number ::= /0x[0-9a-fA-F]+/;
 dec_number ::= /[+-]?[0-9]+\.([0-9]+)?/;

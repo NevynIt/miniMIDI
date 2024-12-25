@@ -33,7 +33,7 @@ namespace _detail
     class lex_bitfield : public lexeme
     {
     public:
-        set_signature<ast_str("lex_bitfield")>;
+        set_signature<ast_str("lex_bitfield")>();
         variant_inherit(lexeme)
         lex_bitfield() {}
         lex_bitfield(const lex_bitfield &b) { if (b.bitfield) bitfield = new std::vector<uint8_t>(*b.bitfield); }
@@ -46,7 +46,7 @@ namespace _detail
     ast_define_rule(make_bitfield)
     {
     public:
-        set_signature<ast_str("make_bitfield")>;
+        set_signature<ast_str("make_bitfield")>();
         ast_base_rule = T0;
 
         ast_decorator_implementation(l)
@@ -77,7 +77,7 @@ namespace _detail
     class lex_field_info : public lexeme
     {
     public:
-        set_signature<ast_str("lex_field_info")>;
+        set_signature<ast_str("lex_field_info")>();
         variant_inherit(lexeme)
         lex_field_info() {}
         lex_field_info(const lex_field_info &ff) { if (ff.f) f = new field_info(*ff.f); }
@@ -89,7 +89,7 @@ namespace _detail
     class lex_struct : public lexeme
     {
     public:
-        set_signature<ast_str("lex_struct")>;
+        set_signature<ast_str("lex_struct")>();
         variant_inherit(lexeme)
 
         lex_struct() {}
@@ -123,7 +123,7 @@ namespace _detail
     ast_define_rule(make_struct)
     {
     public:
-        set_signature<ast_str("make_struct")>;
+        set_signature<ast_str("make_struct")>();
         ast_base_rule = T0;
 
         ast_decorator_implementation(l)
@@ -160,7 +160,7 @@ namespace _detail
     ast_define_rule(make_format)
     {
     public:
-        set_signature<ast_str("make_format")>;
+        set_signature<ast_str("make_format")>();
         ast_base_rule = T0;
 
         ast_decorator_implementation(l)
@@ -177,7 +177,7 @@ namespace _detail
                 return nullptr;
             }
 
-            field_info *f = new field_info();
+            field_info *f = new field_info();  //TODO FIX THIS
             if (lc->choice == 0) //type
             {
                 lex_re *lo = lc->l->template as<lex_re>();
@@ -230,7 +230,7 @@ namespace _detail
     ast_define_rule(make_field)
     {
     public:
-        set_signature<ast_str("make_field")>;
+        set_signature<ast_str("make_field")>();
         ast_base_rule = T0;
 
         ast_decorator_implementation(l)
@@ -257,7 +257,7 @@ namespace _detail
                 }
                 else
                 {
-                    auto *V0s = V0->at(0)->template as<lex_re>();
+                    auto *V0s = V0->at(0)->template as<lex_re>();   //TODO FIX THIS
                     if (V0s)
                     {
                         char *s = new char[V0s->size() + 1];
@@ -284,7 +284,7 @@ namespace _detail
                 }
                 else
                 {
-                    auto *V0s = V0->at(0)->template as<lex_re>();
+                    auto *V0s = V0->at(0)->template as<lex_re>();   //TODO FIX THIS
                     if (V0s)
                     {
                         char *s = new char[V0s->size() + 1];

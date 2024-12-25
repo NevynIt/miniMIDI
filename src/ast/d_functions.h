@@ -49,7 +49,7 @@ namespace ast::_f
     {
     public:
         ast_base_rule = T0;
-        set_signature<ast_str("select"), sig_of(T0), n>;
+        set_signature<ast_str("select"), uti::sig_of<T0>(), n>();
         ast_decorator_implementation(l)
         {
             return select_decorator(l, n);
@@ -59,7 +59,7 @@ namespace ast::_f
     class lex_drop : public lexeme
     {
     public:
-        set_signature<ast_str("drop")>;
+        set_signature<ast_str("drop")>();
         variant_inherit(lexeme)
     };
 
@@ -68,7 +68,7 @@ namespace ast::_f
     {
     public:
         ast_base_rule = T0;
-        set_signature<ast_str("drop"), sig_of(T0)>;
+        set_signature<ast_str("drop"), uti::sig_of<T0>()>();
         ast_decorator_implementation(l)
         {
             delete l;
@@ -134,7 +134,7 @@ namespace ast::_f
     {
     public:
         ast_base_rule = T0;
-        set_signature<ast_str("concat"), sig_of(T0), sig_of(O)>;
+        set_signature<ast_str("concat"), uti::sig_of<T0>(), uti::sig_of<O>()>();
         ast_decorator_implementation(l)
         {
             return concat_decorator<O>(l);
@@ -144,7 +144,7 @@ namespace ast::_f
     ast_internal_rule(fail_always)
     {
     public:
-        set_signature<ast_str("fail_always")>;
+        set_signature<ast_str("fail_always")>();
         ast_primary_implementation(s)
         {
             return nullptr;
@@ -154,7 +154,7 @@ namespace ast::_f
     ast_internal_rule(pass_always)
     {
     public:
-        set_signature<ast_str("pass_always")>;
+        set_signature<ast_str("pass_always")>();
         ast_primary_implementation(s)
         {
             return new lexeme();
@@ -165,12 +165,12 @@ namespace ast::_f
     ast_internal_rule(trace_on)
     {
     public:
-        set_signature<ast_str("trace_on"), sig_of(T0)>;
+        set_signature<ast_str("trace_on"), uti::sig_of<T0>()>();
 
         ast_primary_implementation(s)
         {
             _trace_ = _trace_ ? _trace_ : 1;
-            return sub_match(T0, s);
+            return ast_sub_match(T0, s);
         }
     };
 
@@ -178,12 +178,12 @@ namespace ast::_f
     ast_internal_rule(trace_off)
     {
     public:
-        set_signature<ast_str("trace_off"), sig_of(T0)>;
+        set_signature<ast_str("trace_off"), uti::sig_of<T0>()>();
 
         ast_primary_implementation(s)
         {
             _trace_ = 0;
-            return sub_match(T0, s);
+            return ast_sub_match(T0, s);
         }
     };
 
@@ -195,7 +195,7 @@ namespace ast::_f
     ast_internal_rule(out)
     {
         public:
-        set_signature<ast_str("out")>;
+        set_signature<ast_str("out")>();
         ast_base_rule = T0;
         ast_decorator_implementation(l)
         {

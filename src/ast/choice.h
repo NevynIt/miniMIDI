@@ -11,7 +11,7 @@ namespace ast::_c
     class lex_choice : public lexeme
     {
     public:
-        set_signature<ast_str("lex_choice")>;
+        set_signature<ast_str("lex_choice")>();
         variant_inherit(lexeme)
 
         lex_choice() {}
@@ -45,7 +45,7 @@ namespace ast::_c
     ast_internal_rule(choice)
     {
     public:
-        set_signature<ast_str("choice"), uti::get_from<types...>{}>;
+        set_signature<ast_str("choice"), uti::sig_of<types...>()>();
 
         ast_primary_implementation(s)
         {
@@ -75,7 +75,7 @@ namespace ast::_c
     ast_internal_rule(choicei)
     {
     public:
-        set_signature<ast_str("choicei"), uti::get_from<types...>{}>;
+        set_signature<ast_str("choicei"), uti::sig_of<types...>()>();
 
         ast_primary_implementation(s)
         {

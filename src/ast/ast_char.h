@@ -52,7 +52,7 @@ namespace ast_char
     ast_internal_rule(tolong)
     {
     public:
-        set_signature<ast_str("tolong"), sig_of(T0)>;
+        set_signature<ast_str("tolong"), uti::sig_of<T0>()>();
         ast_base_rule = T0;
 
         ast_decorator_implementation(l)
@@ -83,7 +83,7 @@ namespace ast_char
     ast_internal_rule(tofloat)
     {
     public:
-        set_signature<ast_str("tofloat"), sig_of(T0)>;
+        set_signature<ast_str("tofloat"), uti::sig_of<T0>()>();
         ast_base_rule = T0;
 
         ast_decorator_implementation(l)
@@ -114,7 +114,7 @@ namespace ast_char
     ast_internal_rule(tostring)
     {
     public:
-        set_signature<ast_str("tostring"), sig_of(T0)>;
+        set_signature<ast_str("tostring"), uti::sig_of<T0>()>();
         ast_base_rule = T0;
 
         ast_decorator_implementation(l)
@@ -193,7 +193,7 @@ namespace ast_char
     ast_internal_rule(stdEscape)
     { //standard escape sequences, including \n, \t, \r, \0, \\ and \xHH
     public:
-        set_signature<ast_str("stdEscape"), sig_of(T0)>;
+        set_signature<ast_str("stdEscape"), uti::sig_of<T0>()>();
         ast_base_rule = T0;
 
         ast_decorator_implementation(l)

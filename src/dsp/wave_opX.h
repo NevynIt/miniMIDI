@@ -9,7 +9,7 @@ namespace dsp
     {
     public:
         static constexpr uint8_t op_count = 0;
-        set_signature<uti::str("op0")>;
+        set_signature<uti::str("op0")>();
         variant_inherit(uti::variant)
         wave* get_wave(uint8_t index) { return nullptr; }
 
@@ -23,7 +23,7 @@ namespace dsp
     public:
         static constexpr uint8_t op_count = 1;
         Base1 o1;
-        set_signature<uti::str("op1"), sig_of(Base1)>;
+        set_signature<uti::str("op1"), uti::sig_of<Base1>()>();
         variant_inherit(uti::variant)
         wave* get_wave(uint8_t index) { return index == 0 ? &o1 : nullptr; }
 
@@ -38,7 +38,7 @@ namespace dsp
         static constexpr uint8_t op_count = 2;
         Base1 o1;
         Base2 o2;
-        set_signature<uti::str("op2"), sig_of(Base1), sig_of(Base2)>;
+        set_signature<uti::str("op2"), uti::sig_of<Base1>(), uti::sig_of<Base2>()>();
         variant_inherit(uti::variant)
         wave* get_wave(uint8_t index) { return index == 0 ? &o1 : (index == 1 ? &o2 : nullptr); }
 
@@ -54,7 +54,7 @@ namespace dsp
         Base1 o1;
         Base2 o2;
         Base3 o3;
-        set_signature<uti::str("op3"), sig_of(Base1), sig_of(Base2), sig_of(Base3)>;
+        set_signature<uti::str("op3"), uti::sig_of<Base1>(), uti::sig_of<Base2>(), uti::sig_of<Base3>()>();
         variant_inherit(uti::variant)
         wave* get_wave(uint8_t index) { return index == 0 ? &o1 : (index == 1 ? &o2 : (index == 2 ? &o3 : nullptr)); }
 
@@ -71,7 +71,7 @@ namespace dsp
         Base2 o2;
         Base3 o3;
         Base4 o4;
-        set_signature<uti::str("op4"), sig_of(Base1), sig_of(Base2), sig_of(Base3), sig_of(Base4)>;
+        set_signature<uti::str("op4"), uti::sig_of<Base1>(), uti::sig_of<Base2>(), uti::sig_of<Base3>(), uti::sig_of<Base4>()>();
         variant_inherit(uti::variant)
         wave* get_wave(uint8_t index) { return index == 0 ? &o1 : (index == 1 ? &o2 : (index == 2 ? &o3 : (index == 3 ? &o4 : nullptr))); }
 
@@ -89,7 +89,7 @@ namespace dsp
         Base3 o3;
         Base4 o4;
         Base5 o5;
-        set_signature<uti::str("op5"), sig_of(Base1), sig_of(Base2), sig_of(Base3), sig_of(Base4), sig_of(Base5)>;
+        set_signature<uti::str("op5"), uti::sig_of<Base1>(), uti::sig_of<Base2>(), uti::sig_of<Base3>(), uti::sig_of<Base4>(), uti::sig_of<Base5>()>();
         variant_inherit(uti::variant)
         wave* get_wave(uint8_t index) { return index == 0 ? &o1 : (index == 1 ? &o2 : (index == 2 ? &o3 : (index == 3 ? &o4 : (index == 4 ? &o5 : nullptr)))); }
 
@@ -108,7 +108,7 @@ namespace dsp
         Base4 o4;
         Base5 o5;
         Base6 o6;
-        set_signature<uti::str("op6"), sig_of(Base1), sig_of(Base2), sig_of(Base3), sig_of(Base4), sig_of(Base5), sig_of(Base6)>;
+        set_signature<uti::str("op6"), uti::sig_of<Base1>(), uti::sig_of<Base2>(), uti::sig_of<Base3>(), uti::sig_of<Base4>(), uti::sig_of<Base5>(), uti::sig_of<Base6>()>();
         variant_inherit(uti::variant)
         wave* get_wave(uint8_t index) { return index == 0 ? &o1 : (index == 1 ? &o2 : (index == 2 ? &o3 : (index == 3 ? &o4 : (index == 4 ? &o5 : (index == 5 ? &o6 : nullptr))))); }
 
@@ -128,7 +128,7 @@ namespace dsp
         Base5 o5;
         Base6 o6;
         Base7 o7;
-        set_signature<uti::str("op7"), sig_of(Base1), sig_of(Base2), sig_of(Base3), sig_of(Base4), sig_of(Base5), sig_of(Base6), sig_of(Base7)>;
+        set_signature<uti::str("op7"), uti::sig_of<Base1>(), uti::sig_of<Base2>(), uti::sig_of<Base3>(), uti::sig_of<Base4>(), uti::sig_of<Base5>(), uti::sig_of<Base6>(), uti::sig_of<Base7>()>();
         variant_inherit(uti::variant)
         wave* get_wave(uint8_t index) { return index == 0 ? &o1 : (index == 1 ? &o2 : (index == 2 ? &o3 : (index == 3 ? &o4 : (index == 4 ? &o5 : (index == 5 ? &o6 : (index == 6 ? &o7 : nullptr)))))); }
 
@@ -149,7 +149,7 @@ namespace dsp
         Base6 o6;
         Base7 o7;
         Base8 o8;
-        set_signature<uti::str("op8"), sig_of(Base1), sig_of(Base2), sig_of(Base3), sig_of(Base4), sig_of(Base5), sig_of(Base6), sig_of(Base7), sig_of(Base8)>;
+        set_signature<uti::str("op8"), uti::sig_of<Base1>(), uti::sig_of<Base2>(), uti::sig_of<Base3>(), uti::sig_of<Base4>(), uti::sig_of<Base5>(), uti::sig_of<Base6>(), uti::sig_of<Base7>(), uti::sig_of<Base8>()>();
         variant_inherit(uti::variant)
         wave* get_wave(uint8_t index) { return index == 0 ? &o1 : (index == 1 ? &o2 : (index == 2 ? &o3 : (index == 3 ? &o4 : (index == 4 ? &o5 : (index == 5 ? &o6 : (index == 6 ? &o7 : (index == 7 ? &o8 : nullptr))))))); }
 
@@ -171,7 +171,7 @@ namespace dsp
         Base7 o7;
         Base8 o8;
         Base9 o9;
-        set_signature<uti::str("op9"), sig_of(Base1), sig_of(Base2), sig_of(Base3), sig_of(Base4), sig_of(Base5), sig_of(Base6), sig_of(Base7), sig_of(Base8), sig_of(Base9)>;
+        set_signature<uti::str("op9"), uti::sig_of<Base1>(), uti::sig_of<Base2>(), uti::sig_of<Base3>(), uti::sig_of<Base4>(), uti::sig_of<Base5>(), uti::sig_of<Base6>(), uti::sig_of<Base7>(), uti::sig_of<Base8>(), uti::sig_of<Base9>()>();
         variant_inherit(uti::variant)
         wave* get_wave(uint8_t index) { return index == 0 ? &o1 : (index == 1 ? &o2 : (index == 2 ? &o3 : (index == 3 ? &o4 : (index == 4 ? &o5 : (index == 5 ? &o6 : (index == 6 ? &o7 : (index == 7 ? &o8 : (index == 8 ? &o9 : nullptr)))))))); }
 
@@ -194,7 +194,7 @@ namespace dsp
         Base8 o8;
         Base9 o9;
         Base10 o10;
-        set_signature<uti::str("op10"), sig_of(Base1), sig_of(Base2), sig_of(Base3), sig_of(Base4), sig_of(Base5), sig_of(Base6), sig_of(Base7), sig_of(Base8), sig_of(Base9), sig_of(Base10)>;
+        set_signature<uti::str("op10"), uti::sig_of<Base1>(), uti::sig_of<Base2>(), uti::sig_of<Base3>(), uti::sig_of<Base4>(), uti::sig_of<Base5>(), uti::sig_of<Base6>(), uti::sig_of<Base7>(), uti::sig_of<Base8>(), uti::sig_of<Base9>(), uti::sig_of<Base10>()>();
         variant_inherit(uti::variant)
         wave* get_wave(uint8_t index) { return index == 0 ? &o1 : (index == 1 ? &o2 : (index == 2 ? &o3 : (index == 3 ? &o4 : (index == 4 ? &o5 : (index == 5 ? &o6 : (index == 6 ? &o7 : (index == 7 ? &o8 : (index == 8 ? &o9 : (index == 9 ? &o10 : nullptr))))))))); }
 
@@ -218,7 +218,7 @@ namespace dsp
         Base9 o9;
         Base10 o10;
         Base11 o11;
-        set_signature<uti::str("op11"), sig_of(Base1), sig_of(Base2), sig_of(Base3), sig_of(Base4), sig_of(Base5), sig_of(Base6), sig_of(Base7), sig_of(Base8), sig_of(Base9), sig_of(Base10), sig_of(Base11)>;
+        set_signature<uti::str("op11"), uti::sig_of<Base1>(), uti::sig_of<Base2>(), uti::sig_of<Base3>(), uti::sig_of<Base4>(), uti::sig_of<Base5>(), uti::sig_of<Base6>(), uti::sig_of<Base7>(), uti::sig_of<Base8>(), uti::sig_of<Base9>(), uti::sig_of<Base10>(), uti::sig_of<Base11>()>();
         variant_inherit(uti::variant)
         wave* get_wave(uint8_t index) { return index == 0 ? &o1 : (index == 1 ? &o2 : (index == 2 ? &o3 : (index == 3 ? &o4 : (index == 4 ? &o5 : (index == 5 ? &o6 : (index == 6 ? &o7 : (index == 7 ? &o8 : (index == 8 ? &o9 : (index == 9 ? &o10 : (index == 10 ? &o11 : nullptr)))))))))); }
 
@@ -243,7 +243,7 @@ namespace dsp
         Base10 o10;
         Base11 o11;
         Base12 o12;
-        set_signature<uti::str("op12"), sig_of(Base1), sig_of(Base2), sig_of(Base3), sig_of(Base4), sig_of(Base5), sig_of(Base6), sig_of(Base7), sig_of(Base8), sig_of(Base9), sig_of(Base10), sig_of(Base11), sig_of(Base12)>;
+        set_signature<uti::str("op12"), uti::sig_of<Base1>(), uti::sig_of<Base2>(), uti::sig_of<Base3>(), uti::sig_of<Base4>(), uti::sig_of<Base5>(), uti::sig_of<Base6>(), uti::sig_of<Base7>(), uti::sig_of<Base8>(), uti::sig_of<Base9>(), uti::sig_of<Base10>(), uti::sig_of<Base11>(), uti::sig_of<Base12>()>();
         variant_inherit(uti::variant)
         wave* get_wave(uint8_t index) { return index == 0 ? &o1 : (index == 1 ? &o2 : (index == 2 ? &o3 : (index == 3 ? &o4 : (index == 4 ? &o5 : (index == 5 ? &o6 : (index == 6 ? &o7 : (index == 7 ? &o8 : (index == 8 ? &o9 : (index == 9 ? &o10 : (index == 10 ? &o11 : (index == 11 ? &o12 : nullptr))))))))))); }
 
@@ -269,7 +269,7 @@ namespace dsp
         Base11 o11;
         Base12 o12;
         Base13 o13;
-        set_signature<uti::str("op13"), sig_of(Base1), sig_of(Base2), sig_of(Base3), sig_of(Base4), sig_of(Base5), sig_of(Base6), sig_of(Base7), sig_of(Base8), sig_of(Base9), sig_of(Base10), sig_of(Base11), sig_of(Base12), sig_of(Base13)>;
+        set_signature<uti::str("op13"), uti::sig_of<Base1>(), uti::sig_of<Base2>(), uti::sig_of<Base3>(), uti::sig_of<Base4>(), uti::sig_of<Base5>(), uti::sig_of<Base6>(), uti::sig_of<Base7>(), uti::sig_of<Base8>(), uti::sig_of<Base9>(), uti::sig_of<Base10>(), uti::sig_of<Base11>(), uti::sig_of<Base12>(), uti::sig_of<Base13>()>();
         variant_inherit(uti::variant)
         wave* get_wave(uint8_t index) { return index == 0 ? &o1 : (index == 1 ? &o2 : (index == 2 ? &o3 : (index == 3 ? &o4 : (index == 4 ? &o5 : (index == 5 ? &o6 : (index == 6 ? &o7 : (index == 7 ? &o8 : (index == 8 ? &o9 : (index == 9 ? &o10 : (index == 10 ? &o11 : (index == 11 ? &o12 : (index == 12 ? &o13 : nullptr)))))))))))); }
 
@@ -296,7 +296,7 @@ namespace dsp
         Base12 o12;
         Base13 o13;
         Base14 o14;
-        set_signature<uti::str("op14"), sig_of(Base1), sig_of(Base2), sig_of(Base3), sig_of(Base4), sig_of(Base5), sig_of(Base6), sig_of(Base7), sig_of(Base8), sig_of(Base9), sig_of(Base10), sig_of(Base11), sig_of(Base12), sig_of(Base13), sig_of(Base14)>;
+        set_signature<uti::str("op14"), uti::sig_of<Base1>(), uti::sig_of<Base2>(), uti::sig_of<Base3>(), uti::sig_of<Base4>(), uti::sig_of<Base5>(), uti::sig_of<Base6>(), uti::sig_of<Base7>(), uti::sig_of<Base8>(), uti::sig_of<Base9>(), uti::sig_of<Base10>(), uti::sig_of<Base11>(), uti::sig_of<Base12>(), uti::sig_of<Base13>(), uti::sig_of<Base14>()>();
         variant_inherit(uti::variant)
         wave* get_wave(uint8_t index) { return index == 0 ? &o1 : (index == 1 ? &o2 : (index == 2 ? &o3 : (index == 3 ? &o4 : (index == 4 ? &o5 : (index == 5 ? &o6 : (index == 6 ? &o7 : (index == 7 ? &o8 : (index == 8 ? &o9 : (index == 9 ? &o10 : (index == 10 ? &o11 : (index == 11 ? &o12 : (index == 12 ? &o13 : (index == 13 ? &o14 : nullptr))))))))))))); }
 
@@ -324,7 +324,7 @@ namespace dsp
         Base13 o13;
         Base14 o14;
         Base15 o15;
-        set_signature<uti::str("op15"), sig_of(Base1), sig_of(Base2), sig_of(Base3), sig_of(Base4), sig_of(Base5), sig_of(Base6), sig_of(Base7), sig_of(Base8), sig_of(Base9), sig_of(Base10), sig_of(Base11), sig_of(Base12), sig_of(Base13), sig_of(Base14), sig_of(Base15)>;
+        set_signature<uti::str("op15"), uti::sig_of<Base1>(), uti::sig_of<Base2>(), uti::sig_of<Base3>(), uti::sig_of<Base4>(), uti::sig_of<Base5>(), uti::sig_of<Base6>(), uti::sig_of<Base7>(), uti::sig_of<Base8>(), uti::sig_of<Base9>(), uti::sig_of<Base10>(), uti::sig_of<Base11>(), uti::sig_of<Base12>(), uti::sig_of<Base13>(), uti::sig_of<Base14>(), uti::sig_of<Base15>()>();
         variant_inherit(uti::variant)
         wave* get_wave(uint8_t index) { return index == 0 ? &o1 : (index == 1 ? &o2 : (index == 2 ? &o3 : (index == 3 ? &o4 : (index == 4 ? &o5 : (index == 5 ? &o6 : (index == 6 ? &o7 : (index == 7 ? &o8 : (index == 8 ? &o9 : (index == 9 ? &o10 : (index == 10 ? &o11 : (index == 11 ? &o12 : (index == 12 ? &o13 : (index == 13 ? &o14 : (index == 14 ? &o15 : nullptr)))))))))))))); }
 
@@ -353,7 +353,7 @@ namespace dsp
         Base14 o14;
         Base15 o15;
         Base16 o16;
-        set_signature<uti::str("op16"), sig_of(Base1), sig_of(Base2), sig_of(Base3), sig_of(Base4), sig_of(Base5), sig_of(Base6), sig_of(Base7), sig_of(Base8), sig_of(Base9), sig_of(Base10), sig_of(Base11), sig_of(Base12), sig_of(Base13), sig_of(Base14), sig_of(Base15), sig_of(Base16)>;
+        set_signature<uti::str("op16"), uti::sig_of<Base1>(), uti::sig_of<Base2>(), uti::sig_of<Base3>(), uti::sig_of<Base4>(), uti::sig_of<Base5>(), uti::sig_of<Base6>(), uti::sig_of<Base7>(), uti::sig_of<Base8>(), uti::sig_of<Base9>(), uti::sig_of<Base10>(), uti::sig_of<Base11>(), uti::sig_of<Base12>(), uti::sig_of<Base13>(), uti::sig_of<Base14>(), uti::sig_of<Base15>(), uti::sig_of<Base16>()>();
         variant_inherit(uti::variant)
         wave* get_wave(uint8_t index) { return index == 0 ? &o1 : (index == 1 ? &o2 : (index == 2 ? &o3 : (index == 3 ? &o4 : (index == 4 ? &o5 : (index == 5 ? &o6 : (index == 6 ? &o7 : (index == 7 ? &o8 : (index == 8 ? &o9 : (index == 9 ? &o10 : (index == 10 ? &o11 : (index == 11 ? &o12 : (index == 12 ? &o13 : (index == 13 ? &o14 : (index == 14 ? &o15 : (index == 15 ? &o16 : nullptr))))))))))))))); }
 

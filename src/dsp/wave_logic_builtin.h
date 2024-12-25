@@ -42,7 +42,7 @@ namespace dsp
     class noise_logic : public logic_base<op0>
     {
     public:
-        set_signature<uti::str("Noise")>;
+        set_signature<uti::str("Noise")>();
         variant_inherit(logic_base<op0>)
         inline SampleType postSampling()
         {
@@ -55,7 +55,7 @@ namespace dsp
     class constant_logic : public logic_base<op0>
     {
     public:
-        set_signature<uti::str("Constant")>;
+        set_signature<uti::str("Constant")>();
         variant_inherit(logic_base<op0>)
         inline SampleType getSample()
         {
@@ -74,7 +74,7 @@ namespace dsp
     class square_logic : public logic_base<op0>
     {
     public:
-        set_signature<uti::str("Square")>;
+        set_signature<uti::str("Square")>();
         variant_inherit(logic_base<op0>)
         inline SampleType getSample()
         {
@@ -105,7 +105,7 @@ namespace dsp
     class sawtooth_logic : public logic_base<op0>
     {
     public:
-        set_signature<uti::str("Sawtooth")>;
+        set_signature<uti::str("Sawtooth")>();
         variant_inherit(logic_base<op0>)
         inline SampleType getSample()
         {
@@ -136,7 +136,7 @@ namespace dsp
     class buffer_logic : public logic_base<op0>
     {
     public:
-        set_signature<uti::str("Buffer")>;
+        set_signature<uti::str("Buffer")>();
         variant_inherit(logic_base<op0>)
         inline SampleType getSample()
         {
@@ -176,7 +176,7 @@ namespace dsp
     class formant_logic : public logic_base<op1<Base>>
     {
     public:
-        set_signature<uti::str("Formant"), sig_of(op1<Base>)>;
+        set_signature<uti::str("Formant"), uti::sig_of<op1<Base>>()>();
         variant_inherit(logic_base<op1<Base>>)
 
         inline SampleType getSample()
