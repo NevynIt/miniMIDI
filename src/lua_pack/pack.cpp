@@ -1,12 +1,12 @@
 #include <string>
 #include "../ast/ast_char.h"
+#include "../ast/ast.h"
 #include "pack.h"
 #include <map>
 
 namespace _detail
 {
-    using namespace ast_char;
-    using namespace ast::_b;
+    using namespace ast;
 
     /*
         Grammar definition for format strings:
@@ -30,49 +30,26 @@ namespace _detail
             struct = { [ <whitespace> ] <field> } [ <whitespace> ]
     */
 
-    class lex_bitfield : public lexeme
-    {
-    public:
-        set_signature<ast_str("lex_bitfield")>();
-        variant_inherit(lexeme)
-        lex_bitfield() {}
-        lex_bitfield(const lex_bitfield &b) { if (b.bitfield) bitfield = new std::vector<uint8_t>(*b.bitfield); }
-        lex_bitfield(std::vector<uint8_t> *bitfield) : bitfield(bitfield) {}
-        ~lex_bitfield() { if (bitfield) delete bitfield; }
-        std::vector<uint8_t> *bitfield = nullptr;
-    };
+   /*
+    Revision of the grammar based on regex/replace v4
 
-    template <typename T0>
-    ast_define_rule(make_bitfield)
-    {
-    public:
-        set_signature<ast_str("make_bitfield")>();
-        ast_base_rule = T0;
-
-        ast_decorator_implementation(l)
-        {
-            std::vector<uint8_t> *bitfield = new std::vector<uint8_t>();
-            lex_V *V = l->template as<lex_V>();
-            if (!V)
-            {
-                delete l;
-                return nullptr;
-            }
-            for (auto li : *V)
-            {
-                lex_l *lil = li->template as<lex_l>();
-                if (!lil)
-                {
-                    delete l;
-                    return nullptr;
-                }
-                int number = lil->l;
-                bitfield->push_back(number);
-            }
-            delete l;
-            return new lex_bitfield(bitfield);
-        }
-    };
+    Grammar notation:
+        digit ::= /\d/
+        type ::= /[xXcB?hHiIlLqQnNfdspP]/
+        whitespace ::= /[ \t\n\r]/
+        number ::= digit+
+        bitfield ::= ( number [ ":" ] )*
+        alpha ::= /[a-zA-Z]/
+        identifier ::= alpha ( alpha | digit | "_" )*
+        quoted_name ::= '\'' identifier '\''
+        format ::= type | "<" bitfield ">" | "{" struct "}"
+        field ::= ( number | quoted_name )? format ( "[" number | quoted_name "]" )?
+        struct ::= ( whitespace* field )* whitespace*
+    
+    Regex/replace notation (skipping whitespace):
+        field ::= / \s* (<name>@\'\'|<count>(\d+))? <type>[xXcB?hHiIlLqQnNfdspP]|<bitfield>(\<(<bitsize>\d+\:?)+\>)|<struct>@{} \s* /
+        struct ::= field*
+   */
 
     class lex_field_info : public lexeme
     {
@@ -83,269 +60,82 @@ namespace _detail
         lex_field_info(const lex_field_info &ff) { if (ff.f) f = new field_info(*ff.f); }
         lex_field_info(field_info *ff) : f(ff) {}
         ~lex_field_info() { if (f) delete f; }
+        void printvalue(int indent = 0) const override
+        {
+            if (f)
+                f->print();
+            else
+                printf("nullptr");
+        }
         field_info *f = nullptr;
     };
 
-    class lex_struct : public lexeme
+    ast_regex_rule(field, "\\s* ( <name>@'' | <count>(\\d+) )? <type>[xXcB?hHiIlLqQnNfdspP] |<bitfield>(\\<(<bitsize>(\\d+)\\:?)+\\>) | <structure>@{} (\\[<size>(\\d+)|<ref>@''\\])? \\s*");
+    ast_regex_rule(whitespace, "[ \\t\\n\\r]+");
+    ast_alias(structure) = list<field, drop<any<whitespace>>>;
+    ast_alias_decorator(l)
     {
-    public:
-        set_signature<ast_str("lex_struct")>();
-        variant_inherit(lexeme)
+        lex_field_info *result = new lex_field_info();
+        result->f = new field_info();
+        result->f->type = 2;
+        result->f->fields = new std::vector<field_info *>();
 
-        lex_struct() {}
-        lex_struct(const lex_struct &s)
+        lex_V *V = l->as<lex_V>();
+        for (int i=0; i<V->size(); i++)
         {
-            if (s.fields) 
+            //each of them is a field
+            field_info *fi = new field_info();
+            lex_V *g = ((lex_re *)V->at(i))->groups;
+            for (auto p : *g)
             {
-                fields = new std::vector<field_info *>(s.fields->size());
-                for (size_t i = 0; i < s.fields->size(); i++)
+                if (p->same_rule("count"))
+                    fi->count = atoi_n(p->as<lex_re>()->match->data(), p->as<lex_re>()->match->size());
+                else if (p->same_rule("name"))
+                    fi->field_name = strdup(p->as<lex_v<char>>()->data() + 1, p->as<lex_v<char>>()->size() - 2);
+                else if (p->same_rule("type"))
+                    fi->type = p->as<lex_o<char>>()->o;
+                else if (p->same_rule("bitfield"))
                 {
-                    fields->at(i) = new field_info(*s.fields->at(i));
+                    fi->type = 1;
+                    fi->bitfield = new std::vector<uint8_t>();
+                    lex_V *bits = p->as<lex_re>()->groups;
+                    for (auto b : *bits)
+                        fi->bitfield->push_back(atoi_n(b->as<lex_re>()->match->data(), b->as<lex_re>()->match->size()));
                 }
-            }
-        }
-        lex_struct(std::vector<field_info *> *fields = nullptr) : fields(fields) {}
-        ~lex_struct()
-        {
-            if (fields)
-            {
-                for (auto f : *fields)
+                else if (p->same_rule("structure"))
                 {
-                    delete f;
-                }
-                delete fields;
-            }
-        }
-        std::vector<field_info *> *fields = nullptr;
-    };
-
-    template <typename T0>
-    ast_define_rule(make_struct)
-    {
-    public:
-        set_signature<ast_str("make_struct")>();
-        ast_base_rule = T0;
-
-        ast_decorator_implementation(l)
-        {
-            auto V = l->template as<lex_V>();
-            if (!V)
-            {
-                delete l;
-                return nullptr;
-            }
-            std::vector<field_info *> *fields = new std::vector<field_info *>();
-            for (auto li : *V)
-            {
-                auto fi = li->template as<lex_field_info>();
-                if (!fi)
-                {
-                    for (auto fi : *fields)
+                    fi->type = 2;
+                    const char *str = p->as<lex_v<char>>()->data() + 1;
+                    lexeme *s = match(str);
+                    if (s)
                     {
-                        delete fi;
-                    }
-                    delete fields;
-                    delete l;
-                    return nullptr;
-                }
-                fields->push_back(fi->f);
-                fi->f = nullptr;
-            }
-            delete l;
-            return new lex_struct(fields);
-        };
-    };
-    
-    template <typename T0>
-    ast_define_rule(make_format)
-    {
-    public:
-        set_signature<ast_str("make_format")>();
-        ast_base_rule = T0;
-
-        ast_decorator_implementation(l)
-        {
-            //l is a choice between:
-            //  0 = type
-            //  1 = bitfield
-            //  2 = struct
-
-            lex_choice *lc = l->template as<lex_choice>();
-            if (!lc)
-            {
-                delete l;
-                return nullptr;
-            }
-
-            field_info *f = new field_info();  //TODO FIX THIS
-            if (lc->choice == 0) //type
-            {
-                lex_re *lo = lc->l->template as<lex_re>();
-                if (!lo)
-                {
-                    delete l;
-                    delete f;
-                    return nullptr;
-                }
-                f->type = lo->at(0);
-            }
-            else if (lc->choice == 1) //bitfield
-            {
-                lex_bitfield *lb = lc->l->template as<lex_bitfield>();
-                if (!lb)
-                {
-                    delete l;
-                    delete f;
-                    return nullptr;
-                }
-                f->type = 1;
-                f->bitfield = lb->bitfield;
-                lb->bitfield = nullptr;
-            }
-            else if (lc->choice == 2) //struct
-            {
-                lex_struct *ls = lc->l->template as<lex_struct>();
-                if (!ls)
-                {
-                    delete l;
-                    delete f;
-                    return nullptr;
-                }
-                f->type = 2;
-                f->fields = ls->fields;
-                ls->fields = nullptr;
-            }
-            else
-            {
-                delete l;
-                delete f;
-                return nullptr;
-            }
-            delete l;
-            return new lex_field_info(f);
-        };
-    };
-
-    template <typename T0>
-    ast_define_rule(make_field)
-    {
-    public:
-        set_signature<ast_str("make_field")>();
-        ast_base_rule = T0;
-
-        ast_decorator_implementation(l)
-        {
-            auto V = l->template as<lex_V>();
-            if (!V || V->size() != 3)
-            {
-                delete l;
-                return nullptr;
-            }
-            lex_V *V0 = V->at(0)->template as<lex_V>();
-            lex_field_info *V1 = V->at(1)->template as<lex_field_info>();
-            lex_V *V2 = V->at(2)->template as<lex_V>();
-
-            field_info *f = V1->f;
-            V1->f = nullptr;
-
-            if (V0->size() == 1)
-            {
-                auto V0l = V0->at(0)->template as<lex_l>();
-                if (V0l)
-                {
-                    f->count = V0l->l;
-                }
-                else
-                {
-                    auto *V0s = V0->at(0)->template as<lex_re>();   //TODO FIX THIS
-                    if (V0s)
-                    {
-                        char *s = new char[V0s->size() + 1];
-                        for (size_t i = 0; i < V0s->size(); i++)
+                        auto f = s->as<lex_field_info>();
+                        if (f)
                         {
-                            s[i] = V0s->at(i);
+                            fi->fields = f->f->fields;
+                            f->f->fields = nullptr;
                         }
-                        s[V0s->size()] = 0;
-                        f->field_name = s;
-                    }
-                    else
-                    {
-                        delete l;
-                        return nullptr;
+                        delete s;
                     }
                 }
+                else if (p->same_rule("size"))
+                    fi->array_size = atoi_n(p->as<lex_re>()->match->data(), p->as<lex_re>()->match->size());
+                else if (p->same_rule("ref"))
+                    fi->array_size_name = strdup(p->as<lex_v<char>>()->data() + 1, p->as<lex_v<char>>()->size() - 2);
             }
-            if (V2->size() == 1)
-            {
-                lex_l *V2l = V2->at(0)->template as<lex_l>();
-                if (V2l)
-                {
-                    f->array_size = V2l->l;
-                }
-                else
-                {
-                    auto *V0s = V0->at(0)->template as<lex_re>();   //TODO FIX THIS
-                    if (V0s)
-                    {
-                        char *s = new char[V0s->size() + 1];
-                        for (size_t i = 0; i < V0s->size(); i++)
-                        {
-                            s[i] = V0s->at(i);
-                        }
-                        s[V0s->size()] = 0;
-                        f->array_size_name = s;
-                    }
-                    else
-                    {
-                        delete l;
-                        return nullptr;
-                    }
-                }
-            }
-            delete l;
-            return new lex_field_info(f);
+            result->f->fields->push_back(fi);
         }
-    };
-
-    //these are already defined in ast_char.hpp
-    // dogit = '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9'
-    // alpha = 'a' to 'z' | 'A' to 'Z'
-    // identifier = <alpha> { <alpha> | <digit> | '_' }
-    
-    ast_alias(quoted_name) = select<seq<token<'\''>, identifier, token<'\''>>, 1>; ast_alias_end;
-    ast_alias(number) = str2long; ast_alias_end;
-    ast_regex_rule(type, "[xXcbB?hHiIlLqQnNfdspP]");
-    ast_alias(bitfield) = make_bitfield<rep<select<seq<number,opt<token<':'>>>,0>, 0, -1>>; ast_alias_end;
-    ast_alias(array_size) = select<seq<token<'['>, choice<number,quoted_name>, token<']'>>, 1>; ast_alias_end;
-    ast_alias(field_count) = choice<number,quoted_name>; ast_alias_end;
-
-
-    class structure;
-
-    ast_alias(format) = make_format<choicei<type,
-                            select<seq<token<'<'>, bitfield, token<'>'>>, 1>,
-                            select<seq<token<'{'>, structure,  token<'}'>>, 1>>>;
+        delete l;
+        return result;
+    }
     ast_alias_end;
-
-    ast_alias(field) = make_field<seq<opt<field_count>, 
-                            format, 
-                            opt<array_size>>>;
-    ast_alias_end;
-    
-    ast_alias(structure) = select<seq<
-                            make_struct<some<select<seq<opt<whitespace>,field>, 1>>>,
-                            opt<whitespace>>, 0>;
-    ast_alias_end;
-
-    ast_alias(helper) = make_format<choicei<fail_always, fail_always, structure>>; ast_alias_end;
-    // ast_alias(helper) = trace_on<make_format<choicei<fail_always, fail_always, structure>>>; ast_alias_end;
 
 } // namespace _detail
 
 field_info *field_info::parse(const char *fmt)
 {
     using namespace _detail;
-    auto *l = _detail::helper::match(fmt);
+    auto *l = _detail::structure::match(fmt);
     if (l == nullptr)
     {
         return nullptr;
@@ -357,7 +147,7 @@ field_info *field_info::parse(const char *fmt)
     return f;
 }
 
-std::map<char, const char *> typestrings = {
+const std::map<const char, const char *> typestrings = {
     {'x', "pad byte"}, //insert or skip exactly one byte of padding
     {'X', "pad int32"}, //insert or skip unitl the next int32 boundary
     {'c', "char"},
@@ -409,7 +199,7 @@ void field_info::print(const char *indent)
     }
     else
     {
-        printf("%s", typestrings[type]);
+        printf("%s", typestrings.at(type));
     }
 
     const char *name = (field_name) ? field_name : "_";

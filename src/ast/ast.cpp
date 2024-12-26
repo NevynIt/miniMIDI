@@ -84,28 +84,6 @@ namespace ast
         return V;
     }
 
-    int str2num(const char *s, int len)
-    {
-        if (len == 0)
-            return 0;
-        int ret = 0;
-        int sign = 1;
-        if (*s == '-')
-        {
-            sign = -1;
-            s++;
-            len--;
-        }
-        for (int i = 0; i < len; i++)
-        {
-            if (*s < '0' || *s > '9')
-                return 0;
-            ret = ret * 10 + (*s - '0');
-            s++;
-        }
-        return ret * sign;
-    }
-
     bool ast::_rp::apply_selector(lexeme *&cur, char_cptr &pattern)
     {
         lex_re *selector = ast::_re::match_regex(pattern, selector_regex);
@@ -122,11 +100,11 @@ namespace ast
             {
                 lexeme *r = range->groups->at(i);
                 if (r->same_rule("min"))
-                    max = min = str2num(r->as<lex_re>()->match->data(), r->as<lex_re>()->match->size());
+                    max = min = atoi_n(r->as<lex_re>()->match->data(), r->as<lex_re>()->match->size());
                 else if (r->same_rule("colon"))
                     max = -1;
                 else if (r->same_rule("max"))
-                    max = str2num(r->as<lex_re>()->match->data(), r->as<lex_re>()->match->size());
+                    max = atoi_n(r->as<lex_re>()->match->data(), r->as<lex_re>()->match->size());
             }
             delete range;
             bool single = min == max;
@@ -286,29 +264,37 @@ namespace ast
         {
             if (auto V = cur->as<lex_V>())
             {
-                lex_V *result = new lex_V();
-                for (auto l : *V)
+                if (V->size() > 1)
                 {
-                    if (auto V2 = l->as<lex_V>())
+                    lex_V *result = new lex_V();
+                    for (auto l : *V)
                     {
-                        for (auto l2 : *V2)
-                            result->push_back(l2);
-                        V2->clear();
+                        if (auto V2 = l->as<lex_V>())
+                        {
+                            for (auto l2 : *V2)
+                                result->push_back(l2);
+                            V2->clear();
+                        }
+                        else if (auto re = l->as<lex_re>())
+                        {
+                            auto groups = re->groups;
+                            for (int i=0; i<groups->size(); i++)
+                                result->push_back(groups->take(i));
+                        }
+                        else
+                        {
+                            result->push_back(l);
+                        }
                     }
-                    else if (auto re = l->as<lex_re>())
-                    {
-                        auto groups = re->groups;
-                        for (int i=0; i<groups->size(); i++)
-                            result->push_back(groups->take(i));
-                    }
-                    else
-                    {
-                        result->push_back(l);
-                    }
+                    V->clear();
+                    delete cur;
+                    cur = result;
                 }
-                V->clear();
-                delete cur;
-                cur = result;
+                else
+                {
+                    cur = V->take(0);
+                    delete V;
+                }
             }
             else if (auto re = cur->as<lex_re>())
             {

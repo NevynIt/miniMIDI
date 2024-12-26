@@ -82,7 +82,7 @@ namespace ast::_h
         va_end(args);
     }
 
-    inline const char *strdup(const char *s)
+    inline char *strdup(const char *s)
     {
         if (!s)
             return nullptr;
@@ -91,7 +91,7 @@ namespace ast::_h
         return d;
     }
 
-    inline const char *strdup(const char *s, int len)
+    inline char *strdup(const char *s, int len)
     {
         if (!s)
             return nullptr;
@@ -99,6 +99,28 @@ namespace ast::_h
         strncpy(d, s, len);
         d[len] = '\0';
         return d;
+    }
+
+    inline int atoi_n(const char *s, int len)
+    {
+        if (len == 0)
+            return 0;
+        int ret = 0;
+        int sign = 1;
+        if (*s == '-')
+        {
+            sign = -1;
+            s++;
+            len--;
+        }
+        for (int i = 0; i < len; i++)
+        {
+            if (*s < '0' || *s > '9')
+                return 0;
+            ret = ret * 10 + (*s - '0');
+            s++;
+        }
+        return ret * sign;
     }
 //-------------------------------------------------------------------------------------------------
     // Helper to define match functions and enable tracing and backtracking

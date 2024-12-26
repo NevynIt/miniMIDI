@@ -7,6 +7,9 @@
 /*
  * Regular expressions for 8 bit characters
  *
+ * Whitespace
+ *            non-escaped whitespace in the pattern between units is ignored
+ * 
  * Literals: ' ... ' define a literal
  * 'a'        Literal, match the character 'a'
  * '.'        Dot, matches any character
@@ -81,37 +84,6 @@
  * '((ab)|(cd))'  Match either 'ab' or 'cd'
  * 'a|bc'       Match either 'ac' or 'bc'
 */
-
-/* regex refactoring of the engine (always greedy)
- *  ---A regex string can be described as, using its own sintax and ignoring whitespace and -- comments
- * (
- *   \|?                    --alternative flag, if present, the pattern is considered only if the previous pattern failed
- *   <capture>(             --capture flag, if present the match is captured as a group
- *     \<[\>]*\>            --capture name, if present the match is captured with the name
- *   )?                   --this is optional
- *   <match>(               --match pattern
- *     \p|                  --parenthesised group
- *     \.|                  --literal dot
- *     (\\p)|               --special escapes
- *     (\\x\d\d)|           --hexadecimal character
- *     (\\.)|               --escaped character
- *     (\[[^\]]*\])|        --character class
- *     .                    --any other literal character
- *   )                    --this is the only mandatory part
- *   <repetition>(          --repetition flag, if the capture flag is also present, returns an array, with one element for each repetition (the array can be empty if the match is optional and not present)
- *      \*|                 --kleene star, match zero or more times
- *      \+|                 --plus, match one or more times
- *      \?|                 --question, match zero or one time
- *      (\{[0-9]*(,[0-9]?)?\}) --range {min, max}, match between min and max times. If not provided, min defaults to 0, max defaults to -1 (infinite)
- *   )?                   --this is optional
- * )*
- * 
- * test1 "aaaabbccdccdotsf(asdf\fer(ddd\(joke))c"./a+[bcd]*e?.{2,4}f\pa|b|c|d|e|f/ --> "aaaabbccdccdotsf(asdf\fer(ddd\(joke))c"
- * test2 " abppppab"./ <>(ab<>(p+)ab)/ --> (" ", ("ab", ["p", "p", "p", "p"], "ab"))
- * test3 " abppppab"./ (ab<>(p+)ab)/ --> (" ab", ["p", "p", "p", "p"], "ab")
- * test4 " cd1111efgh cd1ef2gh "./<>( cd<n1>(1)+ef<n2>(2)?gh)* / --> ([(" cd", [<n1>"1", <n1>"1", <n1>"1", <n1>"1"], "ef", [], "gh"), (" cd", [<n1>"1"], "ef", [<n2>"2"], "gh")], " ")
- * test5 " cd1111efgh cd1ef2gh "./( cd<n1>(1)+ef<n2>(2)?gh)* / --> (" cd", [<n1>"1", <n1>"1", <n1>"1", <n1>"1"], "ef", [], "gh cd", [<n1>"1"], "ef", [<n2>"2"], "gh ")
- */
 
 namespace ast::_re
 {
@@ -522,10 +494,12 @@ namespace ast::_re
 
         void printvalue(int indent = 0) const override
         {
-            printf("regex: (%s) ", rule ? rule : "");
-            printf("\"%.*s\"\n", match->size(), match->data());
-            print_ind(indent, "Groups:");
-            groups->printvalue(indent);
+            printf("(%s) re\"%.*s\"", rule ? rule : "", match->size(), match->data());
+            if (groups->size())
+            {
+                print_ind(indent, "\nGroups:");
+                groups->printvalue(indent);
+            }
         }
 
         void append(const char c)
@@ -562,6 +536,10 @@ namespace ast::_re
 
         bool setup(char_cptr &p)
         {
+            //skip not escaped whitespace in the pattern
+            while (*p && (*p == ' ' || *p == '\t' || *p == '\n' || *p == '\r'))
+                p++;
+
             if (!*p) return false;
             //alternative flag
             if (*p == '|')
@@ -573,6 +551,10 @@ namespace ast::_re
             {
                 alternative = false;
             }
+
+            //skip not escaped whitespace in the pattern
+            while (*p && (*p == ' ' || *p == '\t' || *p == '\n' || *p == '\r'))
+                p++;
 
             if (!*p) return false;
             //capture flag
@@ -655,7 +637,13 @@ namespace ast::_re
             }
             
             //repetition
-            return repetition.set(p);
+            if (!repetition.set(p)) return false;
+
+            //skip not escaped whitespace in the pattern
+            while (*p && (*p == ' ' || *p == '\t' || *p == '\n' || *p == '\r'))
+                p++;
+            
+            return true;
         }
 
         template<typename _StreamType>
@@ -709,7 +697,7 @@ namespace ast::_re
             if (group)
             {
                 regex_unit ru;
-                return ru.match_regex(s, group, true);
+                return ru.match_regex(s, group, true, total_count);
             }
             else if (special == '@')
             {
@@ -769,10 +757,29 @@ namespace ast::_re
             }
         }
 
+        int lenghtof(lexeme *l)
+        {
+            if (auto v = l->as<lex_v<char>>())
+                return v->size();
+            else if (auto re = l->as<lex_re>())
+                return re->match->size();
+            else if (auto V = l->as<lex_V>())
+            {
+                int len = 0;
+                for (auto i : *V)
+                    len += lenghtof(i);
+                return len;
+            }
+            else if (auto o = l->as<lex_o<char>>())
+                return 1;
+            return 0;
+        }
+
         template<typename _StreamType>
-        lex_re *match_regex(_StreamType &s, char_cptr pattern, bool internal = false)
+        lex_re *match_regex(_StreamType &s, char_cptr pattern, bool internal = false, int total = 0)
         {
             result = new lex_re();
+            total_count = total;
             bool success = true;
             void *sshot = ast::_b::stream_snapshot(s);
             while (true)
@@ -801,6 +808,7 @@ namespace ast::_re
                     }
                     else
                     {
+                        int total_bkp = total_count;
                         auto group_sshot = ast::_b::stream_snapshot(s);
                         lex_V *subgroup = new lex_V();
                         lexeme *submatch = nullptr;
@@ -811,6 +819,7 @@ namespace ast::_re
                             if (!submatch)
                                 break;
                             subgroup->push_back(submatch);
+                            total_count += lenghtof(submatch);
                         }
                         if (count < repetition.min)
                         {
@@ -818,6 +827,7 @@ namespace ast::_re
                             delete subgroup;
                             success = false;
                             last_count = 0;
+                            total_count = total_bkp;
                             continue;
                         }
                         success = true;
@@ -825,7 +835,6 @@ namespace ast::_re
                         for (auto m : *subgroup)
                             append_one(m);
                         last_count = result->match->size() - pre_append;
-                        total_count += last_count;
                         subgroup->clear();
                         delete subgroup;
                     }
@@ -843,8 +852,8 @@ namespace ast::_re
         regex_mask mask;
         regex_repetition repetition;
 
-        uint16_t last_count = 0;
-        uint16_t total_count = 0;
+        int last_count = 0;
+        int total_count = 0;
         lex_re *result = nullptr;
     };
 

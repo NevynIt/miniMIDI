@@ -152,13 +152,13 @@ namespace ast::_b
     template<>
     inline void lex_o<char>::printvalue(int indent) const
     {
-        printf("'%c'", o);
+        printf("(%s) '%c'", rule ? rule : "", o);
     }
 
     template<>
     inline void lex_o<char const>::printvalue(int indent) const
     {
-        printf("'%c'", o);
+        printf("(%s) '%c'", rule ? rule : "", o);
     }
 
     template<typename O>
@@ -180,15 +180,7 @@ namespace ast::_b
     template <>
     inline void lex_v<char>::printvalue(int indent) const
     {
-        printf("\"");
-        for (auto i = this->begin(); i != this->end(); i++)
-        {
-            printf("%c", *i);
-        }
-        printf("\" (");
-        if (rule)
-            printf("%s", rule); //print the signature of the rule
-        printf(") ");
+        printf("(%s) \"%.*s\"", rule ? rule : "", this->size(), this->data());
     }
 
     template<typename O>
