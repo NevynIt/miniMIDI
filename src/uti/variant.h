@@ -35,16 +35,6 @@ namespace uti
         {
             return this->is_same_as(T::static_get_typeid());
         }
-
-        // inline void print_signature() const
-        // {
-        //     printf("%s", get_typeid());
-        // }
-
-        // static inline void print_signature_static()
-        // {
-        //     printf("%s", static_get_typeid());
-        // }
     };
 
     #define variant_implementation \

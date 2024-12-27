@@ -56,13 +56,6 @@ namespace ast::_f
         }
     };
 
-    class lex_drop : public lexeme
-    {
-    public:
-        set_signature<ast_str("drop")>();
-        variant_inherit(lexeme)
-    };
-
     template<typename T0>
     ast_internal_rule(drop)
     {

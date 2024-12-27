@@ -86,27 +86,29 @@ namespace ast
 
     bool ast::_rp::apply_selector(lexeme *&cur, char_cptr &pattern)
     {
-        lex_re *selector = ast::_re::match_regex(pattern, selector_regex);
+        lex_re *selector = ast::_re::match_regex(pattern, selector_regex, lex_re::storage_type::REF); //static
         if (!selector)
             return false;
+        lex_re *sel = selector->groups->at(0)->as<lex_re>(); 
 
-        const char *rule = selector->groups->at(0)->rule;
-        if (strcmp(rule, "range") == 0)
+        // cur->print();
+        // printf("\n");
+        // printf("selector %.*s: %.*s\n", sel->rule_len(), sel->rule, sel->size(), sel->data());
+
+        if (sel->same_rule("range"))
         {
             int min = 0;
             int max = -1;
-            lex_re *range = (lex_re *)selector->groups->at(0);
-            for (int i=0; i < range->groups->size(); i++)
+            for (int i=0; i < sel->groups->size(); i++)
             {
-                lexeme *r = range->groups->at(i);
+                lexeme *r = sel->groups->at(i);
                 if (r->same_rule("min"))
-                    max = min = atoi_n(r->as<lex_re>()->match->data(), r->as<lex_re>()->match->size());
+                    max = min = atoi_n(r->as<lex_re>()->data(), r->as<lex_re>()->size());
                 else if (r->same_rule("colon"))
                     max = -1;
                 else if (r->same_rule("max"))
-                    max = atoi_n(r->as<lex_re>()->match->data(), r->as<lex_re>()->match->size());
+                    max = atoi_n(r->as<lex_re>()->data(), r->as<lex_re>()->size());
             }
-            delete range;
             bool single = min == max;
             auto V = prepare_V(cur);
             int sz = V->size();
@@ -158,31 +160,21 @@ namespace ast
                 cur = result;
             }
         }
-        else if (strcmp(rule, "setname") == 0)
+        else if (sel->same_rule("setname"))
         {
-            auto n = selector->groups->at(0)->as<lex_v<char>>();
-            char *name = new char[n->size() - 1];
-            strncpy(name, n->data()+1, n->size()-2);
-            name[n->size()-2] = 0;
+            const char *name = sel->data()+1;
             lex_V *V = prepare_V(cur);
             for (int i = 0; i<V->size(); i++)
             {
-                lexeme *l = V->at(i);
-                if (l->own_rule)
-                    delete l->rule;
-                l->rule = strdup(name);
-                l->own_rule = true;
+                lexeme *l = V->at(i); 
+                l->rule = name;
             }
-            delete [] name;
         }
-        else if (strcmp(rule, "name") == 0)
+        else if (sel->same_rule("name"))
         {
             lex_V *result = new lex_V();
             lex_V *V = prepare_V(cur);
-            auto n = selector->groups->at(0)->as<lex_v<char>>();
-            char *name = new char[n->size() - 1];
-            strncpy(name, n->data()+1, n->size()-2);
-            name[n->size()-2] = 0;
+            const char *name = sel->data()+1;
             for (int i = 0; i<V->size(); i++)
             {
                 lexeme *l = V->at(i);
@@ -197,29 +189,22 @@ namespace ast
                         result->push_back(V->take(i));
                 }
             }
-            delete [] name;
             delete cur;
             cur = result; 
         }
-        else if (strcmp(rule, "separator") == 0)
+        else if (sel->same_rule("separator"))
         {
             return true;
         }
-        else if (strcmp(rule, "concat") == 0)
+        else if (sel->same_rule("concat"))
         {
             lex_re *result = new lex_re();
             result->append(cur);
             delete cur;
             cur = result; 
         }
-        else if (strcmp(rule, "regex") == 0)
+        else if (sel->same_rule("regex"))
         {
-            const char *pattern = selector->match->data();
-            int sz = selector->match->size();
-            char *tmp = new char[sz - 1];
-            strncpy(tmp, pattern + 1, sz - 2);
-            tmp[selector->match->size() - 2] = 0;
-
             lex_re *src;
             if (auto re = cur->as<lex_re>())
                 src = re;
@@ -230,11 +215,15 @@ namespace ast
                 delete cur;
                 cur = src;
             }
-            src->append('\0');
-            char *str = src->match->data();
-            lex_re *result = match_regex(str, tmp);
 
-            delete [] tmp;
+            regex_unit ru;
+            ru.pattern = sel->data()+1;
+            ru.pattern_end = ru.pattern + sel->size()-2;
+            const char *str = src->data();
+            ru.stream_end = str + src->size();
+            ru.storage = src->get_storage_type(); //same storage as src
+            lex_re *result = ru.match_regex(str);
+
             delete cur;
 
             if (result)
@@ -242,17 +231,16 @@ namespace ast
             else
                 cur = new lex_V();
         }
-        else if (strcmp(rule, "interleave") == 0)
+        else if (sel->same_rule("interleave"))
         {
             lex_V *result = new lex_V();
             lex_V *V = prepare_V(cur);
-            lex_re *interleave = (lex_re *)selector->groups->at(0);
             for (int i = 0; i<V->size(); i++)
             {
                 result->push_back(V->take(i));
                 if (i < V->size() - 1)
                 {
-                    auto l = (lexeme *)interleave->match->clone();
+                    auto l = (lexeme *)sel->match->clone();
                     l->rule = "separator";
                     result->push_back(l);
                 }
@@ -260,7 +248,7 @@ namespace ast
             delete cur;
             cur = result;
         }
-        else if (strcmp(rule, "flatten") == 0)
+        else if (sel->same_rule("flatten"))
         {
             if (auto V = cur->as<lex_V>())
             {
@@ -277,9 +265,9 @@ namespace ast
                         }
                         else if (auto re = l->as<lex_re>())
                         {
-                            auto groups = re->groups;
-                            for (int i=0; i<groups->size(); i++)
-                                result->push_back(groups->take(i));
+                            if (re->groups)
+                                for (int i=0; i<re->groups->size(); i++)
+                                    result->push_back(re->groups->take(i));
                         }
                         else
                         {
@@ -299,42 +287,40 @@ namespace ast
             else if (auto re = cur->as<lex_re>())
             {
                 lex_V *result = new lex_V();
-                auto groups = re->groups;
-                for (int i=0; i<groups->size(); i++)
-                    result->push_back(groups->take(i));
+                if(re->groups)
+                    for (int i=0; i<re->groups->size(); i++)
+                        result->push_back(re->groups->take(i));
                 delete cur;
                 cur = result;
             }
         }
-        else if (strcmp(rule, "aggregate") == 0)
+        else if (sel->same_rule("aggregate"))
         {
             auto V = new lex_V();
             V->push_back(cur);
             cur = V;
         }
-        else if (strcmp(rule, "group") == 0)
+        else if (sel->same_rule("group"))
         {
-            const char *pattern = selector->match->data();
-            pattern++;
+            const char *pattern = sel->data() + 1;
             auto tmp = select_regex(cur, pattern, true);
             delete cur;
             cur = tmp;
         }
-        else if (strcmp(rule, "loop") == 0)
+        else if (sel->same_rule("loop"))
         {
             lex_V *result = new lex_V();
             for (auto l : *prepare_V(cur))
             {
-                const char *pattern = selector->match->data() + 2;
+                const char *pattern = sel->data() + 1;
                 result->push_back(select_regex(l, pattern, true));
             }
             delete cur;
             cur = result;
         }
-        else if (strcmp(rule, "array") == 0)
+        else if (sel->same_rule("array"))
         {
-            const char *pattern = selector->match->data();
-            pattern++;
+            const char *pattern = sel->data()+1;
 
             lexeme *tmp = cur;
             cur = (lexeme *)tmp->clone();
@@ -371,7 +357,7 @@ namespace ast
                     }
                     else if (*pattern == '|')
                     {
-                        auto skip = ast::_re::match_regex(pattern, selector_skip_regex);
+                        auto skip = ast::_re::match_regex(pattern, selector_skip_regex,lex_re::storage_type::DROP); //static, no need to return anything
                         delete skip;
                         break;
                     }
@@ -386,10 +372,11 @@ namespace ast
         }
         else
         {
-            printf("Unknown rule %s\n", rule);
+            printf("Unknown rule %s\n", sel->rule);
             //error here!
             return false;
         }
+        delete selector;
         return true;
     }
 
@@ -397,7 +384,7 @@ namespace ast
     {
         if (!l)
             return nullptr;
-        lexeme *result = nullptr;
+        lex_re *result = new lex_re();
         while (*pattern && !(internal && *pattern == ')')) 
         {
             const char *lit_re;
@@ -405,26 +392,11 @@ namespace ast
                 lit_re = "(([^\\)$\\\\]|(\\\\.)?)%)+";
             else
                 lit_re = "(([^$\\\\]|(\\\\.)?)%)+";
-            auto literals = ast::_re::match_regex(pattern, lit_re);
+            auto literals = ast::_re::match_regex(pattern, lit_re, lex_re::storage_type::REF); //static
             if (literals)
             {
-                lex_re *re = result ? result->as<lex_re>() : nullptr;
-                if (!re)
-                {
-                    re = new lex_re();
-                    if (!result)
-                        result = re;
-                    else if (auto V = result->as<lex_V>())
-                    {
-                        re->append(V);
-                        for (int i = 0; i < V->size(); i++)
-                            re->groups->push_back(V->take(i));
-                        delete V;
-                        result = re;
-                    }
-                }
-                const char *str = literals->match->data();
-                for (int i = 0; i < literals->match->size(); i++, str++)
+                const char *str = literals->data();
+                for (int i = 0; i < literals->size(); i++, str++)
                 {
                     char c = *str;
                     if (c == '\\')
@@ -432,7 +404,7 @@ namespace ast
                         i++; str++;
                         c = ast::_re::get_escape(str);
                     }
-                    re->append(c);
+                    result->append(c);
                 }
                 delete literals;
             }
@@ -450,29 +422,13 @@ namespace ast
                     }
                     else if (*pattern == '|')
                     {
-                        auto skip = ast::_re::match_regex(pattern, selector_skip_regex);
+                        auto skip = ast::_re::match_regex(pattern, selector_skip_regex, lex_re::storage_type::DROP); //static and no need to return anything
                         delete skip;
                         break;
                     }
                 }
-                if (!result)
-                    result = cur;
-                else if (auto re = result->as<lex_re>())
-                {
-                    re->append(cur);
-                    re->groups->push_back(cur);
-                }
-                else if (auto V = result->as<lex_V>())
-                {
-                    V->push_back(cur);
-                }
-                else
-                {
-                    lex_V *tmp = new lex_V();
-                    tmp->push_back(result);
-                    tmp->push_back(cur);
-                    result = tmp;
-                }
+                result->append(cur);
+                result->append_group(cur);
             }
         }
         return result;

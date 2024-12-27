@@ -150,14 +150,6 @@ namespace uti
         return __r;
     }
 
-    // struct signature_canary {};
-
-    // template<typename T>
-    // struct get_from_one
-    // {
-    //     static constexpr auto s = str("??");
-    // };
-
     template<typename T, typename Enable = void>
     struct get_from_one
     {
@@ -182,6 +174,12 @@ namespace uti
         static constexpr auto s = str("char");
     };
 
+    template<>
+    struct get_from_one<const char>
+    {
+        static constexpr auto s = str("const char");
+    };
+
     template<typename T0, typename ...types>
     inline constexpr auto sig_of()
     {
@@ -190,28 +188,6 @@ namespace uti
         else
             return concat_str_comma(get_from_one<T0>::s, sig_of<types...>());
     }
-
-    // template<size_t n>
-    // static inline constexpr uint32_t hash(const std::array<char, n> &s)
-    // {
-    //     uint32_t h = 0;
-    //     for (size_t i = 0; i < n - 1; i++)
-    //     {
-    //         h = (31 * h + s[i]);
-    //     }
-    //     return h;
-    // }
-
-    // template<auto name>
-    // class signature_t
-    // {
-    // public:
-    //     static constexpr auto s = name;
-    //     static constexpr auto d = name.data();
-    //     static constexpr auto h = hash(name);
-    //     static constexpr auto l = name.size();
-    //     using canary = signature_canary;
-    // };
 
     template<auto A0, auto ...args>
     constexpr inline auto concat_param()
@@ -230,196 +206,7 @@ namespace uti
             return concat_param<args...>();
     }
 
-    // template<auto ...args>
-    // constexpr inline auto sign()
-    // {
-    //     if constexpr (sizeof...(args) == 0)
-    //         return str("");
-    //     else if constexpr (sizeof...(args) == 1)
-    //         return signature_t<concat<args...>()>{};
-    //     else
-    //         return signature_t<concat_param<args...>()>{};
-    // }
-
     typedef const char *signature_id; 
 
     #define set_signature static constexpr auto signature = uti::sign
-    // #define sig_of(_TYPE_) uti::sig_of<_TYPE_>()
-
-    // template<auto ...args>
-    // inline constexpr auto sign()
-    // {
-    //     return signature_t<concat<args...>()>{};
-    // }
-
-    // template<typename T>
-    // static inline void print_val(T val)
-    // {
-    //     if constexpr (std::is_same_v<typename T::canary, signature_canary>)
-    //     {
-    //         T::print();
-    //     }
-    //     else
-    //     {
-    //         printf("?");
-    //     }
-    // }
-
-    // static inline void print_val(char val)
-    // {
-    //     printf("'%c'", val);
-    // }
-
-    // static inline void print_val(unsigned int val)
-    // {
-    //     printf("%d", val);
-    // }
-
-    // static inline void print_val(const char *val)
-    // {
-    //     printf("\"%s\"", val);
-    // }
-
-    // static inline void print_val(int val)
-    // {
-    //     printf("%d", val);
-    // }
-
-    // template<size_t N>
-    // static inline void print_val(const std::array<char, N> &val)
-    // {
-    //     printf("%s", val.data());
-    // }
-
-    // static inline void print_one(auto v1, auto ...v)
-    // {
-    //     print_val(v1);
-    //     if constexpr (sizeof...(v) > 0)
-    //     {
-    //         printf(", ");
-    //         print_one(v...);
-    //     }
-    // }
-
-    // static inline void print_args(auto v1, auto ...v)
-    // {
-    //     v1.print();
-    //     if constexpr (sizeof...(v) > 0)
-    //     {
-    //         printf(", ");
-    //         print_args(v...);
-    //     }
-    // }
-
-    // static inline void print_signature(auto name, auto ...v)
-    // {
-    //     print_val(name);
-    //     if constexpr (sizeof...(v) > 0)
-    //     {
-    //         printf("<");
-    //         print_one(v...);
-    //         printf(">");
-    //     }
-    // }
-
-
-    // template<auto ...str>
-    // class sign //signature
-    // {
-    // public:
-    //     using canary = signature_canary;
-    //     // static constexpr auto sss = testme<concat(str...)>{};
-
-    //     static inline void print()
-    //     {
-    //         if constexpr (sizeof...(str) > 0)
-    //             print_signature(str...);
-    //         else
-    //             printf("??");
-    //     }
-    // };
-
-    // typedef void (*signature_id)(); 
-
-    // Primary template (not defined)
-    // template<typename T, typename Enable = void>
-    // struct get_signature
-    // {
-    //     static constexpr auto s = str("??");
-    // };
-
-    // // Specialization for types with canary member
-    // template<typename T>
-    // struct get_signature<T, std::enable_if_t<std::is_same_v<typename T::canary, signature_canary>>> {
-    //     static constexpr auto s = T{};
-    // };
-
-    // Specialization for types with signature member, which has a canary member
-    // template<typename T>
-    // struct get_signature<T, std::enable_if_t<std::is_same_v<typename T::signature::canary, signature_canary>>> {
-    //     static constexpr auto s = typename T::signature::sss;
-    // };
-
-    // // Specialization for types without canary member
-    // template<typename T>
-    // struct get_signature<T, std::enable_if_t<!std::is_same_v<typename T::canary, signature_canary>>> {
-    //     static constexpr auto s = sign<>{};
-    // };
-
-    // Specialization for T == int
-    // template<>
-    // struct get_signature<int> {
-    //     static constexpr auto s = str("int");
-    // };
-
-    // // Specialization for T == char
-    // template<>
-    // struct get_signature<char> {
-    //     static constexpr auto s = str("char");
-    // };
-
-    // // Specialization for T == const char *
-    // template<>
-    // struct get_signature<const char *> {
-    //     static constexpr auto s = str("const char *");
-    // };
-
-    // template<typename T, typename ...types>
-    // static inline void print_type()
-    // {
-    //     get_signature<T>::s.print();
-    //     if constexpr (sizeof...(types) > 0)
-    //     {
-    //         printf(", ");
-    //         print_type<types...>();
-    //     }
-    // }
-
-    // template<typename ...types>
-    // static inline void print_types()
-    // {
-    //     if constexpr (sizeof...(types) > 0)
-    //     {
-    //         print_type<types...>();
-    //     }
-    //     else
-    //     {
-    //         printf("??");
-    //     }
-    // }
-
-
-    // class get_from 
-    // {
-    // public:
-    //     using canary = signature_canary;
-
-    //     static inline void print()
-    //     {
-    //         if constexpr (sizeof...(types) > 0)
-    //             print_types<types...>();
-    //         else
-    //             printf("??");
-    //     }
-    // };
 }

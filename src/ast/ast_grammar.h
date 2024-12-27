@@ -119,7 +119,7 @@ namespace ast_grammar
         auto r = (*V)["$1"];
         if (r->rule_is<rep_flag>())
         {
-            auto o = r->as<lex_re>()->match->at(0);
+            auto o = r->as<lex_re>()->data()[0];
             if (o == '*')
             {
                 auto tmp = (*V)["rep<$0, 0, -1>"];

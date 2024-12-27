@@ -476,26 +476,97 @@ namespace ast::_re
         set_signature<ast_str("lex_re")>();
         variant_inherit(lexeme)
 
-        lex_re()
+        enum storage_type : uint8_t
         {
-            groups = new lex_V();
-            match = new lex_v<char>();
+            REF,
+            OWN,
+            DROP
+        };
+
+        lex_re(storage_type t = OWN, const char *ptr = nullptr) : lexeme()
+        {
+            if (t == REF)
+                set_ref(ptr);
+            else if (t == OWN)
+                set_own();
+            else if (t == DROP)
+                set_drop();      
         }
+
         lex_re(const lex_re &r) : lexeme(r)
         {
-            groups = (lex_V *)r.groups->clone();
-            match = (lex_v<char> *)r.match->clone();
+            if (r.groups)
+                groups = new lex_V(*r.groups);
+            if (r.match)
+                match = (lexeme *)r.match->clone();
         }
+
         ~lex_re()
         {
-            delete groups;
+            delete groups; //ok also for nullptr
             delete match;
+        }
+
+        void set_ref(const char *ptr, int len = 0)
+        {
+            delete match;
+            delete groups;
+
+            match = new lex_ref<const char>(ptr, len);
+            groups = nullptr;
+        }
+
+        storage_type get_storage_type() const
+        {
+            if (match)
+                return match->as<lex_ref<const char>>() ? REF : OWN;
+            return DROP;
+        }
+
+        void set_own()
+        {
+            delete match;
+            delete groups;
+
+            match = new lex_v<char>();
+            groups = nullptr;
+        }
+
+        void set_drop()
+        {
+            delete match;
+            delete groups;
+
+            match = nullptr;
+            groups = nullptr;
+        }
+
+        const char *data() const
+        {
+            if (!match)
+                return "";
+            if (auto ref = match->as<lex_ref<const char>>())
+                return ref->ptr;
+            else if (auto v = match->as<lex_v<char>>())
+                return v->data();
+            return "";
+        }
+
+        int size() const
+        {
+            if (!match)
+                return 0;
+            if (auto ref = match->as<lex_ref<const char>>())
+                return ref->len;
+            else if (auto v = match->as<lex_v<char>>())
+                return v->size();
+            return 0;
         }
 
         void printvalue(int indent = 0) const override
         {
-            printf("(%s) re\"%.*s\"", rule ? rule : "", match->size(), match->data());
-            if (groups->size())
+            printf("re\"%.*s\"", size(), data());
+            if (groups && groups->size())
             {
                 print_ind(indent, "\nGroups:");
                 groups->printvalue(indent);
@@ -504,29 +575,99 @@ namespace ast::_re
 
         void append(const char c)
         {
-            match->push_back(c);
+            if (auto v = match->as<lex_v<char>>())
+                v->push_back(c);
+            else if (auto ref = match->as<lex_ref<const char>>())
+                ref->len++; //assume it's the same characer
+            //if match is a lex_drop, ignore
         }
 
         void append(const lexeme *l)
         {
             if (!l)
                 return;
+            
+            if (auto d = l->as<lex_drop>())
+                return;
 
-            if (auto v = l->as<lex_v<char>>())
-                match->insert(match->end(), v->begin(), v->end());
-            else if (auto re = l->as<lex_re>())
-                append(re->match);
-            else if (auto V = l->as<lex_V>())
-                for (auto i : *V)
-                    append(i);
-            else if (auto o = l->as<lex_o<char>>())
-                match->push_back(o->o);
-            else
-                printf("Unknown lexeme type\n");
+            if (auto v = match->as<lex_v<char>>())
+            {
+                if (auto V = l->as<lex_V>())
+                {
+                    for (auto i : *V)
+                        append(i);
+                }
+                else if (auto re = l->as<lex_re>())
+                {
+                    v->reserve(v->size() + re->size());
+                    v->insert(v->end(), re->data(), re->data() + re->size());
+                }
+                else if (auto lv = l->as<lex_v<char>>())
+                {
+                    v->reserve(v->size() + lv->size());
+                    v->insert(v->end(), lv->data(), lv->data() + lv->size());
+                }
+                else if (auto lr = l->as<lex_ref<const char>>())
+                {
+                    v->reserve(v->size() + lr->len);
+                    v->insert(v->end(), lr->ptr, lr->ptr + lr->len);
+                }
+                else if (auto o = l->as<lex_o<char>>())
+                {
+                    v->push_back(o->o);
+                }
+                else
+                {
+                    printf("Unknown lexeme type\n");
+                }
+            }
+            else if (auto ref = match->as<lex_ref<const char>>())
+            {
+                if (auto V = l->as<lex_V>())
+                {
+                    for (auto i : *V)
+                        append(i);
+                }
+                else if (auto re = l->as<lex_re>())
+                {
+                    ref->len += re->size();
+                }
+                else if (auto lv = l->as<lex_v<char>>())
+                {
+                    ref->len += lv->size();
+                }
+                else if (auto lr = l->as<lex_ref<const char>>())
+                {
+                    ref->len += lr->len;
+                }
+                else if (auto o = l->as<lex_o<char>>())
+                {
+                    ref->len++;
+                }
+                else
+                {
+                    printf("Unknown lexeme type\n");
+                }
+            }
         }
 
-        lex_v<char> *match;
-        lex_V *groups;
+        void append_group(lexeme *l)
+        {
+            if (!l)
+                return;
+            
+            if (auto d = match->as<lex_drop>())
+                return;
+            if (auto d = l->as<lex_drop>())
+                return;
+
+            if (!groups)
+                groups = new lex_V();
+            groups->push_back(l);
+        }
+
+        lexeme *match = nullptr; //match can be a lex_drop, a lex_ref<const char> or a lex_v<char>
+        lex_V *groups = nullptr;
     };
 
     class regex_unit
@@ -534,13 +675,15 @@ namespace ast::_re
     public:
         regex_unit() {}
 
-        bool setup(char_cptr &p)
+        bool setup()
         {
+            char_cptr &p = pattern;
+
             //skip not escaped whitespace in the pattern
             while (*p && (*p == ' ' || *p == '\t' || *p == '\n' || *p == '\r'))
                 p++;
 
-            if (!*p) return false;
+            if (pattern_eof()) return false;
             //alternative flag
             if (*p == '|')
             {
@@ -556,7 +699,7 @@ namespace ast::_re
             while (*p && (*p == ' ' || *p == '\t' || *p == '\n' || *p == '\r'))
                 p++;
 
-            if (!*p) return false;
+            if (pattern_eof()) return false;
             //capture flag
             if (*p == '<')
             {
@@ -564,7 +707,7 @@ namespace ast::_re
                 rule = p;
                 while (*p != '>' && *p != '\0')
                     p++;
-                if (!*p) return false;
+                if (pattern_eof()) return false;
                 rule_len = p - rule;
                 p++;
             }
@@ -574,7 +717,7 @@ namespace ast::_re
                 rule_len = 0;
             }
 
-            if (!*p) return false;
+            if (pattern_eof()) return false;
             group = nullptr;
             special = 0;
 
@@ -587,12 +730,12 @@ namespace ast::_re
             else if (*p == '(')
             { //check if there is a group
                 p++;
-                if (!*p) return false;
+                if (pattern_eof()) return false;
                 group = p;
                 int depth = 0;
                 while (*p != ')' || depth > 0)
                 {
-                    if (!*p) return false;
+                    if (pattern_eof()) return false;
                     if (*p == '(')
                         depth++;
                     else if (*p == ')')
@@ -600,18 +743,21 @@ namespace ast::_re
                     else if (*p == '\\')
                     {
                         p++;
-                        if (!*p) return false;
+                        if (pattern_eof()) return false;
                     }
                     p++;
                 }
+                group_end = p;
                 p++;
             }
             else if (*p == '@')
             {
                 special = '@';
                 p++;
+                if (pattern_eof()) return false;
                 if (!delimited_start.set_class(p)) return false;
                 p++;
+                if (pattern_eof()) return false;
                 if (!delimited_end.set_class(p)) return false;
                 p++;
             }
@@ -647,25 +793,25 @@ namespace ast::_re
         }
 
         template<typename _StreamType>
-        lex_v<char> *match_parentheses(_StreamType &s)
+        lex_re *match_parentheses(_StreamType &s)
         {
             if (!delimited_start[*s])
                 return nullptr;
 
             auto sshot = ast::_b::stream_snapshot(s);
 
-            lex_v<char> *l = new lex_v<char>();
-            l->push_back(*s);
+            lex_re *l = new lex_re(storage, s);
+            l->append(*s);
             s++;
 
             int depth = 0;
-            while (!ast::_b::stream_eof(s))
+            while (!stream_eof(s))
             {
                 if (delimited_end[*s])
                 {
                     if (depth == 0)
                     {
-                        l->push_back(*s);
+                        l->append(*s);
                         s++;
                         return l;
                     }
@@ -677,12 +823,12 @@ namespace ast::_re
                 }
                 else if (*s == '\\')
                 {
-                    l->push_back(*s);
+                    l->append(*s);
                     s++;
                 }
-                if (!ast::_b::stream_eof(s))
+                if (!stream_eof(s))
                 {
-                    l->push_back(*s);
+                    l->append(*s);
                     s++;
                 }
             }
@@ -692,12 +838,18 @@ namespace ast::_re
         }
 
         template<typename _StreamType>
-        lexeme *match_one(_StreamType &s)
+        lex_re *match_one(_StreamType &s)
         {
             if (group)
             {
                 regex_unit ru;
-                return ru.match_regex(s, group, true, total_count);
+                ru.pattern = group;
+                ru.pattern_end = group_end;
+                ru.storage = storage;
+                // ru.internal = true;
+                ru.total_count = total_count;
+                lex_re *re = ru.match_regex(s);
+                return re;
             }
             else if (special == '@')
             {
@@ -708,30 +860,31 @@ namespace ast::_re
                 if (last_count == 0)
                     return nullptr;
                 else
-                    return new lex_v<char>();
+                    return new lex_re(lex_re::DROP);
             }          
             else if (special == '^')
             {
                 if (total_count > 0)
                     return nullptr;
                 else
-                    return new lex_v<char>();
+                    return new lex_re(lex_re::DROP);
             }
             else if (special == '$')
             {
-                if (!ast::_b::stream_eof(s))
+                if (!stream_eof(s))
                     return nullptr;
                 else
-                    return new lex_v<char>();
+                    return new lex_re(lex_re::DROP);
             }
         
-            if (ast::_b::stream_eof(s))
+            if (stream_eof(s))
                 return nullptr;
             if (mask[*s])
             {
-                auto c = *s;
+                auto l = new lex_re(storage, s);
+                l->append(*s);
                 s++;
-                return new lex_o<char>(c);
+                return l;
             }
             return nullptr;
         }
@@ -743,50 +896,42 @@ namespace ast::_re
             {
                 if (rule_len)
                 {
-                    submatch->rule = strdup(rule, rule_len);
-                    submatch->own_rule = true;
+                    submatch->rule = rule;
                 }
-                result->groups->push_back(submatch);
+                result->append_group(submatch);
             }
             else
             {
                 if (auto re = submatch->as<lex_re>())
-                    for (int i = 0; i < re->groups->size(); i++)
-                        result->groups->push_back(re->groups->take(i));
+                    if (re->groups)
+                        for (int i = 0; i < re->groups->size(); i++)
+                            result->append_group(re->groups->take(i));
                 delete submatch;
             }
         }
 
-        int lenghtof(lexeme *l)
+        bool pattern_eof()
         {
-            if (auto v = l->as<lex_v<char>>())
-                return v->size();
-            else if (auto re = l->as<lex_re>())
-                return re->match->size();
-            else if (auto V = l->as<lex_V>())
-            {
-                int len = 0;
-                for (auto i : *V)
-                    len += lenghtof(i);
-                return len;
-            }
-            else if (auto o = l->as<lex_o<char>>())
-                return 1;
-            return 0;
+            return !*pattern || pattern == pattern_end;
         }
 
         template<typename _StreamType>
-        lex_re *match_regex(_StreamType &s, char_cptr pattern, bool internal = false, int total = 0)
+        bool stream_eof(_StreamType &s)
         {
-            result = new lex_re();
-            total_count = total;
+            return  ast::_b::stream_eof(s) || (stream_end && s >= stream_end); //this will likekly explode when the stream is not just a char *, will deal with it later
+        }
+
+        template<typename _StreamType>
+        lex_re *match_regex(_StreamType &s) //any
+        {
+            result = new lex_re(storage, s); //this will likekly explode when the stream is not just a char *, will deal with it later
             bool success = true;
             void *sshot = ast::_b::stream_snapshot(s);
             while (true)
             {
-                if (success && (*pattern == 0 || (internal && *pattern == ')')))
+                if (success && pattern_eof())
                     return result;
-                if (!setup(pattern) || (!success && !alternative))
+                if (!setup() || (!success && !alternative))
                 {
                     ast::_b::stream_restore(s, sshot);
                     delete result;
@@ -798,12 +943,12 @@ namespace ast::_re
                     {
                         success = true;
                         auto sm = match_one(s);
-                        int pre_append = result->match->size();
+                        int pre_append = result->size();
                         if (sm)
                             append_one(sm);
                         else
                             success = false;
-                        last_count = result->match->size() - pre_append;
+                        last_count = result->size() - pre_append;
                         total_count += last_count;
                     }
                     else
@@ -811,7 +956,7 @@ namespace ast::_re
                         int total_bkp = total_count;
                         auto group_sshot = ast::_b::stream_snapshot(s);
                         lex_V *subgroup = new lex_V();
-                        lexeme *submatch = nullptr;
+                        lex_re *submatch = nullptr;
                         int count = 0;
                         for (; repetition.max == -1 || count < repetition.max; count++)
                         {
@@ -819,7 +964,7 @@ namespace ast::_re
                             if (!submatch)
                                 break;
                             subgroup->push_back(submatch);
-                            total_count += lenghtof(submatch);
+                            total_count += submatch->size();
                         }
                         if (count < repetition.min)
                         {
@@ -831,10 +976,10 @@ namespace ast::_re
                             continue;
                         }
                         success = true;
-                        int pre_append = result->match->size();
+                        int pre_append = result->size();
                         for (auto m : *subgroup)
                             append_one(m);
-                        last_count = result->match->size() - pre_append;
+                        last_count = result->size() - pre_append;
                         subgroup->clear();
                         delete subgroup;
                     }
@@ -843,10 +988,18 @@ namespace ast::_re
             }
         }
 
+        char_cptr pattern = nullptr;
+        char_cptr pattern_end = nullptr;
+        lex_re::storage_type storage = lex_re::OWN;
+        // bool internal = false;
+
+        char_cptr stream_end = nullptr;
+
         bool alternative = false;
         const char *rule = nullptr; //null = no capture
         int rule_len = 0;
         const char *group = nullptr; //null = use the mask
+        const char *group_end = nullptr;
         char special = 0;
         regex_mask delimited_start, delimited_end;
         regex_mask mask;
@@ -857,12 +1010,13 @@ namespace ast::_re
         lex_re *result = nullptr;
     };
 
-
     template<typename _StreamType>
-    lex_re *match_regex(_StreamType &s, char_cptr pattern)
+    inline lex_re *match_regex(_StreamType &s, char_cptr pattern, lex_re::storage_type storage = lex_re::storage_type::OWN) //any
     {
         regex_unit ru;
-        return ru.match_regex(s, pattern);
+        ru.pattern = pattern;
+        ru.storage = storage;
+        return ru.match_regex(s); //any
     }
 
     template<const auto arr>
@@ -874,7 +1028,7 @@ namespace ast::_re
 
         ast_primary_implementation(s)
         {
-            return match_regex(s, arr.data());
+            return match_regex(s, arr.data()); //dynamic
         }
     };
 

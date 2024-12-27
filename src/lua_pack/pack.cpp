@@ -88,24 +88,25 @@ namespace _detail
             lex_V *g = ((lex_re *)V->at(i))->groups;
             for (auto p : *g)
             {
+                lex_re *re = p->as<lex_re>();
                 if (p->same_rule("count"))
-                    fi->count = atoi_n(p->as<lex_re>()->match->data(), p->as<lex_re>()->match->size());
+                    fi->count = atoi_n(re->data(), re->size());
                 else if (p->same_rule("name"))
-                    fi->field_name = strdup(p->as<lex_v<char>>()->data() + 1, p->as<lex_v<char>>()->size() - 2);
+                    fi->field_name = strdup(re->data() + 1, re->size() - 2);
                 else if (p->same_rule("type"))
-                    fi->type = p->as<lex_o<char>>()->o;
+                    fi->type = re->data()[0];
                 else if (p->same_rule("bitfield"))
                 {
                     fi->type = 1;
                     fi->bitfield = new std::vector<uint8_t>();
-                    lex_V *bits = p->as<lex_re>()->groups;
+                    lex_V *bits = re->groups;
                     for (auto b : *bits)
-                        fi->bitfield->push_back(atoi_n(b->as<lex_re>()->match->data(), b->as<lex_re>()->match->size()));
+                        fi->bitfield->push_back(atoi_n(b->as<lex_re>()->data(), b->as<lex_re>()->size()));
                 }
                 else if (p->same_rule("structure"))
                 {
                     fi->type = 2;
-                    const char *str = p->as<lex_v<char>>()->data() + 1;
+                    const char *str = re->data() + 1;
                     lexeme *s = match(str);
                     if (s)
                     {
@@ -119,9 +120,9 @@ namespace _detail
                     }
                 }
                 else if (p->same_rule("size"))
-                    fi->array_size = atoi_n(p->as<lex_re>()->match->data(), p->as<lex_re>()->match->size());
+                    fi->array_size = atoi_n(re->data(), re->size());
                 else if (p->same_rule("ref"))
-                    fi->array_size_name = strdup(p->as<lex_v<char>>()->data() + 1, p->as<lex_v<char>>()->size() - 2);
+                    fi->array_size_name = strdup(re->data() + 1, re->size() - 2);
             }
             result->f->fields->push_back(fi);
         }

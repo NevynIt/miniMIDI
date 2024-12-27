@@ -97,33 +97,53 @@ namespace ast::_b
         set_signature<ast_str("lexeme")>();
         variant_implementation
         uti::signature_id rule = nullptr;
-        bool own_rule = false;
+        // bool own_rule = false;
 
         lexeme() {}
         lexeme(const lexeme &l) : rule(l.rule)
         {
-            if (l.own_rule)
-            {
-                rule = strdup(l.rule);
-                own_rule = true;
-            }
+            // if (l.own_rule)
+            // {
+            //     rule = strdup(l.rule);
+            //     own_rule = true;
+            // }
         }
         ~lexeme()
         {
-            if (own_rule)
-                delete[] rule;
+            // if (own_rule)
+            //     delete[] rule;
         }
 
         virtual void printvalue(int indent = 0) const { printf("??"); };
         virtual void print(int indent = 0) const
         {
-            print_ind(indent, "(%s) %s: ", rule ? rule : "", static_get_typeid());
+            print_ind(indent, "(%.*s) %s: ", rule_len(), rule, get_typeid());
             printvalue(indent);
+        }
+
+        int rule_len() const
+        {
+            if (!rule)
+                return 0;
+            int i;
+            for (i = 0; rule[i] != '>' && rule[i]!=0; i++)
+                ;
+            return i;
         }
 
         bool same_rule(const char *r) const
         {
-            return rule == r || (rule && strcmp(rule, r) == 0);
+            if (rule == r)
+                return true;
+
+            for (const char *p = rule; ; p++, r++)
+            {
+                if ((*p == 0 || *p == '>') && (*r == 0 || *r == '>'))
+                    return true;
+                if (*p != *r)
+                    return false;
+            }
+            return true;
         }
 
         template<typename R>
@@ -152,13 +172,13 @@ namespace ast::_b
     template<>
     inline void lex_o<char>::printvalue(int indent) const
     {
-        printf("(%s) '%c'", rule ? rule : "", o);
+        printf("'%c'", o);
     }
 
     template<>
     inline void lex_o<char const>::printvalue(int indent) const
     {
-        printf("(%s) '%c'", rule ? rule : "", o);
+        printf("'%c'", o);
     }
 
     template<typename O>
@@ -180,16 +200,13 @@ namespace ast::_b
     template <>
     inline void lex_v<char>::printvalue(int indent) const
     {
-        printf("(%s) \"%.*s\"", rule ? rule : "", this->size(), this->data());
+        printf("\"%.*s\"", this->size(), this->data());
     }
 
     template<typename O>
     inline void lex_v<O>::printvalue(int indent) const
     {
-        printf("{ (");
-        if (rule)
-            printf("%s", rule); //print the signature of the rule
-        printf(")\n");
+        printf("{ \n");
         for (auto i = this->begin(); i != this->end(); i++)
         {
             lex_o<O>(*i).print(indent + 1);
@@ -197,11 +214,53 @@ namespace ast::_b
                 printf(",\n");
         }
         printf("\n");
-        print_ind(indent, "} (");
-        if (rule)
-            printf("%s", rule); //print the signature of the rule
-        printf(")");
+        print_ind(indent, "}");
     }
+
+    template<typename O>
+    class lex_ref : public lexeme
+    {
+    public:
+        using object = O;
+        set_signature<ast_str("lex_ref"), uti::sig_of<O>()>();
+        variant_inherit(lexeme)
+        O *ptr = nullptr; //the pointer is not owned
+        unsigned int len = 0;
+
+        lex_ref() {}
+        lex_ref(O *ptr, unsigned int len = 0) : ptr(ptr), len(len) {}
+        lex_ref(const lex_ref &p) : ptr(p.ptr), len(p.len) {}
+        ~lex_ref() { }
+
+        void printvalue(int indent = 0) const override;
+    };
+
+    template<typename O>
+    inline void lex_ref<O>::printvalue(int indent) const
+    {
+        printf("{\n");
+        for (int i = 0; i<len; i++)
+        {
+            lex_o<O>(ptr[i]).print(indent + 1);
+            if (i + 1 != len)
+               printf(",\n");
+        }
+        printf("\n");
+        print_ind(indent, "}");
+    }
+
+    template <>
+    inline void lex_ref<const char>::printvalue(int indent) const
+    {
+        printf("\"%.*s\"", len, ptr);
+    }
+
+    class lex_drop : public lexeme
+    {
+    public:
+        set_signature<ast_str("drop")>();
+        variant_inherit(lexeme)
+    };
 
     class lex_V : public lexeme, public std::vector<lexeme *>
     {
@@ -250,23 +309,17 @@ namespace ast::_b
                 printf("{}");
                 return;
             }
-            printf("{ (");
-            if (rule)
-                printf("%s", rule); //print the signature of the rule
-            printf(")\n");
+            printf("{\n");
             int c = 0;
             for (auto i = this->begin(); i != this->end(); i++)
             {
-                print_ind(indent, "[%d]: ", c++);
-                (*i)->printvalue(indent + 1);
+                printf("[%2d]: ", c++);
+                (*i)->print(indent + 1);
                 if (i + 1 != this->end())
                     printf(",\n");
             }
             printf("\n");
-            print_ind(indent, "} (");
-            if (rule)
-                printf("%s", rule); //print the signature of the rule
-            printf(")");
+            print_ind(indent, "}");
         }
 
         ~lex_V()
@@ -288,7 +341,7 @@ namespace ast::_b
 
         void printvalue(int indent = 0) const override
         {
-            print_ind(indent, "%ld", l);
+            printf("%ld", l);
         }
     };
 
@@ -303,7 +356,7 @@ namespace ast::_b
 
         void printvalue(int indent = 0) const override
         {
-            print_ind(indent, "%f", f);
+            printf("%f", f);
         }
     };
 
