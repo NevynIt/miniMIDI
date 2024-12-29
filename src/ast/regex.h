@@ -523,6 +523,27 @@ namespace ast::_re
             return DROP;
         }
 
+        lex_re *get_group(const char *name)
+        {
+            if (!groups)
+                return nullptr;
+            for (auto g : *groups)
+            {
+                if (g->same_rule(name))
+                    return g->as<lex_re>();
+            }
+            return nullptr;
+        }
+
+        lex_re *get_group(int n)
+        {
+            if (!groups)
+                return nullptr;
+            if (n < 0 || n >= groups->size())
+                return nullptr;
+            return groups->at(n)->as<lex_re>();
+        }
+
         void set_own()
         {
             delete match;
@@ -575,10 +596,34 @@ namespace ast::_re
 
         void append(const char c)
         {
+            if (!match)
+                return;
             if (auto v = match->as<lex_v<char>>())
                 v->push_back(c);
             else if (auto ref = match->as<lex_ref<const char>>())
                 ref->len++; //assume it's the same characer
+            //if match is a lex_drop, ignore
+        }
+
+        void append(const char *c)
+        {
+            if (!match)
+                return;
+            if (auto v = match->as<lex_v<char>>())
+                v->insert(v->end(), c, c + strlen(c));
+            else if (auto ref = match->as<lex_ref<const char>>())
+                ref->len += strlen(c); //this should check that it's the same string
+            //if match is a lex_drop, ignore
+        }
+
+        void append(const char *c, int len)
+        {
+            if (!match)
+                return;
+            if (auto v = match->as<lex_v<char>>())
+                v->insert(v->end(), c, c + len);
+            else if (auto ref = match->as<lex_ref<const char>>())
+                ref->len += len; //this should check that it's the same string
             //if match is a lex_drop, ignore
         }
 
@@ -588,6 +633,8 @@ namespace ast::_re
                 return;
             
             if (auto d = l->as<lex_drop>())
+                return;
+            if (!match)
                 return;
 
             if (auto v = match->as<lex_v<char>>())
@@ -622,7 +669,7 @@ namespace ast::_re
                 }
             }
             else if (auto ref = match->as<lex_ref<const char>>())
-            {
+            { //TODO: it should check if what is being added is just the continuation of ptr, and transform into a lex_v<char> if not
                 if (auto V = l->as<lex_V>())
                 {
                     for (auto i : *V)
@@ -656,7 +703,7 @@ namespace ast::_re
             if (!l)
                 return;
             
-            if (auto d = match->as<lex_drop>())
+            if (!match)
                 return;
             if (auto d = l->as<lex_drop>())
                 return;
@@ -813,6 +860,11 @@ namespace ast::_re
                     {
                         l->append(*s);
                         s++;
+
+                        lex_re *cnt = new lex_re(storage, l->data()+1);
+                        cnt->append(l->data()+1, l->size()-2);
+                        l->append_group(cnt);
+
                         return l;
                     }
                     depth--;
@@ -1019,7 +1071,7 @@ namespace ast::_re
         return ru.match_regex(s); //any
     }
 
-    template<const auto arr>
+    template<const auto arr, lex_re::storage_type storage = lex_re::storage_type::OWN>
     ast_internal_rule(regex)
     {
         static_assert(std::is_same_v<decltype(arr.data()), const char *>, "arr must be a char array");
@@ -1028,7 +1080,7 @@ namespace ast::_re
 
         ast_primary_implementation(s)
         {
-            return match_regex(s, arr.data()); //dynamic
+            return match_regex(s, arr.data(), storage);
         }
     };
 

@@ -188,7 +188,7 @@ namespace ast::_f
     ast_internal_rule(out)
     {
         public:
-        set_signature<ast_str("out")>();
+        set_signature<ast_str("out"), uti::sig_of<T0>()>();
         ast_base_rule = T0;
         ast_decorator_implementation(l)
         {
@@ -196,5 +196,4 @@ namespace ast::_f
             return l;
         }
     };
-    
 }

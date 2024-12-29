@@ -21,14 +21,16 @@ namespace ast
     {
         if (l)
         {
-            lex_v<char> *ll = concat_decorator<char>((lexeme *)l->clone())->as<lex_v<char>>();
-            if (ll)
+            if (auto re = l->as<lex_re>())
             {
-                for (auto i = ll->begin(); i != ll->end(); i++)
-                {
-                    printf("%c", *i);
-                }
-                delete ll;
+                printf("%.*s", re->size(), re->data());
+            }
+            else
+            {
+                auto tmp = new lex_re();
+                tmp->append(l);
+                printf("%.*s", tmp->size(), tmp->data());
+                delete tmp;
             }
             printf("\n");
         }
@@ -163,12 +165,14 @@ namespace ast
         else if (sel->same_rule("setname"))
         {
             const char *name = sel->data()+1;
-            lex_V *V = prepare_V(cur);
-            for (int i = 0; i<V->size(); i++)
-            {
-                lexeme *l = V->at(i); 
-                l->rule = name;
-            }
+            if (auto V = cur->as<lex_V>())
+                for (int i = 0; i<V->size(); i++)
+                {
+                    lexeme *l = V->at(i); 
+                    l->rule = name;
+                }
+            else
+                cur->rule = name;
         }
         else if (sel->same_rule("name"))
         {
@@ -278,7 +282,7 @@ namespace ast
                     delete cur;
                     cur = result;
                 }
-                else
+                else if (V->size() == 1)
                 {
                     cur = V->take(0);
                     delete V;
@@ -302,10 +306,17 @@ namespace ast
         }
         else if (sel->same_rule("group"))
         {
-            const char *pattern = sel->data() + 1;
-            auto tmp = select_regex(cur, pattern, true);
-            delete cur;
-            cur = tmp;
+            if (cur->is<lex_V>() && cur->as<lex_V>()->size() == 0)
+            {
+                //do nothing
+            }
+            else
+            {
+                const char *pattern = sel->data() + 1;
+                auto tmp = select_regex(cur, pattern, true);
+                delete cur;
+                cur = tmp;
+            }
         }
         else if (sel->same_rule("loop"))
         {
@@ -363,6 +374,7 @@ namespace ast
                     }
                 }
             }
+            delete tmp;
             //store the current result
             auto V = prepare_V(cur);
             for (int i = 0; i < V->size(); i++)
@@ -380,7 +392,7 @@ namespace ast
         return true;
     }
 
-    lexeme *ast::_rp::select_regex(const lexeme *l, char_cptr &pattern, bool internal)
+    lex_re *ast::_rp::select_regex(const lexeme *l, char_cptr &pattern, bool internal)
     {
         if (!l)
             return nullptr;
@@ -428,13 +440,20 @@ namespace ast
                     }
                 }
                 result->append(cur);
-                result->append_group(cur);
+                if (auto V = cur->as<lex_V>())
+                {
+                    for (int i = 0; i < V->size(); i++)
+                        result->append_group(V->take(i));
+                    delete cur;
+                }
+                else
+                    result->append_group(cur);
             }
         }
         return result;
     }
 
-    lexeme *ast::_rp::replace_regex(lexeme *l, char_cptr pattern)
+    lex_re *ast::_rp::replace_regex(lexeme *l, char_cptr pattern)
     {
         auto tmp = select_regex(l, pattern);
         delete l;

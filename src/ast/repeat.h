@@ -76,10 +76,6 @@ namespace ast::_r
         }
     };
 
-
-    template<typename T0>
-    using opt = rep<T0, 0, 1>;
-
     template<typename T0>
     using any = rep<T0, 0, -1>;
 

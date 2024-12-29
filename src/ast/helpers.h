@@ -385,6 +385,10 @@ namespace ast::_h
 
     #define ast_regex_rule(_NAME_, _PATTERN_) ast_alias(_NAME_) = regex<ast_str(_PATTERN_)>; ast_alias_end;
     #define ast_internal_regex(_NAME_, _PATTERN_) ast_internal_alias(_NAME_) = regex<ast_str(_PATTERN_)>; ast_alias_end;
+
+    #define ast_regex_drop(_NAME_, _PATTERN_) ast_alias(_NAME_) = drop<regex<ast_str(_PATTERN_), lex_re::storage_type::DROP>>; ast_alias_end;
+    #define ast_internal_regex_drop(_NAME_, _PATTERN_) ast_internal_alias(_NAME_) = drop<regex<ast_str(_PATTERN_), lex_re::storage_type::DROP>>; ast_alias_end;
+
     #define ast_string_rule(_NAME_, _STR_) ast_alias(_NAME_) = token_string<ast_str_arr(_STR_)>; ast_alias_end;
     #define ast_internal_string(_NAME_, _STR_) ast_internal_alias(_NAME_) = token_string<ast_str_arr(_STR_)>; ast_alias_end;
 }

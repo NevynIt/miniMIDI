@@ -2,6 +2,7 @@
 #include "deps.h"
 #include "helpers.h"
 #include "bblocks.h"
+#include "d_functions.h"
 
 namespace ast::_c
 {
@@ -82,5 +83,7 @@ namespace ast::_c
             return choicei_match<_StreamType, types...>(s, 0, _trace_);
         }
     };
-
+    
+    template<typename T0>
+    using opt = choice<T0,_f::drop<_f::pass_always>>;
 }

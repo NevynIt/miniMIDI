@@ -76,7 +76,7 @@
  * 
  * when applying a selector, anything that is not a lex_V is enclosed in a lex_V first
  * this is true for lex_re too, except for the flatten selector
- * if % is applied directly to a lex_re, it extracts the groups of the lex_re from [1:]
+ * if % is applied to a lex_re, it extracts the groups of the lex_re
  * this is the only way to extract the groups of a lex_re in a replace string
 */
 
@@ -90,8 +90,8 @@ namespace ast::_rp
 
     typedef const char *char_cptr;
 
-    lexeme *select_regex(const lexeme *l, char_cptr &pattern, bool internal = false);
-    lexeme *replace_regex(lexeme *l, char_cptr pattern);
+    lex_re *select_regex(const lexeme *l, char_cptr &pattern, bool internal = false);
+    lex_re *replace_regex(lexeme *l, char_cptr pattern);
 
     bool apply_selector(lexeme *&cur, char_cptr &pattern);
 
@@ -100,7 +100,7 @@ namespace ast::_rp
     {
         static_assert(std::is_same_v<decltype(arr.data()), const char *>, "arr must be a char array");
     public:
-        set_signature<ast_str("replace"), arr>();
+        set_signature<ast_str("replace"), arr, uti::sig_of<T0>()>();
         ast_base_rule = T0;
 
         ast_decorator_implementation(l)

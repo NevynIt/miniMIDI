@@ -58,7 +58,7 @@ integer ::= /[+-]?[0-9]+/;
 hex_number ::= /0x[0-9a-fA-F]+/;
 dec_number ::= /[+-]?[0-9]+\.([0-9]+)?/;
 number ::= dec_number | hex_number;
-comment ::= /--([^\n]*)\n/./$1/;
+comment ::= /--([^\n]*)\n/.#$1#;
 S ::= ((/[ \t\n\r]+/ | comment)*).drop;
     -- whitespace and comments
     -- the compiler will ignore them
@@ -105,7 +105,7 @@ param_list ::= '<' S param.list<(S ',' S)> S '>';
 rule ::= name ( param_list )? S "::=" S expression S ';';
     -- the compiler will use the name as the class name
 
-copyline ::= /$([^\n]*)\n/./$1/.out.drop;
+copyline ::= /$([^\n]*)\n/.#$1#.out.drop;
 grammar ::= S (rule | copyline ).list<S>;
 
 -- the grammar is self-contained, so it can be parsed by itself
