@@ -459,4 +459,13 @@ namespace ast
         delete l;
         return tmp;
     }
+    
+    void Environment::add_rule(std::vector<const rule *> &rules, const rule *r)
+    {
+    }
+    
+    const rule *Environment::get_rule(std::vector<const rule *> &rules, const char *name)
+    {
+        return nullptr;
+    }
 }
